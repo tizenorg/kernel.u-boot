@@ -105,9 +105,8 @@ static int check_boot_mode(unsigned int inform)
 		puts("(ram dump)\n");
 		boot_mode = DUMP_REBOOT;
 	} else if (inform == REBOOT_FUS) {
-		/* later fixup the fus mode using SLP_FLAG_FUS */
 		puts("(fus reboot)\n");
-		boot_mode = NORMAL_BOOT;
+		boot_mode = FUS_USB_REBOOT;
 	} else if (inform == REBOOT_FOTA) {
 		puts("(fota reboot)\n");
 		boot_mode = FOTA_REBOOT;

@@ -129,7 +129,7 @@
 /* INFORM0~3 registers are cleared by asserting XnRESET pin */
 /* INFORM4~7 registers are cleared only by power-up reset */
 #define CONFIG_INFO_ADDRESS	0x10020810	/* INFORM4 */
-#define CONFIG_INFORM_ADDRESS	0x10020818	/* INFORM6 */
+#define CONFIG_INFORM_ADDRESS	0x1002080C	/* INFORM3 */
 
 /* 
  * spi gpio 
