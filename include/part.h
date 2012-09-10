@@ -139,9 +139,16 @@ int   test_part_amiga (block_dev_desc_t *dev_desc);
 
 #ifdef CONFIG_EFI_PARTITION
 /* disk/part_efi.c */
+#include "../disk/part_efi.h"
 int get_partition_info_efi (block_dev_desc_t * dev_desc, int part, disk_partition_t *info);
 void print_part_efi (block_dev_desc_t *dev_desc);
 int   test_part_efi (block_dev_desc_t *dev_desc);
+
+int get_gpt_table(block_dev_desc_t * dev_desc, unsigned int *part_offset);
+void set_gpt_info(block_dev_desc_t * dev_desc, char *ramaddr,
+               unsigned int len, unsigned int reserved);
+void set_gpt_dev(int dev);
+void write_gpt_table(block_dev_desc_t *dev_desc, gpt_entry *p_gpt_entry);
 #endif
 
 #endif /* _PART_H */

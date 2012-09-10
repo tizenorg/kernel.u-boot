@@ -1,0 +1,72 @@
+; Texas Instruments OMAP(tm) Platform Software.
+; Copyright 2006 by Texas Instruments Incorporated. All rights
+; reserved. Property of Texas Instruments Incorporated. Restricted
+; rights to use, duplicate or disclose this code are granted
+; through contract.
+
+
+; ///////////////////////////////////////////////////////////////////////////////
+;                         Configuring OMAP 4430 for Trace32
+; ///////////////////////////////////////////////////////////////////////////////
+
+
+print "Connecting to OMAP 4430..."
+
+SYStem.RESet
+system.mode down
+system.cpu omap4430appsmp2
+sys.jc 12Mhz
+system.mode attach
+core.select 1
+system.MEMACCESS.DAP
+core.select 0
+system.MEMACCESS.DAP
+TASK.RESet
+sYmbol.RESet
+sYmbol.AutoLoad.RESet          ; reset autoloader list
+TRONCHIP.s undef ON
+TrOnchip.Set DABORT OFF       ; used by Symbian OS for page miss!
+TrOnchip.Set PABORT OFF     ; used by Symbian OS for page miss!
+
+TrOnchip.Set UNDEF OFF       ; used by Symbian OS for VFP/Neon!
+
+SYStem.Option DACR ON  ; give Debugger global write permissions
+SETUP.IMASKASM OFF     ; lock interrupts while single stepping
+SYSTEM.MEMACCESS DAP   ; enable DAP access
+
+;setup missing trace funnel and TPIU disable
+d.s eapb:0xd4164fb0 %l 0xc5acce55
+d.s eapb:0xd4164000 %l 0x00000301
+; ds.l 0x54160020 %1 1
+
+;initialize CPSR and stack pointer
+Register.Set CPSR 0x13  ; for arm mode
+
+Register.Set R13 0x1000
+
+print "Connecting to OMAP 4430 Completed Scuccessfully"
+
+;------------------------------------------------------------------------------;
+; Load IMAGE                                                                   ;
+;------------------------------------------------------------------------------;
+
+print "Loading ..."
+
+&UBOOT_CODE="y:\u-boot-s5pc1xx\u-boot"	
+&UBOOT_IMAGE="y:\u-boot-s5pc1xx\u-boot.bin"
+;&SBOOT_IMAGE="y:\s-boot\s-boot-mmc.bin"
+
+;&IPL_LOAD_ADDRESS=0x02020000
+&UBOOT_EXECUTED_ADDRESS=0x84800000
+
+Data.LOAD.Binary	&UBOOT_IMAGE &UBOOT_EXECUTED_ADDRESS
+Data.Load.Elf		&UBOOT_CODE /ABSLIFETIMES /gnu /nocode /STRIPPART 5
+
+;Data.load.binary	&SBOOT_IMAGE 0x82008000
+
+;Autoburing initial boot setting
+;d.s SD:0x82000000 %LE %LONG 0x534E5344 
+
+; Break & Run
+Register.Set pc &UBOOT_EXECUTED_ADDRESS
+go

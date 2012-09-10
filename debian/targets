@@ -1,0 +1,3 @@
+# DEB_HOST_ARCH		platform	target
+# --------------------------------------------
+armel			exynos_trats	u-boot.bin

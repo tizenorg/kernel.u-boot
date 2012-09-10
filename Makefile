@@ -435,15 +435,15 @@ $(obj)u-boot-sig.bin:	$(obj)u-boot.bin
 endif
 		@echo -n "BoOt" > sig-magic
 		@echo -n `date +%Y%m%d%H` > sig-date
-		@echo -n $(PRODUCT_NAME) > sig-product
+		@echo -n "none" > sig-product
 		@# workaround for old version used board
-		@echo -n $(BOARD) > sig-board
+		@echo -n "slp_u1" > sig-board
 		@cat sig-magic /dev/zero | head -c 12 > sig-tmp
 		@cat sig-tmp sig-date /dev/zero | head -c 24 > sig-tmp2
 		@cat sig-tmp2 sig-product /dev/zero | head -c 48 > sig-tmp
 ifeq ($(CONFIG_MMC_BOOT),y)
 		@cat sig-tmp sig-board /dev/zero | head -c 512 > sig-hdr
-		@cat u-boot.bin /dev/zero | head -c 523776 > u-boot-pad.bin
+		@cat u-boot.bin /dev/zero | head -c 1048064 > u-boot-pad.bin
 		@cat u-boot-pad.bin sig-hdr > u-boot-mmc.bin
 else
 		@cat sig-tmp sig-board /dev/zero | head -c 64 > sig-hdr
