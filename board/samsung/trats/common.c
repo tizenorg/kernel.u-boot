@@ -195,7 +195,11 @@ int fixup_boot_mode(int mode)
 			mode = CHARGE_BOOT;
 		}
 	}
-
+	else if ((lpm_inform == REBOOT_CHARGE) &&
+			(readl(CONFIG_SYS_SDRAM_BASE) != REBOOT_INFO_MAGIC)) {
+		puts("charge reboot\n");
+		mode = CHARGE_BOOT;
+	}
 	/* check battery */
 	if (mode == CHARGE_BOOT) {
 		if (!get_ta_usb_status()) {
