@@ -163,10 +163,6 @@ int get_boot_mode(void)
 	return boot_mode;
 }
 
-#ifndef CONFIG_LPM_INFORM
-#define CONFIG_LPM_INFORM 0x10020808      /* INFORM2 */
-#endif
-
 int fixup_boot_mode(int mode)
 {
 	int ret = 1;

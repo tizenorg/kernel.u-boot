@@ -130,6 +130,7 @@
 /* INFORM4~7 registers are cleared only by power-up reset */
 #define CONFIG_INFO_ADDRESS	0x10020810	/* INFORM4 */
 #define CONFIG_INFORM_ADDRESS	0x1002080C	/* INFORM3 */
+#define CONFIG_LPM_INFORM	0x10020808      /* INFORM2 */
 
 /* 
  * spi gpio 

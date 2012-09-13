@@ -43,4 +43,6 @@ void board_inform_clear(unsigned int flag)
 {
 	/* clear INFORM regardless of flags */
 	writel(0, CONFIG_INFORM_ADDRESS);
+	/* for normal boot */
+	writel(0x12345678, CONFIG_LPM_INFORM);
 }
