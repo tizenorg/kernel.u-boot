@@ -43,6 +43,7 @@
 #include <linux/stat.h>
 #include "../disk/part_dos.h"
 #include <malloc.h>
+#include <div64.h>
 
 #if defined(CONFIG_CMD_USB) && defined(CONFIG_USB_STORAGE)
 #include <usb.h>
@@ -655,9 +656,9 @@ void PUT(block_dev_desc_t *dev_desc,uint64_t off, void *buf, uint32_t size)
 	unsigned block_len;
 	unsigned char *temp_ptr=NULL;
 	char sec_buf[SECTOR_SIZE];
-	startblock = off / (uint64_t)sector_size;
+	startblock = lldiv(off, SECTOR_SIZE);
 	startblock += part_offset;
-	remainder = off % (uint64_t)sector_size;
+	remainder = do_div(off, SECTOR_SIZE);
 	remainder &= SECTOR_SIZE - 1;
 	if (dev_desc == NULL)
 		return ;

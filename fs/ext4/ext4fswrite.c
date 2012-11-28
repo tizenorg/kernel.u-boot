@@ -26,7 +26,7 @@
 #include <linux/stat.h>
 #include <linux/time.h>
 #include "../ext4/crc16.h"
-
+#include <div64.h>
 //#define DEBUG_LOG 1
 
 #define YES 1
@@ -3803,9 +3803,10 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 	}
 
 	/*calucalate how many blocks required*/
-	total_no_of_bytes_for_file=sizebytes;
-	total_no_of_block_for_file=total_no_of_bytes_for_file/blocksize ;
-	if(total_no_of_bytes_for_file%blocksize!=0)
+	total_no_of_bytes_for_file = sizebytes;
+	total_no_of_block_for_file = lldiv(total_no_of_bytes_for_file, blocksize);
+	
+	if(do_div(total_no_of_bytes_for_file, blocksize) != 0)
 	{
 		total_no_of_block_for_file++;
 	}
