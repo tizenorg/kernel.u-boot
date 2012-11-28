@@ -505,7 +505,7 @@ static void check_battery(void)
 static void init_rtc_max8997(void)
 {
 	unsigned char addr = MAX8997_RTC_ADDR;
-	unsigned char val[2];
+	unsigned char val[2] = {0,};
 
 	i2c_set_bus_num(I2C_5);
 
@@ -515,8 +515,9 @@ static void init_rtc_max8997(void)
 	}
 
 	/* Disable SMPL & WTSR */
-	i2c_write(addr, 0x4, 1, 0x1, 1);
-	i2c_write(addr, 0x6, 1, 0x0, 1);
+	i2c_write(addr, 0x6, 1, val, 1);
+	val[0] = 1;
+	i2c_write(addr, 0x4, 1, val, 1);
 }
 
 #if defined(CONFIG_EXTERNAL_CHARGER)
