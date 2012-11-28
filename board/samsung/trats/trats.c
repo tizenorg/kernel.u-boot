@@ -839,6 +839,23 @@ static void check_keypad(void)
 		setenv("bootcmd", "usbdown");
 }
 
+static void check_ta_usb(void)
+{
+	unsigned char addr = MAX8997_MUIC_ADDR;
+	unsigned char int2;
+
+	if (ta_usb_connected)
+		return;
+
+	i2c_read(addr, 0x2, 1, &int2, 1);
+
+	/* check whether ta or usb cable have been attached */
+	if ((int2 & 0x10)) {
+		init_rtc_max8997();
+		power_off();
+	}
+}
+
 #ifdef CONFIG_LCD
 void fimd_clk_set(void)
 {
@@ -1348,6 +1365,7 @@ int misc_init_r(void)
 	check_auto_burn();
 
 	ta_usb_connected = muic_check_type();
+	check_ta_usb();
 #ifdef CONFIG_CMD_PIT
 	check_pit();
 #endif
