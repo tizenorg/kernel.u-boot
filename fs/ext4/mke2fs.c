@@ -26,6 +26,7 @@
 #include <asm/byteorder.h>
 #include <linux/stat.h>
 #include <linux/time.h>
+#include <div64.h>
 
 #define STRIDE_LENGTH 8
 block_dev_desc_t *dev_desc=NULL;
@@ -555,7 +556,7 @@ static void PRS(block_dev_desc_t *dev_desc, int part_no)
 
 		}
 		blocksize = use_bsize;
-		num_blk= partinfo_size/blocksize;
+		num_blk= lldiv(partinfo_size, blocksize);
 		memset(&fs_param, 0, sizeof(struct ext2_super_block));
 		fs_param.s_rev_level = 1;	/* Create revision 1 filesystems now */
 
@@ -578,7 +579,7 @@ static void PRS(block_dev_desc_t *dev_desc, int part_no)
 			dev_size = fs_param.s_blocks_count;
 			retval = 0;
 		} else {
-			dev_size=partinfo_size/blocksize;
+			dev_size=lldiv(partinfo_size, blocksize);
 		}
 
 		if (!fs_param.s_blocks_count) {
