@@ -3769,6 +3769,7 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 	unsigned int inodes_per_block;
 	unsigned int inode_bitmap_index;
 	int sizeof_void_space = 0;
+	memset(filename, 0x00, sizeof(filename));
 	g_parent_inode = (struct ext2_inode *)xzalloc(sizeof(struct ext2_inode));
 	if(!g_parent_inode)
 		goto fail;
