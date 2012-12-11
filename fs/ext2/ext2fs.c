@@ -29,7 +29,7 @@
 #include <asm/byteorder.h>
 #include <linux/stat.h>
 #include <linux/time.h>
-
+#include <div64.h>
 
 //#define DEBUG_LOG 1
 
@@ -795,10 +795,8 @@ int ext2fs_write_file
 	int previous_block_number = -1;
 	int delayed_start = 0;
 	int delayed_extent = 0;
-	int delayed_skipfirst = 0;
 	int delayed_next = 0;
 	char * delayed_buf = NULL;
-	int status;
 
 	/* Adjust len so it we can't read past the end of the file.  */
 	if (len > filesize)
@@ -808,7 +806,6 @@ int ext2fs_write_file
 
 	for (i = pos / blocksize; i < blockcnt; i++) {
 		int blknr;
-		int blockoff = pos % blocksize;
 		int blockend = blocksize;
 		int skipfirst = 0;
 		blknr = readblock (file_inode, i);
@@ -818,8 +815,6 @@ int ext2fs_write_file
 		blknr = blknr << log2blocksize;
 
 		if (blknr) {
-			int status;
-
 			if (previous_block_number != -1) {
 				if (delayed_next == blknr) {
 				delayed_extent += blockend;
@@ -829,7 +824,6 @@ int ext2fs_write_file
 					previous_block_number = blknr;
 					delayed_start = blknr;
 					delayed_extent = blockend;
-					delayed_skipfirst = skipfirst;
 					delayed_buf = buf;
 					delayed_next = blknr +
 						(blockend >> SECTOR_BITS);
@@ -838,7 +832,6 @@ int ext2fs_write_file
 				previous_block_number = blknr;
 				delayed_start = blknr;
 				delayed_extent = blockend;
-				delayed_skipfirst = skipfirst;
 				delayed_buf = buf;
 				delayed_next = blknr + (blockend >> SECTOR_BITS);
 			}
@@ -1257,11 +1250,9 @@ int update_bmap_with_one(unsigned long blockno, unsigned char * buffer, int inde
 	unsigned char  *ptr=buffer;
 	unsigned char operand;
 	int status;
+	int blocksize;
 	i=blockno/8;
 	remainder=blockno%8;
-	int j,m;
-	int blocksize;
-
 
 	/*get the blocksize of the filesystem*/
 	blocksize=EXT2_BLOCK_SIZE(ext2fs_root);
@@ -1291,7 +1282,6 @@ int update_bmap_with_zero(unsigned long blockno, unsigned char * buffer, int ind
 	int status;
 	i=blockno/8;
 	remainder=blockno%8;
-	int j;
 	int blocksize;
 
 	/*get the blocksize of the filesystem*/
@@ -1388,11 +1378,7 @@ int update_inode_bmap_with_zero(unsigned long inode_no, unsigned char * buffer,i
 unsigned long get_next_availbale_block_no(block_dev_desc_t *dev_desc,int part_no)
 {
 	int i;
-	int status;
-	int sector_per_block;
 	int blocksize;
-	static int previous_value=0;
-	static int previous_bg_bitmap_index;
 	unsigned int bg_bitmap_index;
 
 
@@ -1455,18 +1441,12 @@ unsigned long get_next_availbale_block_no(block_dev_desc_t *dev_desc,int part_no
 		sb->free_blocks--;
 		return blockno;
 	}
-
-
-	fail:
-	printf("failed to get get_next_availbale_block_no\n");
+	return 0;
 }
 
 unsigned long get_next_availbale_inode_no(block_dev_desc_t *dev_desc,int part_no)
 {
 	int i;
-	int status;
-	static int previous_value=0;
-	static int previous_bg_bitmap_index;
 	unsigned int inode_bitmap_index;
 
 	struct ext2_block_group *gd=(struct ext2_block_group*)gd_table;
@@ -1521,13 +1501,8 @@ unsigned long get_next_availbale_inode_no(block_dev_desc_t *dev_desc,int part_no
 		sb->free_inodes--;
 		return inode_no;
 	}
-
-
-	fail:
-	printf("failed to get get_next_availbale_block_no\n");
+	return 0;
 }
-
-
 
 int check_filename_exists_in_root(block_dev_desc_t *dev_desc,char *filename)
 {
@@ -1537,8 +1512,8 @@ int check_filename_exists_in_root(block_dev_desc_t *dev_desc,char *filename)
 	unsigned int first_block_no_of_root;
 	int blocksize;
 	int sector_per_block;
-	struct ext2_dirent *dir;
-	struct ext2_dirent *previous_dir;
+	struct ext2_dirent *dir = NULL;
+	struct ext2_dirent *previous_dir = NULL;
 	int totalbytes=0;
 	int templength=0;
 	int status;
@@ -1626,7 +1601,7 @@ int check_filename_exists_in_root(block_dev_desc_t *dev_desc,char *filename)
 fail:
     free(root_first_block_buffer);
 
-
+    return -1;
 }
 
 
@@ -1642,10 +1617,10 @@ int delete_file(block_dev_desc_t *dev_desc, unsigned int inodeno)
 	unsigned int inode_no;
 	int bg_bitmap_index;
 	int inode_bitmap_index;
-	unsigned char* read_buffer;
-	unsigned char* start_block_address;
-	unsigned int* double_indirect_buffer;
-	unsigned int* DIB_start_addr;
+	unsigned char* read_buffer = NULL;
+	unsigned char* start_block_address = NULL;
+	unsigned int* double_indirect_buffer = NULL;
+	unsigned int* DIB_start_addr = NULL;
 	struct ext2_block_group *gd;
 
 
@@ -1709,7 +1684,7 @@ int delete_file(block_dev_desc_t *dev_desc, unsigned int inodeno)
 		printf("DIPB releasing %d\n",blknr);
 #endif
 		if(DIB_start_addr)
-		free(DIB_start_addr);
+			free(DIB_start_addr);
 	}
 
 
@@ -1772,14 +1747,14 @@ int delete_file(block_dev_desc_t *dev_desc, unsigned int inodeno)
 
 	/*free*/
 	if(start_block_address)
-	free(start_block_address);
+		free(start_block_address);
 	return 0;
 
 	fail:
 	if(DIB_start_addr)
-	free(DIB_start_addr);
+		free(DIB_start_addr);
 	if(start_block_address)
-	free(start_block_address);
+		free(start_block_address);
 	return -1;
 }
 
@@ -2048,6 +2023,7 @@ int ext2_fs_update(block_dev_desc_t *dev_desc)
 
 	/*update the block group descriptor table*/
 	PUT(dev_desc,(uint64_t)(gd_table_block_no*blocksize),(struct ext2_block_group*)gd_table,(uint32_t)blocksize);
+	return 0;
 }
 
 
@@ -2063,7 +2039,7 @@ int ext2fs_write(block_dev_desc_t *dev_desc, int part_no,char *filename, unsigne
 	struct ext2_inode *file_inode=NULL;
 	unsigned char *inode_buffer=NULL;
 	unsigned int inodeno;
-	time_t timestamp;
+	time_t timestamp = 0;
 	unsigned int first_block_no_of_root;
 
 	/*directory entry*/
@@ -2119,8 +2095,8 @@ int ext2fs_write(block_dev_desc_t *dev_desc, int part_no,char *filename, unsigne
 
 	/*calucalate how many blocks required*/
 	total_no_of_bytes_for_file=sizebytes;
-	total_no_of_block_for_file=total_no_of_bytes_for_file/blocksize;
-	if(total_no_of_bytes_for_file%blocksize!=0)
+	total_no_of_block_for_file=lldiv(total_no_of_bytes_for_file, blocksize);
+	if(do_div(total_no_of_bytes_for_file, blocksize) !=0)
 	{
 		total_no_of_block_for_file++;
 	}

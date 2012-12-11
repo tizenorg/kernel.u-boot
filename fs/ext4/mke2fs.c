@@ -34,6 +34,7 @@ extern void *my_buffer;
 extern unsigned long my_block_nr;
 unsigned int my_journal_blocks;
 
+extern errcode_t ext4fs_close_clean(ext2_filsys fs);
 extern int isatty(int);
 #define EFBIG 27
 
@@ -225,6 +226,7 @@ static void progress_init(struct progress_struct *progress,
 	printf("%s",label);
 }
 
+#if 0
 static void progress_update(struct progress_struct *progress, __u32 val)
 {
 	if ((progress->format[0] == 0) || progress->skip_progress)
@@ -232,6 +234,7 @@ static void progress_update(struct progress_struct *progress, __u32 val)
 	printf(progress->format, val, progress->max);
 	printf("%s\n",progress->backup);
 }
+#endif
 
 static void progress_close(struct progress_struct *progress)
 {
@@ -245,7 +248,7 @@ static void write_inode_tables(ext2_filsys fs, int lazy_flag, int itable_zeroed)
 	errcode_t	retval;
 	blk_t		blk;
 	dgrp_t		i;
-	int		num, ipb;
+	int		num;
 	struct progress_struct progress;
 
 	if (quiet)
@@ -261,7 +264,6 @@ static void write_inode_tables(ext2_filsys fs, int lazy_flag, int itable_zeroed)
 		num = fs->inode_blocks_per_group;
 
 		if (lazy_flag) {
-			ipb = fs->blocksize / EXT2_INODE_SIZE(fs->super);
 			num = ((((fs->super->s_inodes_per_group -
 				  fs->group_desc[i].bg_itable_unused) *
 				 EXT2_INODE_SIZE(fs->super)) +
@@ -557,6 +559,7 @@ static void PRS(block_dev_desc_t *dev_desc, int part_no)
 		}
 		blocksize = use_bsize;
 		num_blk= lldiv(partinfo_size, blocksize);
+		printf("num_blk: %d\n", num_blk);
 		memset(&fs_param, 0, sizeof(struct ext2_super_block));
 		fs_param.s_rev_level = 1;	/* Create revision 1 filesystems now */
 
@@ -722,7 +725,7 @@ static void PRS(block_dev_desc_t *dev_desc, int part_no)
 		/* Make sure number of inodes specified will fit in 32 bits */
 		if (num_inodes == 0) {
 			unsigned long long n;
-			n = (unsigned long long) fs_param.s_blocks_count * blocksize / inode_ratio;
+			n = lldiv((unsigned long long) fs_param.s_blocks_count * blocksize, inode_ratio);
 			if (n > ~0U) {
 		printf("too many inodes (%llu), raise inode ratio?", n);
 				return ;
@@ -735,8 +738,7 @@ static void PRS(block_dev_desc_t *dev_desc, int part_no)
 		 * Calculate number of inodes based on the inode ratio
 		 */
 		fs_param.s_inodes_count = num_inodes ? num_inodes :
-			((__u64) fs_param.s_blocks_count * blocksize)
-				/ inode_ratio;
+			lldiv((__u64) fs_param.s_blocks_count * blocksize, inode_ratio);
 
 		if ((((long long)fs_param.s_inodes_count) *
 			  (inode_size ? inode_size : EXT2_GOOD_OLD_INODE_SIZE)) >=

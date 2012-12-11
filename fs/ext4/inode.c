@@ -12,6 +12,7 @@
 #include "ext2_fs.h"
 #include "e2image.h"
 #include "ext2fs.h"
+#include <ext2fs.h>
 extern block_dev_desc_t *dev_desc;
 
 
@@ -491,7 +492,9 @@ errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 	char 		*ptr;
 	errcode_t	retval;
 	int 		clen, i, inodes_per_block, length;
+#if 0
 	io_channel	io;
+#endif
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
 
@@ -500,17 +503,16 @@ errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 		retval = (fs->read_inode)(fs, ino, inode);
 		if (retval != EXT2_ET_CALLBACK_NOTHANDLED)						 
 			return retval;
-			
 	}
-	if ((ino == 0) || (ino > fs->super->s_inodes_count))		
+	if ((ino == 0) || (ino > fs->super->s_inodes_count))
 		return EXT2_ET_BAD_INODE_NUM;
-		
+
 	/* Create inode cache if not present */
-	if (!fs->icache) {		
+	if (!fs->icache) {
 		retval = create_icache(fs);
-		if (retval){			
+		if (retval) {
 			return retval;
-			}
+		}
 	}
 	/* Check to see if it's in the inode cache */
 	if (bufsize == sizeof(struct ext2_inode)) {
@@ -528,7 +530,9 @@ errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 		block_nr += (ino - 1) / inodes_per_block;
 		offset = ((ino - 1) % inodes_per_block) *
 			EXT2_INODE_SIZE(fs->super);
+#if 0
 		io = fs->image_io;
+#endif
 	} else {
 		group = (ino - 1) / EXT2_INODES_PER_GROUP(fs->super);
 		if (group > fs->group_desc_count)
@@ -540,7 +544,9 @@ errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 			return EXT2_ET_MISSING_INODE_TABLE;
 		block_nr = fs->group_desc[(unsigned)group].bg_inode_table +
 			block;
+#if 0
 		io = fs->io;
+#endif
 	}
 	offset &= (EXT2_BLOCK_SIZE(fs->super) - 1);
 
@@ -560,13 +566,13 @@ errcode_t ext2fs_read_inode_full(ext2_filsys fs, ext2_ino_t ino,
 			retval = io_channel_read_blk(io, block_nr, 1,
 						     fs->icache->buffer);			
 			#endif
-			int factor = fs->blocksize/512;	
+			int factor = fs->blocksize/512;
 			retval= ext2fs_devread(block_nr * factor , 0, fs->blocksize, fs->icache->buffer);
 			retval=0; //uma hack
 			if (retval)
 				return retval;
 			fs->icache->buffer_blk = block_nr;
-		}		
+		}
 		memcpy(ptr, ((char *) fs->icache->buffer) + (unsigned) offset,
 		       clen);
 

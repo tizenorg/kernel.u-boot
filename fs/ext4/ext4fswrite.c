@@ -49,6 +49,10 @@ int j_blkindex = 1;
 struct journal_log *journal_ptr[MAX_JOURNAL_ENTRIES];
 struct dirty_blocks *dirty_block_ptr[MAX_JOURNAL_ENTRIES];
 
+void log_journal(char *journal_buffer,unsigned int blknr);
+void put_metadata(char *metadata_buffer,unsigned int blknr);
+void ext4fs_update(block_dev_desc_t *dev_desc);
+
 #define EXT2_JOURNAL_INO	 		8	/* Journal inode */
 #define EXT2_JOURNAL_SUPERBLOCK			0	/* Journal  Superblock number */
 #define S_IFLNK					0120000	/* symbolic link */
@@ -1277,7 +1281,6 @@ int ext4fs_write_file
 	int previous_block_number = -1;
 	int delayed_start = 0;
 	int delayed_extent = 0;
-	int delayed_skipfirst = 0;
 	int delayed_next = 0;
 	char * delayed_buf = NULL;
 
@@ -1308,7 +1311,6 @@ int ext4fs_write_file
 					previous_block_number = blknr;
 					delayed_start = blknr;
 					delayed_extent = blockend;
-					delayed_skipfirst = skipfirst;
 					delayed_buf = buf;
 					delayed_next = blknr +
 						(blockend >> SECTOR_BITS);
@@ -1317,7 +1319,6 @@ int ext4fs_write_file
 				previous_block_number = blknr;
 				delayed_start = blknr;
 				delayed_extent = blockend;
-				delayed_skipfirst = skipfirst;
 				delayed_buf = buf;
 				delayed_next = blknr + (blockend >> SECTOR_BITS);
 			}
@@ -1398,7 +1399,7 @@ static int ext4fs_iterate_dir (ext2fs_node_t dir, char *name, ext2fs_node_t * fn
 					type = FILETYPE_SYMLINK;
 				} else if (dirent.filetype == FILETYPE_REG) {
 					type = FILETYPE_REG;
-				}
+				} 
 			} else {
 				/* The filetype can not be read from the dirent, get it from inode */
 
@@ -2168,7 +2169,7 @@ unsigned long ext4fs_get_next_available_inode_no(block_dev_desc_t *dev_desc,int 
 	}
 }
 
-ext4fs_existing_filename_check(block_dev_desc_t *dev_desc,char *filename)
+int ext4fs_existing_filename_check(block_dev_desc_t *dev_desc,char *filename)
 {
 	unsigned int direct_blk_idx=0;
 	unsigned int blknr=-1;
@@ -2198,8 +2199,8 @@ int ext4fs_if_filename_exists_in_root(block_dev_desc_t *dev_desc,char *filename,
 	unsigned int first_block_no_of_root;
 	int blocksize;
 	int sector_per_block;
-	struct ext2_dirent *dir;
-	struct ext2_dirent *previous_dir;
+	struct ext2_dirent *dir = NULL;
+	struct ext2_dirent *previous_dir = NULL;
 	int totalbytes=0;
 	int templength=0;
 	int status;
@@ -2803,7 +2804,6 @@ void ext4fs_deinit(block_dev_desc_t *dev_desc)
 	int i;
 	struct ext2_inode inode_journal;
 	journal_superblock_t *jsb;
-	char * p_jdb;
 	unsigned int blknr;
 	char *temp_buff = (char *)xzalloc(blocksize);
 	ext4fs_read_inode(ext4fs_root, EXT2_JOURNAL_INO,&inode_journal);
@@ -3111,7 +3111,7 @@ void recover_transaction(block_dev_desc_t *dev_desc,int prev_desc_logical_no)
 }
 
 
-print_jrnl_status(int recovery_flag)
+int print_jrnl_status(int recovery_flag)
 {
 	/*
 	*if this function is called  scanning/recovery 
@@ -3123,7 +3123,7 @@ print_jrnl_status(int recovery_flag)
 	else {
 		printf("Journal Scan Completed\n");
 	}
-	return;
+	return 0;
 }
 
 
@@ -3131,13 +3131,11 @@ int check_journal_state(block_dev_desc_t *dev_desc,int recovery_flag)
 {
 		struct ext2_inode inode_journal;
 		journal_superblock_t *jsb;
-		journal_header_t *jh;
 		journal_header_t *jdb;
 		char * p_jdb;
 		int i;
 		int DB_FOUND = NO;
 		unsigned int blknr;
-		unsigned int total_no_of_block_for_file;
 		char *temp_buff = (char *)xzalloc(blocksize);
 		char *temp_buff1 = (char *)xzalloc(blocksize);
 
@@ -3145,8 +3143,7 @@ int check_journal_state(block_dev_desc_t *dev_desc,int recovery_flag)
 		int prev_desc_logical_no =0;
 		int curr_desc_logical_no =0;
 
-		int ofs,flags,block;
-		int transaction_seq_no = 0;
+		int ofs, flags;
 		struct ext3_journal_block_tag *tag;
 
 		ext4fs_read_inode(ext4fs_root, EXT2_JOURNAL_INO,&inode_journal);
@@ -3197,7 +3194,6 @@ int check_journal_state(block_dev_desc_t *dev_desc,int recovery_flag)
 #endif
 			i = be_le(jsb->s_first);
 			while(1){
-				block = be_le(jsb->s_first);
 				blknr = ext4fs_read_allocated_block (&inode_journal, i);
 				memset(temp_buff1,'\0',blocksize);
 				ext2fs_devread(blknr * sector_per_block, 0, blocksize, temp_buff1);
@@ -3517,7 +3513,7 @@ int update_descriptor_block(block_dev_desc_t *dev_desc, unsigned int blknr)
 	journal_superblock_t *jsb;
 	unsigned int jsb_blknr;
 	char *buf =NULL, *temp = NULL;
-	int  flags, i;
+	int  i;
 	char *temp_buff = (char *)xzalloc(blocksize);
 
 	ext4fs_read_inode(ext4fs_root, EXT2_JOURNAL_INO,&inode_journal);
@@ -3556,13 +3552,13 @@ int update_descriptor_block(block_dev_desc_t *dev_desc, unsigned int blknr)
 		free(buf);
 		buf =NULL;
 	}
+	return 0;
 }
 
-int update_commit_block(dev_desc ,blknr)
+int update_commit_block(block_dev_desc_t *dev_desc ,unsigned int blknr)
 {
 	journal_header_t jdb;
-	char *buf = NULL, *temp = NULL;
-	int  flags;
+	char *buf = NULL;
 	struct ext2_inode inode_journal;
 	journal_superblock_t *jsb;
 	unsigned int jsb_blknr;
@@ -3588,18 +3584,15 @@ int update_commit_block(dev_desc ,blknr)
 		free(buf);
 		buf =NULL;
 	}
+	return 0;
 }
 
 int update_journal(block_dev_desc_t *dev_desc)
 {
 	struct ext2_inode inode_journal;
-	journal_header_t *jdb;
 	unsigned int blknr;
-	char * p_jdb;
-	int ofs, flags;
 	int i;
-	struct ext3_journal_block_tag *tag;
-	unsigned char *metadata_buff = (char *)xzalloc(blocksize);
+	unsigned char *metadata_buff = (unsigned char *)xzalloc(blocksize);
 	ext4fs_read_inode(ext4fs_root, EXT2_JOURNAL_INO,&inode_journal);
 	blknr = ext4fs_read_allocated_block (&inode_journal, j_blkindex++);
 	update_descriptor_block(dev_desc ,blknr);
@@ -3616,6 +3609,7 @@ int update_journal(block_dev_desc_t *dev_desc)
 		free(metadata_buff);
 		metadata_buff = NULL;
 	}
+	return 0;
 }
 
 void ext4fs_update(block_dev_desc_t *dev_desc)
@@ -3701,7 +3695,7 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 	unsigned char *root_first_block_buffer = NULL;
 	unsigned int i,j,k;
 	int status,ret = 0;
-
+	
 	/*inode*/
 	struct ext2_inode *file_inode = NULL;
 	unsigned char *inode_buffer = NULL;
@@ -3756,12 +3750,15 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 	unsigned int last_entry_dirlen;
 	int direct_blk_idx;
 	unsigned int root_blknr;
+
+	unsigned char *ptr = NULL;
 	struct ext2_dirent *temp_dir = NULL;
-	char filename[256];
+	ALLOC_CACHE_ALIGN_BUFFER(char, filename, 256);
+	memset(filename, 0x00, sizeof(filename));
 
 	unsigned int previous_blknr = -1;
 	unsigned int *zero_buffer = NULL;
-	unsigned char *ptr = NULL;
+
 
 	char * temp_ptr = NULL;
 	unsigned int itable_blkno, parent_itable_blkno,blkoff;
@@ -4327,8 +4324,8 @@ RESTART:
 #ifdef DEBUG_LOG
 	/*print the block no allocated to a file*/
 	unsigned int blknr;
-	total_no_of_block_for_file=total_no_of_bytes_for_file/blocksize;
-	if(total_no_of_bytes_for_file%blocksize!=0)
+	total_no_of_block_for_file=lldiv(total_no_of_bytes_for_file, blocksize);
+	if(do_div(total_no_of_bytes_for_file, blocksize) !=0)
 	{
 		total_no_of_block_for_file++;
 	}
@@ -4373,7 +4370,7 @@ static int search_dir(block_dev_desc_t *dev_desc,struct ext2_inode *parent_inode
 	int blocksize;
 	int sector_per_block;
 	struct ext2_dirent *dir;
-	struct ext2_dirent *previous_dir;
+	struct ext2_dirent *previous_dir = NULL;
 	int totalbytes = 0;
 	int templength = 0;
 	int status;
@@ -4650,23 +4647,26 @@ static int create_dir(block_dev_desc_t *dev_desc, unsigned int parent_inode_num,
 	unsigned int previous_blknr = -1;
 	int partno = 1;
 	unsigned int inodeno;
-	unsigned int working_block_no_of_parent;
+	unsigned int working_block_no_of_parent = 0;
 	unsigned char *working_block_buffer_for_parent = NULL;
 	unsigned int inode_bitmap_index;
-	unsigned char *buf;
+	unsigned char *buf = NULL;
 	short create_dir_status = 0;
 
 	/*directory entry*/
 	struct ext2_dirent *dir = NULL;
 	struct ext4_dir *dir_entry = NULL;
-	struct ext2_dirent *temp_dir = NULL;
+
 	int templength = 0;
 	int totalbytes = 0;
 	short int padding_factor = 0;
 	unsigned int new_entry_byte_reqd;
 	unsigned int last_entry_dirlen;
 	int status;
+
 	unsigned char *ptr = NULL;
+	struct ext2_dirent *temp_dir = NULL;
+
 	char * temp_ptr = NULL;
 	unsigned int parent_itable_blkno,itable_blkno,blkoff;
 	struct ext2_sblock *sblock = &(ext4fs_root->sblock);
@@ -4962,11 +4962,11 @@ static int create_symlink(block_dev_desc_t *dev_desc,int link_type,unsigned int 
 	unsigned int parent_blknr;
 	unsigned int previous_blknr = -1;
 	int partno = 1;
-	unsigned int inodeno;
-	unsigned int working_block_no_of_parent;
+	unsigned int inodeno = 0;
+	unsigned int working_block_no_of_parent = 0;
 	unsigned char *working_block_buffer_for_parent = NULL;
 	unsigned int inode_bitmap_index;
-	unsigned char *buf;
+	unsigned char *buf = NULL;
 	short create_dir_status = 1;
 
 	/*directory entry*/
@@ -5372,8 +5372,6 @@ END:
 
 int ext4fs_create_symlink (block_dev_desc_t *dev_desc, int link_type,char *src_path, char *target_path)
 {
-	unsigned int src_parent_inodeno;
-	struct ext2_inode src_parent_inode;
 	unsigned int target_parent_inodeno;
 	struct ext2_inode target_parent_inode;
 	unsigned int src_inodeno = 0;

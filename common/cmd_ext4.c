@@ -40,6 +40,7 @@
 #include <linux/ctype.h>
 #include <asm/byteorder.h>
 #include <ext2fs.h>
+#include <ext4fs.h>
 #include <linux/stat.h>
 #include "../disk/part_dos.h"
 #include <malloc.h>
@@ -72,6 +73,7 @@ void put_ext4(block_dev_desc_t *dev_desc,uint64_t off, void *buf, uint32_t size)
 	unsigned int sector_size = 512;	
 	unsigned char *temp_ptr=NULL;
 	char sec_buf[SECTOR_SIZE];
+
 	startblock = off / (uint64_t)sector_size;
 	startblock += part_offset;
 	remainder = off % (uint64_t)sector_size;
@@ -82,8 +84,8 @@ void put_ext4(block_dev_desc_t *dev_desc,uint64_t off, void *buf, uint32_t size)
 
 	if ((startblock + (size/SECTOR_SIZE)) > (part_offset +total_sector)) 
 	{
-		printf("part_offset is %u\n",part_offset);
-		printf("total_sector is %u\n",total_sector);
+		printf("part_offset is %lu\n", part_offset);
+		printf("total_sector is %u\n", total_sector);
 		printf("error: overflow occurs\n");
 		return ;
 	}
@@ -361,7 +363,6 @@ int do_ext4_ls (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 int do_ext4_format (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	char *filename = "/";
 	int dev=0;
 	int part=1;
 	char *ep;
@@ -389,9 +390,6 @@ int do_ext4_format (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 		part = (int)simple_strtoul(++ep, NULL, 16);
 	}
-
-	if (argc == 4)
-		filename = argv[3];
 
 	if ((part_length = ext2fs_set_blk_dev(dev_desc, part)) == 0) 
 	{
@@ -661,6 +659,7 @@ int do_ext4_create_symlink(cmd_tbl_t *cmdtp, int flag, int argc, char * const ar
 
 	return 0;
 }
+
 U_BOOT_CMD
 (
 	ext4symlink,	6, 1, do_ext4_create_symlink,
@@ -668,7 +667,6 @@ U_BOOT_CMD
 	"<interface> <dev[:part]> [H:Hardlink/S:Softlink][Absolute Source Path] [Absolute Target Path]\n"
 	"	  - create a Symbolic Link"
 );
-
 
 U_BOOT_CMD
 (

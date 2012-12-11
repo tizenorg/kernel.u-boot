@@ -62,7 +62,6 @@
 #endif
 
 static int total_sector;
-static block_dev_desc_t *cur_dev = NULL;
 static unsigned long part_offset = 0;
 static unsigned long part_size = 0;
 
@@ -601,7 +600,7 @@ static uint32_t has_super(uint32_t x)
 		117649, 177147, 390625, 531441, 823543, 1594323, 1953125,
 		4782969, 5764801, 9765625, 14348907, 40353607, 43046721,
 		48828125, 129140163, 244140625, 282475249, 387420489,
-		1162261467, 1220703125, 1977326743, 3486784401/* >2^31 */,
+		1162261467, 1220703125, 1977326743, 3486784401UL/* >2^31 */,
 	};
 	const uint32_t *sp = supers + ARRAY_SIZE(supers);
 	while (1) {
@@ -652,8 +651,6 @@ char* safe_strncpy(char *dst, const char *src, size_t size)
 void PUT(block_dev_desc_t *dev_desc,uint64_t off, void *buf, uint32_t size)
 {
 	uint64_t startblock,remainder;
-	unsigned int sector_size = 512;
-	unsigned block_len;
 	unsigned char *temp_ptr=NULL;
 	char sec_buf[SECTOR_SIZE];
 	startblock = lldiv(off, SECTOR_SIZE);
@@ -664,7 +661,7 @@ void PUT(block_dev_desc_t *dev_desc,uint64_t off, void *buf, uint32_t size)
 		return ;
 
 	if ((startblock + (size/SECTOR_SIZE)) > (part_offset +total_sector)) {
-		printf("part_offset is %d\n",part_offset);
+		printf("part_offset is %ld\n", part_offset);
 		printf("total_sector is %d\n",total_sector);
 		printf("error: overflow occurs\n");
 		return ;
@@ -705,9 +702,8 @@ int mkfs_ext2(block_dev_desc_t *dev_desc, int part_no)
 {
 	disk_partition_t info;
 	unsigned i, pos, n;
-	unsigned bs, bpi;
 	unsigned blocksize, blocksize_log2;
-	unsigned inodesize, user_inodesize;
+	unsigned inodesize;
 	unsigned reserved_percent = 5;
 	unsigned long long kilobytes;
 	uint32_t nblocks, nblocks_full;
@@ -719,24 +715,20 @@ int mkfs_ext2(block_dev_desc_t *dev_desc, int part_no)
 	uint32_t group_desc_blocks;
 	uint32_t inode_table_blocks;
 	uint32_t lost_and_found_blocks;
-	time_t timestamp;
+	time_t timestamp = 0;
 	const char *label = "";
 	struct ext2_sblock *sb; // superblock
 	struct ext2_group_desc *gd; // group descriptors
 	struct ext2_inode *inode;
 	struct ext2_dir *dir;
 	uint8_t *buf;
-	__u32 volume_id;
 	__u32 bytes_per_sect;
 	__u32 volume_size_sect;
 	__u64 volume_size_bytes;
 	unsigned char *buffer;
 	unsigned char *temp_buffer;
-	dos_partition_t *pt,*temp_pt;
+	dos_partition_t *pt;
 	pt=xzalloc(sizeof(dos_partition_t));
-
-	/* volume_id is fixed */
-	volume_id = 0x386d43bf;
 
 	/* Get image size and sector size */
 	bytes_per_sect = SECTOR_SIZE;
@@ -794,7 +786,7 @@ int mkfs_ext2(block_dev_desc_t *dev_desc, int part_no)
 	// How many reserved blocks?
 	if (reserved_percent > 50)
 		printf("-%c is bad", 'm');
-	nreserved = (uint64_t)nblocks * reserved_percent / 100;
+	nreserved = lldiv((uint64_t)nblocks * reserved_percent, 100);
 
 	// N.B. killing e2fsprogs feature! Unused blocks don't account in calculations
 	nblocks_full = nblocks;
@@ -814,7 +806,7 @@ int mkfs_ext2(block_dev_desc_t *dev_desc, int part_no)
 		uint32_t overhead, remainder;
 		// ninodes is the max number of inodes in this filesystem
 		uint32_t ninodes =
-			((uint64_t) nblocks_full * blocksize) / bytes_per_inode;
+			lldiv(((uint64_t) nblocks_full * blocksize), bytes_per_inode);
 		if (ninodes < EXT2_GOOD_OLD_FIRST_INO+1)
 			ninodes = EXT2_GOOD_OLD_FIRST_INO+1;
 		inodes_per_group = div_roundup(ninodes, ngroups);
@@ -1039,15 +1031,15 @@ int mkfs_ext2(block_dev_desc_t *dev_desc, int part_no)
 
 	// zero boot sectors
 	/* Magic number is written in first block*/
-	buffer= (char *)xmalloc(1024);
-	temp_buffer= (char *)xmalloc(1024);
+	buffer = (unsigned char *)xmalloc(1024);
+	temp_buffer = (unsigned char *)xmalloc(1024);
 	memset(buffer, 0, 1024);
 	buffer[DOS_PART_MAGIC_OFFSET] = 0x55;
 	buffer[DOS_PART_MAGIC_OFFSET + 1] = 0xaa;
 
 	/* Read the first block and restore the partition info into first block*/
 	dev_desc->block_read (dev_desc->dev, 0, 1, (ulong *) temp_buffer);
-	temp_pt = (dos_partition_t *) (temp_buffer + DOS_PART_TBL_OFFSET);
+
 	pt->boot_ind = 0x0;
 	pt->sys_ind = 0x83;
 	memcpy(buffer+DOS_PART_TBL_OFFSET,pt,sizeof(dos_partition_t));
@@ -1177,7 +1169,6 @@ int ext2_register_device (block_dev_desc_t * dev_desc, int part_no)
 
 int do_ext2_format (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	char *filename = "/";
 	int dev=0;
 	int part=1;
 	char *ep;
@@ -1204,10 +1195,7 @@ int do_ext2_format (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		part = (int)simple_strtoul(++ep, NULL, 16);
 	}
 
-	if (argc == 4)
-		filename = argv[3];
-
-	PRINTF("Using device %s %d:%d, directory: %s\n", argv[1], dev, part, filename);
+	PRINTF("Using device %s %d:%d\n", argv[1], dev, part);
 
 	if ((part_length = ext2fs_set_blk_dev(dev_desc, part)) == 0) {
 		printf ("** Bad partition - %s %d:%d **\n",  argv[1], dev, part);
