@@ -32,7 +32,7 @@ struct pit_info {
 	partition_info_t entry[DEFAULT_PIT_NUM];
 };
 
-static struct pit_info default_pit09 = {
+static struct pit_info default_pit10 = {
 	.hdr = {
 		.magic = PIT_MAGIC,
 		.count = DEFAULT_PIT_NUM,

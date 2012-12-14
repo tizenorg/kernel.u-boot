@@ -29,7 +29,7 @@
 #include <mmc.h>
 #include <mobile/pit.h>
 
-#include "Tizen_GPT_Ver08.h"
+#include "Tizen_GPT_Ver10.h"
 
 enum {
 	NAND_ERASE = 0,
@@ -436,10 +436,10 @@ static int do_pit_read(cmd_tbl_t * cmdtp, int flag, int argc,
 	if (check_pit_integrity(addr))
 		return ret;
 
-	/* force update to PIT 08 when target used PIT 07 */
+	/* force update to PIT 10 when target used PIT 07 */
 	if (pit_check_ver07(addr)) {
-		puts("Force update pit from 07 to 08\n");
-		memcpy(addr, &default_pit08, PIT_PKT_SIZE);
+		puts("Force update pit from 07 to 10\n");
+		memcpy(addr, &default_pit10, PIT_PKT_SIZE);
 		pit_is_08_forced = 1;
 		mmc_cmd(MMC_WRITE, CONFIG_PIT_DEFAULT_ADDR, PIT_PKT_SIZE, (void *)addr);
 	}
