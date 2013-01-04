@@ -51,7 +51,7 @@ int ext2fs_set_blk_dev (block_dev_desc_t * rbdd, int part)
 
 
 int ext2fs_devread (int sector, int byte_offset, int byte_len, char *buf) {
-	char sec_buf[SECTOR_SIZE];
+	ALLOC_CACHE_ALIGN_BUFFER(char, sec_buf, SECTOR_SIZE);
 	unsigned block_len;
 
 /*
@@ -101,7 +101,7 @@ int ext2fs_devread (int sector, int byte_offset, int byte_len, char *buf) {
 	block_len = byte_len & ~(SECTOR_SIZE - 1);
 
 	if (block_len == 0) {
-		u8 p[SECTOR_SIZE];
+		ALLOC_CACHE_ALIGN_BUFFER(u8, p, SECTOR_SIZE);
 
 		block_len = SECTOR_SIZE;
 		ext2fs_block_dev_desc->block_read(ext2fs_block_dev_desc->dev,

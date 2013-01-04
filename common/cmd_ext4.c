@@ -126,7 +126,7 @@ void put_ext4(block_dev_desc_t *dev_desc,uint64_t off, void *buf, uint32_t size)
 
 int ext4_register_device (block_dev_desc_t * dev_desc, int part_no)
 {
-	unsigned char buffer[SECTOR_SIZE];
+	ALLOC_CACHE_ALIGN_BUFFER(u8, buffer, SECTOR_SIZE);
 
 	disk_partition_t info;
 
@@ -141,28 +141,25 @@ int ext4_register_device (block_dev_desc_t * dev_desc, int part_no)
 		return -1;
 	}
 	if (buffer[DOS_PART_MAGIC_OFFSET] != 0x55 ||
-		 buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa) 
+		 buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa)
 	{
 		/* no signature found */
 		return -1;
 	}
 
 	/* First we assume there is a MBR */
-	if (!get_partition_info(dev_desc, part_no, &info)) 
+	if (!get_partition_info(dev_desc, part_no, &info))
 	{
 		part_offset = info.start;
 		cur_part = part_no;
 		part_size = info.size;
-	}
-	else if ((strncmp((char *)&buffer[DOS_FS_TYPE_OFFSET], "FAT", 3) == 0) ||
+	} else if ((strncmp((char *)&buffer[DOS_FS_TYPE_OFFSET], "FAT", 3) == 0) ||
 			(strncmp((char *)&buffer[DOS_FS32_TYPE_OFFSET], "FAT32", 5) == 0)) 
 	{
 		/* ok, we assume we are on a PBR only */
 		cur_part = 1;
 		part_offset = 0;
-	}
-	else 
-	{
+	} else {
 		printf("** Partition %d not valid on device %d **\n",
 			part_no, dev_desc->dev);
 		return -1;
@@ -170,8 +167,6 @@ int ext4_register_device (block_dev_desc_t * dev_desc, int part_no)
 
 	return 0;
 }
-
-
 
 int do_ext4_load (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -400,7 +395,7 @@ int do_ext4_format (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (ext4_register_device(dev_desc,part)!=0) 
 	{
-		printf("\n** Unable to use %s %d:%d for fattable **\n",
+		printf("\n** Unable to register %s %d:%d for ext4 **\n",
 			argv[1], dev, part);
 		return 1;
 	}

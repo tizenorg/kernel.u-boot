@@ -655,7 +655,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 	/* Indirect.  */
 	else if (fileblock < (INDIRECT_BLOCKS + (blksz / 4))) {
 		if (ext4fs_indir1_block == NULL) {
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** SI ext2fs read block (indir 1) malloc failed. **\n");
 				return (-1);
@@ -668,7 +668,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 			ext4fs_indir1_block = NULL;
 			ext4fs_indir1_size = 0;
 			ext4fs_indir1_blkno = -1;
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** SI ext2fs read block (indir 1) malloc failed. **\n");
 				return (-1);
@@ -700,7 +700,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 						   + blksz / 4);
 
 		if (ext4fs_indir1_block == NULL) {
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -713,7 +713,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 			ext4fs_indir1_block = NULL;
 			ext4fs_indir1_size = 0;
 			ext4fs_indir1_blkno = -1;
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -734,7 +734,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 		}
 
 		if (ext4fs_indir2_block == NULL) {
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -747,7 +747,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 			ext4fs_indir2_block = NULL;
 			ext4fs_indir2_size = 0;
 			ext4fs_indir2_blkno = -1;
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -775,7 +775,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 		perblock_parent = ((blksz / 4) * (blksz / 4));
 		
 		if (ext4fs_indir1_block == NULL) {
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -788,7 +788,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 			ext4fs_indir1_block = NULL;
 			ext4fs_indir1_size = 0;
 			ext4fs_indir1_blkno = -1;
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -810,7 +810,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 		}
 		
 		if (ext4fs_indir2_block == NULL) {
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -823,7 +823,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 			ext4fs_indir2_block = NULL;
 			ext4fs_indir2_size = 0;
 			ext4fs_indir2_blkno = -1;
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -844,7 +844,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 		}
 		
 		if (ext4fs_indir3_block == NULL) {
-			ext4fs_indir3_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir3_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir3_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -857,7 +857,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 			ext4fs_indir3_block = NULL;
 			ext4fs_indir3_size = 0;
 			ext4fs_indir3_blkno = -1;
-			ext4fs_indir3_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir3_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir3_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -945,7 +945,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 	/* Indirect.  */
 	else if (fileblock < (INDIRECT_BLOCKS + (blksz / 4))) {
 		if (ext4fs_indir1_block == NULL) {
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** SI ext2fs read block (indir 1) malloc failed. **\n");
 				return (-1);
@@ -958,7 +958,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 			ext4fs_indir1_block = NULL;
 			ext4fs_indir1_size = 0;
 			ext4fs_indir1_blkno = -1;
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** SI ext2fs read block (indir 1) malloc failed. **\n");
 				return (-1);
@@ -986,7 +986,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 		rblock = fileblock - (INDIRECT_BLOCKS + blksz / 4);
 
 		if (ext4fs_indir1_block == NULL) {
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -999,7 +999,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 			ext4fs_indir1_block = NULL;
 			ext4fs_indir1_size = 0;
 			ext4fs_indir1_blkno = -1;
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -1021,7 +1021,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 		}
 
 		if (ext4fs_indir2_block == NULL) {
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -1034,7 +1034,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 			ext4fs_indir2_block = NULL;
 			ext4fs_indir2_size = 0;
 			ext4fs_indir2_blkno = -1;
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** DI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -1062,7 +1062,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 		perblock_parent = ((blksz / 4) * (blksz / 4));
 		
 		if (ext4fs_indir1_block == NULL) {
-					ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+					ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -1075,7 +1075,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 			ext4fs_indir1_block = NULL;
 			ext4fs_indir1_size = 0;
 			ext4fs_indir1_blkno = -1;
-			ext4fs_indir1_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir1_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir1_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 1) malloc failed. **\n");
 				return (-1);
@@ -1097,7 +1097,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 		}
 		
 		if (ext4fs_indir2_block == NULL) {
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -1110,7 +1110,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 			ext4fs_indir2_block = NULL;
 			ext4fs_indir2_size = 0;
 			ext4fs_indir2_blkno = -1;
-			ext4fs_indir2_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir2_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir2_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -1130,7 +1130,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 		}
 		
 		if (ext4fs_indir3_block == NULL) {
-			ext4fs_indir3_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir3_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir3_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -1143,7 +1143,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 			ext4fs_indir3_block = NULL;
 			ext4fs_indir3_size = 0;
 			ext4fs_indir3_blkno = -1;
-			ext4fs_indir3_block = (uint32_t *) malloc (blksz);
+			ext4fs_indir3_block = (uint32_t *) memalign(ARCH_DMA_MINALIGN, blksz);
 			if (ext4fs_indir3_block == NULL) {
 				printf ("** TI ext2fs read block (indir 2 2) malloc failed. **\n");
 				return (-1);
@@ -1379,7 +1379,7 @@ static int ext4fs_iterate_dir (ext2fs_node_t dir, char *name, ext2fs_node_t * fn
 			if (status < 1)
 				return (0);
 
-			fdiro = malloc (sizeof (struct ext2fs_node));
+			fdiro = memalign(ARCH_DMA_MINALIGN, sizeof (struct ext2fs_node));
 			if (!fdiro) {
 				return (0);
 			}
@@ -1483,7 +1483,7 @@ static char *ext4fs_read_symlink (ext2fs_node_t node)
 		if (status == 0)
 			return (0);
 	}
-	symlink = malloc (__le32_to_cpu (diro->inode.size) + 1);
+	symlink = memalign(ARCH_DMA_MINALIGN, __le32_to_cpu (diro->inode.size) + 1);
 	if (!symlink)
 		return (0);
 
@@ -3831,7 +3831,7 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 	zero_buffer = xzalloc(blocksize);
 	if(!zero_buffer)
 		goto fail;
-	root_first_block_buffer=malloc (blocksize);
+	root_first_block_buffer=memalign(ARCH_DMA_MINALIGN, blocksize);
 RESTART:
 
 	/*read the block no allocated to a file*/
@@ -5566,7 +5566,7 @@ int ext4fs_mount (unsigned part_length)
 	struct ext2_data *data;
 	int status;
 
-	data = malloc (sizeof (struct ext2_data));
+	data = memalign(ARCH_DMA_MINALIGN, sizeof (struct ext2_data));
 	if (!data) {
 		return (0);
 	}
