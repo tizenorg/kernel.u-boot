@@ -53,15 +53,21 @@ enum {
 	MAX77693_ADC_OPEN		= 0x1f
 };
 
-int max77693_init(void);
+#ifdef CONFIG_PMIC_MAX77693
 void max77693_pmic_bus_init(int bus_num);
+void max77693_muic_bus_init(int bus_num);
+void max77693_fg_bus_init(int bus_num);
+#else
+#define max77693_pmic_bus_init(x) do {} while(0)
+#define max77693_muic_bus_init(x) do {} while(0)
+#define max77693_fg_bus_init(x) do {} while(0)
+#endif
+int max77693_init(void);
 int max77693_pmic_probe(void);
 int max77693_charger_detbat(void);
-void max77693_muic_bus_init(int bus_num);
 int max77693_muic_probe(void);
 int max77693_muic_check(void);
 int max77693_muic_get_adc(void);
-void max77693_fg_bus_init(int bus_num);
 int max77693_fg_probe(void);
 void max77693_fg_init(enum battery_type batt_type, int charger_type);
 u32 max77693_fg_get_soc(void);

@@ -26,3 +26,48 @@ void reset_cpu(ulong addr)
 {
 	writel(0x1, samsung_get_base_swreset());
 }
+
+/*
+ * return: xxxx MB
+ */
+int exynos_get_dram_size(void)
+{
+	u32 dmc_base = samsung_get_base_dmc();
+	u32 memcontrol;
+	u32 memconfig0, memconfig1;
+	u32 chip_num;
+	u32 size;
+
+	memcontrol = readl(dmc_base + 0x4);
+	memconfig0 = readl(dmc_base + 0x8);
+
+	/* chip_num = MEMCONTROL[19:16] */
+	chip_num = (memcontrol >> 16) & 0xf;
+	switch (chip_num) {
+	case 1:
+		memconfig1 = readl(dmc_base + 0xc);
+		/* chip_mask = MEMCONFIGx[23:16] */
+		size = ((memconfig0 + memconfig1) >> 16) & 0xff;
+		size = ((~size + 1) & 0xff) << 4;
+		break;
+	case 0:
+	default:
+		size = (memconfig0 >> 16) & 0xff;
+		size = ((~size + 1) & 0xff) << 4;
+		break;
+	}
+
+	return size;
+}
+
+static void exynos_chip_info(void)
+{
+	printf("Pro ID:\t0x%08X\n", readl(S5P_PRO_ID));
+	printf("Pkg ID:\t0x%08X\n", readl(S5P_PRO_ID + 4));
+}
+
+U_BOOT_CMD(
+	chipinfo, 1, 1, exynos_chip_info,
+	"print chip info (product id, package id, lot id, ...)",
+	"chipinfo\n"
+);

@@ -111,8 +111,8 @@ enum muic_path {
 	MUIC_PATH_UART_AP,
 };
 
-static unsigned int pmic_bus = 4;
-static unsigned int muic_bus = 4;
+static unsigned int pmic_bus = -1;
+static unsigned int muic_bus = -1;
 
 static unsigned int revision;
 

@@ -437,7 +437,11 @@ endif
 		@echo -n `date +%Y%m%d%H` > sig-date
 		@echo -n "none" > sig-product
 		@# workaround for old version used board
+ifeq ($(BOARD),trats)
 		@echo -n "slp_u1" > sig-board
+else
+		@echo -n "slp_midasq" > sig-board
+endif
 		@cat sig-magic /dev/zero | head -c 12 > sig-tmp
 		@cat sig-tmp sig-date /dev/zero | head -c 24 > sig-tmp2
 		@cat sig-tmp2 sig-product /dev/zero | head -c 48 > sig-tmp

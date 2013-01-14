@@ -1,6 +1,5 @@
 #
-# Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd. All rights reserved.
-# Minkyu Kang <mk7.kang@samsung.com>
+# Copyright (c) 2000 - 2012 Samsung Electronics Co., Ltd. All rights reserved.
 # Sanghee Kim <sh0130.kim@samsung.com>
 #
 # See file CREDITS for list of people who contributed to this
@@ -24,18 +23,21 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	= $(obj)lib$(SOC).o
+ifneq ($(OBJTREE),$(SRCTREE))
+$(shell mkdir -p $(obj)board/$(VENDOR)/common)
+endif
 
-SOBJS	:= cache.o
-COBJS	:= clock.o soc.o pinmux.o
+LIB	= $(obj)lib$(VENDOR).o
 
-SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS))
+COBJS-y	:= common.o
+COBJS-y	+= inform.o
 
-all:	 $(obj).depend $(LIB)
+COBJS	:= $(sort $(COBJS-y))
+SRCS	:= $(COBJS:.o=.c)
+OBJS	:= $(addprefix $(obj),$(COBJS))
 
-$(LIB):	$(OBJS)
-	$(call cmd_link_o_target, $(OBJS))
+$(LIB):	$(obj).depend $(SOBJS) $(OBJS)
+	$(call cmd_link_o_target, $(SOBJS) $(OBJS))
 
 #########################################################################
 

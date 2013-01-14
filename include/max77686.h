@@ -35,22 +35,6 @@
 				 MAX77686_EN32KHZ | \
 				 MAX77686_EN32KHZ_LJM)
 
-#define MAX77686_STATUS1_JIGONB	(1 << 1)
-#define MAX77686_PWRON_ACOKB	(1 << 2)
-
-/* MAX77686 PMIC Registers. */
-#define MAX77686_DEVICE_ID		0x00
-#define MAX77686_INTSRC			0x01
-#define MAX77686_INT1			0x02
-#define MAX77686_INT2			0x03
-#define MAX77686_INT1MSK		0x04
-#define MAX77686_INT2MSK		0x05
-#define MAX77686_STATUS1		0x06
-#define MAX77686_STATUS2		0x07
-#define MAX77686_PWRON			0x08
-#define MAX77686_ONOFF_DELAY	0x09
-#define MAX77686_MRSTB			0x0A
-
 typedef enum {
 	OPMODE_OFF,
 	OPMODE_STANDBY,
@@ -58,28 +42,23 @@ typedef enum {
 	OPMODE_ON,
 } opmode_type;
 
-enum {
-	PWRONR,
-	PWRONF,
-	PWRON1S,
-};
-
-struct max77686_platform_data {
-	struct s5p_gpio_bank *bank;
-	unsigned int uart_sel;
-};
-
+#ifdef CONFIG_PMIC_MAX77686
 void max77686_bus_init(int bus_num);
-int max77686_probe(void);
+#else
+#define max77686_bus_init(x) do {} while(0)
+#endif
 int max77686_rtc_init(void);
-int max77686_get_irq(int irq);
-int max77686_get_irq_booton(int irq);
+int max77686_init(void);
+int max77686_check_pwron_pwrkey(void);
+int max77686_check_pwron_wtsr(void);
+int max77686_check_pwron_smpl(void);
+int max77686_check_pwrkey(void);
+int max77686_clear_irq(void);
 int max77686_set_ldo_voltage(int ldo, ulong uV);
 int max77686_set_buck_voltage(int buck, ulong uV);
 int max77686_set_ldo_mode(int ldo, opmode_type mode);
 int max77686_set_buck_mode(int buck, opmode_type mode);
 int max77686_set_32khz(unsigned char mode);
-void max77686_set_platform_data(struct max77686_platform_data *pd);
 void show_pwron_source(char *buf);
 int max77686_check_acokb_pwron(void);
 

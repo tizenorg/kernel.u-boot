@@ -26,7 +26,6 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)lib$(BOARD).o
 
 COBJS-y	:= trats.o
-COBJS-y += common.o inform.o
 
 SOBJS	:= lowlevel_init.o
 

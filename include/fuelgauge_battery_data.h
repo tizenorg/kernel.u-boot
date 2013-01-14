@@ -56,10 +56,15 @@
 #define SDI_2100_RCOMP0			0x0065
 #define SDI_2100_TEMPCO			0x0930
 
+/* parameter for SDI 3030mA 2012.10.11 */
+#define SDI_3000_RCOMP0			0x0059
+#define SDI_3000_TEMPCO			0x0C1F
+
 enum battery_type {
 	BATTERY_UNKNOWN = 0,
 	BATTERY_SDI_1750,
 	BATTERY_SDI_2100,
+	BATTERY_SDI_3000,
 };
 
 struct table_soc_data {

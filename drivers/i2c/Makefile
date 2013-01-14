@@ -42,6 +42,7 @@ COBJS-$(CONFIG_SPEAR_I2C) += spr_i2c.o
 COBJS-$(CONFIG_TSI108_I2C) += tsi108_i2c.o
 COBJS-$(CONFIG_S5P_GPIO_I2C) += s5p_gpio_i2c.o
 COBJS-$(CONFIG_DRIVER_S5PC1XX_I2C) += s5pc1xx_i2c.o
+COBJS-$(CONFIG_MULTI_I2C) += multi_i2c.o
 
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)

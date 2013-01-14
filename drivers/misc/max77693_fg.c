@@ -26,12 +26,15 @@
 #include <asm/arch/power.h>
 #include <i2c.h>
 #include <max77693.h>
+#include "fuelgauge_battery_data.h"
 
 #ifdef DEBUG_FG
 #define DEBUG(fmt,args...) printk(fmt, ##args)
 #else
 #define DEBUG(fmt,args...) do {} while(0)
 #endif
+
+#define msleep(a)	udelay(a * 1000)
 
 /* Register address */
 #define MAX77693_REG_STATUS		0x00
@@ -42,32 +45,73 @@
 #define MAX77693_REG_AVG_CURRENT	0x0B
 #define MAX77693_REG_CONFIG		0x1D
 #define MAX77693_REG_VERSION		0x21
-#define MAX77693_REG_VFOCV		0xFB
+#define MAX77693_REG_OCV_RO		0xEE
+#define MAX77693_REG_OCV_WR		0xFB
 #define MAX77693_REG_VFSOC		0xFF
 
-#define FIRMWARE_CONFIG_DEFAULT		0x2350
-#define RCOMP0_DEFAULT			0x0060
-#define TEMPCO_DEFAULT			0x1015
+static int fg_bus = -1;
+static int rst_status;
+static int charger_status;
+static int por;
+static u32 vfocv_table;
+static const char pszfg[] = "max77693-fg:";
 
-/* Parameter values from MAXIM 1650mA SDI 20110303 */
-#define DSG_DV				65	/* mV */
-#define CHG_DV				40	/* mV */
-#define T_DV				100	/* mV, voltage tolerance */
-#define T_SOC_DSG_UPPER			10	/* 10%, soc tolerance */
-#define T_SOC_DSG_BELOW			20	/* 20%, soc tolerance */
-#define T_SOC_CHG_UPPER			10	/* 10%, soc tolerance */
-#define T_SOC_CHG_BELOW			10	/* 10%, soc tolerance */
-#define T_SOC_W				27	/* 27%, soc tolerance(reset case) */
-#define T_SOC_LOW			3	/* 3%, soc tolerance(low batt) */
-#define T_SOC_HIGH			97	/* 97%, soc tolerance(high batt) */
-#define PLAT_VOL_HIGH_DSG		380000	/* unit : 0.01mV */
-#define PLAT_VOL_LOW_DSG		365000	/* unit : 0.01mV */
-#define PLAT_VOL_HIGH_CHG		385000	/* unit : 0.01mV */
-#define PLAT_VOL_LOW_CHG		370000	/* unit : 0.01mV */
-#define PLAT_T_SOC			0	/* 0%, soc tolerance */
-#define DSG_VCELL_COMP			-500	/* vcell compensation for table soc, unit : 0.01mV */
-#define CHG_VCELL_COMP			8500	/* vcell compensation for table soc, unit : 0.01mV */
-#define AVER_SAMPLE_CNT			6
+/* parameter for SDI 1750mA 2012.02.17 */
+/* Address 0x80h */
+static u16 sdi_1750_cell_character0[16] = {
+	0xACB0,	0xB630,	0xB950,	0xBA20,	0xBBB0,	0xBBE0,	0xBC30,	0xBD00,
+	0xBD60,	0xBDC0,	0xBF30,	0xC0A0,	0xC480,	0xC890,	0xCC40,	0xD010
+};
+
+/* Address 0x90h */
+static u16 sdi_1750_cell_character1[16] = {
+	0x0180,	0x0F10,	0x0060,	0x0E40,	0x3DC0,	0x4E10,	0x2D50,	0x3680,
+	0x3680,	0x0D50,	0x0D60,	0x0D80,	0x0C80,	0x0860,	0x0800,	0x0800
+};
+
+/* Address 0xA0h */
+static u16 sdi_1750_cell_character2[16] = {
+	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,
+	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,	0x0080,	0x0080
+};
+
+/* parameter for SDI 2100mA 2012.01.25 */
+/* Address 0x80h */
+static u16 sdi_2100_cell_character0[16] = {
+	0xA890,	0xB780,	0xB9A0,	0xBBF0,	0xBC30,	0xBC80,	0xBCF0,	0xBD50,
+	0xBE60,	0xBFB0,	0xC1B0,	0xC4B0,	0xC560,	0xCCE0,	0xD170,	0xD7A0
+};
+
+/* Address 0x90h */
+static u16 sdi_2100_cell_character1[16] = {
+	0x0150,	0x1000,	0x0C10,	0x3850,	0x2E50,	0x32F0,	0x3040,	0x12F0,
+	0x0FE0,	0x1090,	0x09E0,	0x0BD0,	0x0820,	0x0720,	0x0700,	0x0700
+};
+
+/* Address 0xA0h */
+static u16 sdi_2100_cell_character2[16] = {
+	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,
+	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,	0x0100,	0x0100
+};
+
+/* parameter for SDI 2100mA 2012.10.11 */
+/* Address 0x80h */
+static u16 sdi_3000_cell_character0[16] = {
+	0xAF70, 0xB570, 0xB7A0, 0xB900, 0xBA70, 0xBBF0, 0xBC40, 0xBC90,
+	0xBE20, 0xBF80, 0xC340, 0xC600, 0xCA90, 0xCD90, 0xD3B0, 0xD7C0
+};
+
+/* Address 0x90h */
+static u16 sdi_3000_cell_character1[16] = {
+	0x0170, 0x0D20, 0x0BA0, 0x0BF0, 0x0DF0, 0x3F40, 0x3F00, 0x1A00,
+	0x18E0, 0x09F0, 0x0970, 0x0920, 0x0860, 0x0680, 0x0600, 0x0600
+};
+
+/* Address 0xA0h */
+static u16 sdi_3000_cell_character2[16] = {
+	0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100,
+	0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100
+};
 
 /* table_soc = (new_vcell - new_v0)*new_slope/100000 (unit : 0.01% ) */
 static struct fuelgauge_dsg_data_table {
@@ -141,27 +185,30 @@ static struct fuelgauge_ocv_data_table {
 	{ 0, 0, 0 }
 };
 
-u16 cell_character_80h[16] = {
-	0xA2A0, 0xB6E0, 0xB850, 0xBAD0, 0xBB20, 0xBB70, 0xBBC0, 0xBC20,
-	0xBC80, 0xBCE0, 0xBD80, 0xBE20, 0xC090, 0xC420, 0xC910, 0xD070
+static struct table_soc_data sdi_2100_table_soc_data[] = {
+	{	3000, 0, 0, 0			},
+	{	3306, 1289, 105100, 3170600	},
+	{	3597, 4059, 4100, 3580300	},
+	{	3622, 10148, 8500, 3535900	},
+	{	3672, 16039, 2200, 3637100	},
+	{	3714, 35344, 4100, 3569600	},
+	{	3782, 51984, 7000, 3420600	},
+	{	3902, 69246, 11400, 3112200	},
+	{	4225, 97566, 0, 100000000	},
 };
 
-u16 cell_character_90h[16] = {
-	0x0090, 0x1A50, 0x02F0, 0x2060, 0x2060, 0x2E60, 0x26A0, 0x2DB0,
-	0x2DB0, 0x1870, 0x2A20, 0x16F0, 0x08F0, 0x0D40, 0x08C0, 0x08C0
+static struct table_soc_data sdi_3000_table_soc_data[] = {
+	{ 3301, 1148, 0, 0 },
+	{ 3609, 4230, 0, 0 },
+	{ 3640, 11828, 0, 0 },
+	{ 3657, 13469, 0, 0 },
+	{ 3707, 21840, 0, 0 },
+	{ 3733, 34992, 0, 0 },
+	{ 3758, 43629, 0, 0 },
+	{ 3806, 53027, 0, 0 },
+	{ 3900, 65387, 0, 0 },
+	{ 4265, 100492, 0, 0 },
 };
-
-u16 cell_character_a0h[16] = {
-	0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100,
-	0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100
-};
-
-static int fg_bus = 9;
-static int rst_status;
-static int charger_status;
-static int por;
-static u32 vfocv_table;
-static const char pszfg[] = "max77693-fg:";
 
 static inline void mdelay(int msec)
 {
@@ -249,6 +296,45 @@ u32 max77693_fg_get_vcell(void)
 	return vcell * 625;
 }
 
+static u32 max77693_fg_get_ocv(void)
+{
+	u16 value;
+	u32 ocv;
+
+	value = fuelgauge_reg_read(MAX77693_REG_OCV_RO);
+	ocv = (u32)(value >> 3);
+
+	DEBUG("%s\tocv = 0x%x (0x%x)\n", pszfg, vcell, value);
+
+	return ocv * 625 / 1000;
+}
+
+u32 max77693_fg_get_soc(void)
+{
+	u16 value;
+	u32 soc;
+
+	value = fuelgauge_reg_read(MAX77693_REG_VFSOC);
+	soc = (u32)(value >> 8);
+
+	DEBUG("%s\tsoc = 0x%x (0x%x)\n", pszfg, soc, value);
+
+	return soc;
+}
+
+static u32 max77693_fg_get_vfocv(void)
+{
+	u16 value;
+	u32 vfocv;
+
+	value = fuelgauge_reg_read(MAX77693_REG_OCV_WR);
+	vfocv = (u32)(value >> 3);
+
+	DEBUG("%s\tvfocv = 0x%x (0x%x)\n", pszfg, vcell, value);
+
+	return vfocv * 625 / 1000;
+}
+
 static u32 max77693_fg_get_average_vcell(void)
 {
 	int i;
@@ -273,19 +359,6 @@ static u32 max77693_fg_get_average_vcell(void)
 	}
 
 	return (vcell_total - vcell_max - vcell_min) / (AVER_SAMPLE_CNT - 2);
-}
-
-static u32 max77693_fg_get_vfocv(void)
-{
-	u16 value;
-	u32 vfocv;
-
-	value = fuelgauge_reg_read(MAX77693_REG_VFOCV);
-	vfocv = (u32)(value >> 3);
-
-	DEBUG("%s\tvfocv = 0x%x (0x%x)\n", pszfg, vcell, value);
-
-	return vfocv * 625 / 1000;
 }
 
 static u32 max77693_fg_get_vfocv_table(u32 raw_soc)
@@ -325,19 +398,6 @@ static u32 max77693_fg_get_vfocv_table(u32 raw_soc)
 	return vfocv;
 }
 
-u32 max77693_fg_get_soc(void)
-{
-	u16 value;
-	u32 soc;
-
-	value = fuelgauge_reg_read(MAX77693_REG_VFSOC);
-	soc = (u32)(value >> 8);
-
-	DEBUG("%s\tsoc = 0x%x (0x%x)\n", pszfg, soc, value);
-
-	return soc;
-}
-
 static u16 max77693_fg_check_version(void)
 {
 	u16 version = fuelgauge_reg_read(MAX77693_REG_VERSION);
@@ -347,12 +407,53 @@ static u16 max77693_fg_check_version(void)
 	return version;
 }
 
-static void max77693_fg_load_init_config(void)
+static void max77693_fg_load_init_config(enum battery_type batt_type)
 {
-	int i;
 	u16 data0[16], data1[16], data2[16];
 	u16 status;
-	int rewrite_count = 5;
+	u16 rcomp0, tempco;
+	u16 *cell_character0, *cell_character1, *cell_character2;
+	u32 vcell, soc, vfocv;
+	u32 i;
+	u32 rewrite_count = 5;
+
+	vcell = max77693_fg_get_average_vcell();
+	soc = max77693_fg_get_soc();
+	vfocv = max77693_fg_get_ocv();
+
+	printf("%s\tPOR start: vcell(%d), vfocv(%d), soc(%d)\n", pszfg, vcell, vfocv, soc);
+
+	/* update battery parameter */
+	switch (batt_type) {
+	case BATTERY_SDI_1750:
+		printf("%s\tupdate SDI 1750 parameter\n", pszfg);
+		rcomp0 = SDI_1750_RCOMP0;
+		tempco = SDI_1750_TEMPCO;
+		cell_character0 = sdi_1750_cell_character0;
+		cell_character1 = sdi_1750_cell_character1;
+		cell_character2 = sdi_1750_cell_character2;
+		break;
+	case BATTERY_SDI_2100:
+		printf("%s\tupdate SDI 2100 parameter\n", pszfg);
+		rcomp0 = SDI_2100_RCOMP0;
+		tempco = SDI_2100_TEMPCO;
+		cell_character0 = sdi_2100_cell_character0;
+		cell_character1 = sdi_2100_cell_character1;
+		cell_character2 = sdi_2100_cell_character2;
+		break;
+	case BATTERY_SDI_3000:
+		printf("%s\tupdate SDI 3000 parameter\n", pszfg);
+		rcomp0 = SDI_3000_RCOMP0;
+		tempco = SDI_3000_TEMPCO;
+		cell_character0 = sdi_3000_cell_character0;
+		cell_character1 = sdi_3000_cell_character1;
+		cell_character2 = sdi_3000_cell_character2;
+		break;
+
+	default:
+		printf("%s\tunknown battery type, keep parameter\n", pszfg);
+		break;
+	}
 
 	/* 1. Delay 500mS */
 	/* delay(500); */
@@ -366,23 +467,23 @@ rewrite_model:
 	fuelgauge_reg_write(0x63, 0x00C4);
 
 	/* 5. Write/Read/Verify the Custom Model */
-	fuelgauge_reg_write_16n(0x80, cell_character_80h);
-	fuelgauge_reg_write_16n(0x90, cell_character_90h);
-	fuelgauge_reg_write_16n(0xA0, cell_character_a0h);
+	fuelgauge_reg_write_16n(0x80, cell_character0);
+	fuelgauge_reg_write_16n(0x90, cell_character1);
+	fuelgauge_reg_write_16n(0xA0, cell_character2);
 
 	fuelgauge_reg_read_16n(0x80, data0);
 	fuelgauge_reg_read_16n(0x90, data1);
 	fuelgauge_reg_read_16n(0xA0, data2);
 
 	for (i = 0; i < 16; i++) {
-		if (cell_character_80h[i] != data0[i])
+		if (cell_character0[i] != data0[i])
 			goto rewrite_model;
-		if (cell_character_90h[i] != data1[i])
+		if (cell_character1[i] != data1[i])
 			goto rewrite_model;
-		if (cell_character_a0h[i] != data2[i])
+		if (cell_character2[i] != data2[i])
 			goto rewrite_model;
 	}
-
+relock_model:
 	/* 8. Lock model access */
 	fuelgauge_reg_write(0x62, 0x0000);
 	fuelgauge_reg_write(0x63, 0x0000);
@@ -405,8 +506,8 @@ rewrite_model:
 	}
 
 	/* 10. Write Custom Parameters */
-	fuelgauge_reg_write_and_verify(0x38, RCOMP0_DEFAULT);
-	fuelgauge_reg_write_and_verify(0x39, TEMPCO_DEFAULT);
+	fuelgauge_reg_write_and_verify(0x38, rcomp0);
+	fuelgauge_reg_write_and_verify(0x39, tempco);
 
 	/* 11. Delay at least 350mS */
 	mdelay(350);
@@ -426,162 +527,116 @@ rewrite_model:
 
 	/* 18. Delay at least 350mS */
 
-	printf("%s\tinitialized\n", pszfg);
+	vcell = max77693_fg_get_average_vcell();
+	soc = max77693_fg_get_soc();
+	vfocv = max77693_fg_get_ocv();
+
+	printf("%s\tPOR finish: vcell(%d), vfocv(%d), soc(%d)\n", pszfg, vcell, vfocv, soc);
 }
 
-static int max77693_fg_check_validation(u32 vcell, u32 soc)
+static int get_table_soc(u32 vcell, enum battery_type batt_type)
 {
 	s32 raw_table_soc = 0;
-	u32 table_soc = 0;
-	u32 i, idx = 0, idx_end, ret = 0;
+	u32 table_soc;
+	u32 idx_start, idx_end, idx;
+	struct table_soc_data *table_soc_data;
 
-	vfocv_table = 0;
-	vcell *= 100;
+	idx_start = 0;
+	idx_end = 0;
 
-	if (charger_status) {
-		/* charging case */
-		vcell += CHG_VCELL_COMP;
-		idx_end = (int)ARRAY_SIZE(max77693_fg_chg_soc_table) - 1;
-		if (vcell <= max77693_fg_chg_soc_table[0].table_v0) {
-			if (soc > T_SOC_LOW)
-				ret = 2;
-			table_soc = 0;
-
-			goto skip_table_soc;
-		} else if (vcell > max77693_fg_chg_soc_table[idx_end].table_vcell) {
-			if (soc < T_SOC_HIGH)
-				ret = 2;
-			table_soc = 100;
-
-			goto skip_table_soc;
-		}
-
-		/* find range */
-		for (i = 0; i < idx_end; i++) {
-			if (vcell <= max77693_fg_chg_soc_table[0].table_vcell) {
-				idx = 0;
-				break;
-			} else if (vcell > max77693_fg_chg_soc_table[i].table_vcell
-				   && vcell <=
-				   max77693_fg_chg_soc_table[i + 1].table_vcell) {
-				idx = i + 1;
-				break;
-			}
-		}
-
-		/* calculate table soc */
-		raw_table_soc = ((vcell -
-			max77693_fg_chg_soc_table[idx].table_v0) *
-			max77693_fg_chg_soc_table[idx].table_slope) / 100000;
-
-		DEBUG("%d = (%d - %d)*%d/100000\n", raw_table_soc, vcell,
-			max77693_fg_chg_soc_table[idx].table_v0,
-			max77693_fg_chg_soc_table[idx].table_slope);
-
-		if (raw_table_soc > 10000)
-			raw_table_soc = 10000;
-		else if (raw_table_soc < 0)
-			raw_table_soc = 0;
-		table_soc = raw_table_soc / 100;
-
-		/* check validation */
-		if (por == 1 &&
-		    vcell <= PLAT_VOL_HIGH_CHG && vcell >= PLAT_VOL_LOW_CHG) {
-			if (table_soc > (soc + PLAT_T_SOC) ||
-			    soc > (table_soc + PLAT_T_SOC))
-				ret = 2;
-		} else if (rst_status == SWRESET) {
-			if (table_soc > (soc + T_SOC_W) ||
-			    soc > (table_soc + T_SOC_W))
-				ret = 2;
-		} else {
-			if (table_soc > (soc + T_SOC_CHG_UPPER) ||
-			    soc > (table_soc + T_SOC_CHG_BELOW))
-				ret = 2;
-		}
-
-		vfocv_table = max77693_fg_get_vfocv_table(raw_table_soc);
-	} else {
-		/* discharging case */
-		vcell += DSG_VCELL_COMP;
-		idx_end = (int)ARRAY_SIZE(max77693_fg_dsg_soc_table) - 1;
-		if (vcell <= max77693_fg_dsg_soc_table[idx_end].table_vcell ||
-			vcell < 340000) {
-			if (soc > T_SOC_LOW)
-				ret = 1;
-			table_soc = 0;
-
-			goto skip_table_soc;
-		} else if (vcell >= 417000) {
-			if (soc < T_SOC_HIGH)
-				ret = 1;
-			table_soc = 100;
-
-			goto skip_table_soc;
-		}
-
-		/* find range */
-		for (i = 0; i < idx_end; i++) {
-			if (vcell >= max77693_fg_dsg_soc_table[0].table_vcell) {
-				idx = 0;
-				break;
-			} else if (vcell < max77693_fg_dsg_soc_table[i].table_vcell
-				   && vcell >=
-				   max77693_fg_dsg_soc_table[i + 1].table_vcell) {
-				idx = i + 1;
-				break;
-			}
-		}
-
-		/* calculate table soc */
-		raw_table_soc = ((vcell -
-			max77693_fg_dsg_soc_table[idx].table_v0) *
-			max77693_fg_dsg_soc_table[idx].table_slope) / 100000;
-
-		DEBUG("%d = (%d - %d)*%d/100000\n", raw_table_soc, vcell,
-			max77693_fg_dsg_soc_table[idx].table_v0,
-			max77693_fg_dsg_soc_table[idx].table_slope);
-
-		if (raw_table_soc > 10000)
-			raw_table_soc = 10000;
-		else if (raw_table_soc < 0)
-			raw_table_soc = 0;
-		table_soc = raw_table_soc / 100;
-
-		/* check validation */
-		if (por == 1 &&
-		    vcell <= PLAT_VOL_HIGH_DSG && vcell >= PLAT_VOL_LOW_DSG) {
-			if (table_soc > (soc + PLAT_T_SOC) ||
-			    soc > (table_soc + PLAT_T_SOC))
-				ret = 1;
-		} else if (rst_status == SWRESET) {
-			if (table_soc > (soc + T_SOC_W) ||
-			    soc > (table_soc + T_SOC_W))
-				ret = 1;
-		} else {
-			if (table_soc > (soc + T_SOC_DSG_UPPER) ||
-			    soc > (table_soc + T_SOC_DSG_BELOW))
-				ret = 1;
-		}
-
-		vfocv_table = max77693_fg_get_vfocv_table(raw_table_soc);
+	switch (batt_type) {
+	case BATTERY_SDI_2100:
+		table_soc_data = sdi_2100_table_soc_data;
+		idx_end = (int)ARRAY_SIZE(sdi_2100_table_soc_data) - 1;
+		break;
+	case BATTERY_SDI_3000:
+		table_soc_data = sdi_3000_table_soc_data;
+		idx_end = (int)ARRAY_SIZE(sdi_3000_table_soc_data) - 1;
+		break;
+	default:
+		printf("%s\tunknown battery type. uses 2100mAh data default.\n", pszfg);
+		table_soc_data = sdi_2100_table_soc_data;
+		idx_end = (int)ARRAY_SIZE(sdi_2100_table_soc_data) - 1;
+		break;
 	}
 
-skip_table_soc:
-	return ret;
+	if (vcell < table_soc_data[idx_start].table_vcell) {
+		printf("%s: vcell(%d) out of range, set table soc as 0\n", __func__, vcell);
+		table_soc = 0;
+		goto calculate_finish;
+	} else if (vcell > table_soc_data[idx_end].table_vcell) {
+		printf("%s: vcell(%d) out of range, set table soc as 100\n", __func__, vcell);
+		table_soc = 100;
+		goto calculate_finish;
+	}
+
+	while (idx_start <= idx_end) {
+		idx = (idx_start + idx_end) / 2;
+		if (table_soc_data[idx].table_vcell > vcell) {
+			idx_end = idx - 1;
+		} else if (table_soc_data[idx].table_vcell < vcell) {
+			idx_start = idx + 1;
+		} else
+			break;
+	}
+	table_soc = table_soc_data[idx].table_soc;
+
+	/* high resolution */
+	if (vcell < table_soc_data[idx].table_vcell)
+		table_soc = table_soc_data[idx].table_soc -
+			((table_soc_data[idx].table_soc - table_soc_data[idx-1].table_soc) *
+			(table_soc_data[idx].table_vcell - vcell) /
+			(table_soc_data[idx].table_vcell - table_soc_data[idx-1].table_vcell));
+	else
+		table_soc = table_soc_data[idx].table_soc +
+			((table_soc_data[idx+1].table_soc - table_soc_data[idx].table_soc) *
+			(vcell - table_soc_data[idx].table_vcell) /
+			(table_soc_data[idx+1].table_vcell - table_soc_data[idx].table_vcell));
+
+	printf("%s: vcell(%d) is caculated to t-soc(%d.%d)\n", __func__, vcell, table_soc / 1000, table_soc % 1000);
+	table_soc /= 1000;
+
+calculate_finish:
+	return table_soc;
 }
 
-void max77693_fg_init(int charger_type)
+static int check_fuelgauge_powered(void)
 {
-	u32 vcell, soc, vfocv;
-	u16 status;
+	int pwr_chk = 0;
+
+	pwr_chk = fuelgauge_reg_read(MAX77693_REG_OCV_RO);
+
+	if (pwr_chk < 0)
+		return 0;
+	else
+		return 1;
+}
+
+void max77693_fg_init(enum battery_type batt_type, int charger_type)
+{
+	u32 soc, vcell, vfocv, power_check, table_soc, soc_diff, soc_chk_cnt, check_cnt;
+	u32 raw_data, t_raw_data;
+	u16 status, reg_data;
 	u8 recalculation_type = 0, soc_valid = 0;
 	u8 raw_vcell[2], t_raw_vcell[2] = {0 , 0};
-	u32 raw_data, t_raw_data;
 
 	if (max77693_fg_probe()) {
 		printf("%s\tinitialize failed\n", pszfg);
 		return;
+	}
+
+	power_check = check_fuelgauge_powered();
+	while (power_check == 0) {
+		msleep(500);
+		power_check = check_fuelgauge_powered();
+
+		check_cnt++;
+		printf("%s\t:fuelgauge is not powered(%d).\n", pszfg, check_cnt);
+
+		if (check_cnt >= FUELGAUGE_POWER_CHECK_COUNT) {
+			printf("%s\t:fuelgauge power failed.\n", pszfg);
+			return;
+		}
 	}
 
 	charger_status = charger_type;
@@ -590,11 +645,13 @@ void max77693_fg_init(int charger_type)
 
 	status = fuelgauge_reg_read(MAX77693_REG_STATUS);
 	if (status & 0x02) {
-		max77693_fg_load_init_config();
+		max77693_fg_load_init_config(batt_type);
 		por = 1;
 	} else {
 		por = 0;
 	}
+
+	printf("%s\tpor = 0x%04x\n", pszfg, status);
 
 	vcell = max77693_fg_get_average_vcell();
 	raw_data = (vcell * 1000) / 625;
@@ -609,6 +666,42 @@ void max77693_fg_init(int charger_type)
 
 	printf("%s\tvcell = %d mV, soc = %d, vfocv = %d mV\n",
 		pszfg, vcell, soc, vfocv);
+
+	if ((batt_type == BATTERY_SDI_2100) || (batt_type == BATTERY_SDI_3000)) {
+		table_soc = get_table_soc(vcell, batt_type);
+
+		if (por == 0)
+			goto init_finish;
+
+check_soc_validation:
+		/* check validation */
+		if (soc > table_soc)
+			soc_diff = soc - table_soc;
+		else
+			soc_diff = table_soc - soc;
+
+		if (soc_diff > SOC_DIFF_TH) {
+			printf("%s: [#%d] diff(%d), soc(%d) and table soc(%d)\n", __func__,
+				++soc_chk_cnt, soc_diff, soc, table_soc);
+
+			raw_data = (vcell * 1000) / 625;
+			raw_data <<= 3;
+			raw_vcell[1] = (raw_data & 0xff00) >> 8;
+			raw_vcell[0] = raw_data & 0xff;
+			fuelgauge_reg_write(MAX77693_REG_OCV_WR, (raw_vcell[1] << 8) | raw_vcell[0]);
+
+			mdelay(300);
+
+			soc = max77693_fg_get_soc();
+			vfocv = max77693_fg_get_vfocv();
+			vcell = max77693_fg_get_average_vcell();
+			table_soc = get_table_soc(vcell, batt_type);
+
+			if (soc_chk_cnt < SOC_DIFF_CHECK_COUNT)
+				goto check_soc_validation;
+		}
+		goto init_finish;
+	}
 
 	vfocv_table = 0;
 	recalculation_type = 0;
@@ -625,8 +718,6 @@ void max77693_fg_init(int charger_type)
 		}
 	}
 
-	soc_valid = max77693_fg_check_validation(vcell, soc);
-
 	if (vfocv_table != 0) {
 		t_raw_data = (vfocv_table * 1000) / 625;
 		t_raw_data <<= 3;
@@ -634,20 +725,15 @@ void max77693_fg_init(int charger_type)
 		t_raw_vcell[0] = t_raw_data & 0xff;
 	}
 
-	if (soc_valid == 1)	/* discharging */
-		recalculation_type = 4;
-	else if (soc_valid == 2)	/* charging */
-		recalculation_type = 3;
-
 	switch (recalculation_type) {
 	case 1:
 	case 3:
 		/* 0x200 means 40mV */
 		if (vfocv_table != 0)
-			fuelgauge_reg_write(MAX77693_REG_VFOCV,
+			fuelgauge_reg_write(MAX77693_REG_OCV_WR,
 					(t_raw_vcell[1] << 8) | t_raw_vcell[0]);
 		else
-			fuelgauge_reg_write(MAX77693_REG_VFOCV,
+			fuelgauge_reg_write(MAX77693_REG_OCV_WR,
 					((raw_vcell[1] -
 					  0x2) << 8) | (raw_vcell[0] - 0x00));
 		mdelay(500);
@@ -657,10 +743,10 @@ void max77693_fg_init(int charger_type)
 		/* 0x2C0 means 55mV */
 		/* 0x340 means 65mV */
 		if (vfocv_table != 0)
-			fuelgauge_reg_write(MAX77693_REG_VFOCV,
+			fuelgauge_reg_write(MAX77693_REG_OCV_WR,
 					(t_raw_vcell[1] << 8) | t_raw_vcell[0]);
 		else
-			fuelgauge_reg_write(MAX77693_REG_VFOCV,
+			fuelgauge_reg_write(MAX77693_REG_OCV_WR,
 					((raw_vcell[1] +
 					  0x3) << 8) | (raw_vcell[0] + 0x40));
 		mdelay(500);
@@ -668,6 +754,16 @@ void max77693_fg_init(int charger_type)
 	default:
 		break;
 	}
+
+init_finish:
+	/* NOTICE : use soc after initializing, soc can be changed */
+	soc = max77693_fg_get_soc();
+	vfocv = max77693_fg_get_vfocv();
+	max77693_fg_check_version();
+
+	printf("%s\tvcell = %d mV, soc = %d, vfocv = %d mV\n",
+		pszfg, vcell, soc, vfocv);
+
 }
 
 static int max77693_fg_reg_dump(void)

@@ -316,6 +316,44 @@ static void exynos4_set_mmc_clk(int dev_index, unsigned int div)
 	writel(val, addr);
 }
 
+/* I2C: exynos4: the I2C clock */
+void exynos4_set_i2c_clk(void)
+{
+	struct exynos4_clock *clk =
+		(struct exynos4_clock *)samsung_get_base_clock();
+	unsigned int cfg = 0;
+
+	/* control MUXACLK_100 */
+	cfg = readl(&clk->src_top0);
+	cfg |= 0x10000;
+	writel(cfg, &clk->src_top0);
+
+	/* control ACLK_100_RATIO [7:4] */
+	cfg = readl(&clk->div_top);
+	cfg &= 0xffffff0f;
+	cfg |= 0x70;
+	writel(cfg, &clk->div_top);
+
+	return;
+}
+
+static unsigned long exynos4_get_i2c_clk(void)
+{
+	struct exynos4_clock *clk =
+		(struct exynos4_clock *)samsung_get_base_clock();
+	unsigned long sclk, aclk_100;
+	unsigned int ratio;
+
+	sclk = get_pll_clk(APLL);
+
+	ratio = (readl(&clk->div_top)) >> 4;
+	ratio &= 0xf;
+
+	aclk_100 = sclk / (ratio + 1);
+
+	return aclk_100;
+}
+
 unsigned long get_pll_clk(int pllreg)
 {
 	return exynos4_get_pll_clk(pllreg);
@@ -324,6 +362,27 @@ unsigned long get_pll_clk(int pllreg)
 unsigned long get_arm_clk(void)
 {
 	return exynos4_get_arm_clk();
+}
+
+void set_i2c_clk(void)
+{
+	if (cpu_is_exynos4()) {
+		exynos4_set_i2c_clk();
+		return;
+	} else {
+		debug("I2C clock is not set for this CPU\n");
+		return;
+	}
+}
+
+unsigned long get_i2c_clk(void)
+{
+	if (cpu_is_exynos4()) {
+		return exynos4_get_i2c_clk();
+	} else {
+		debug("I2C clock is not set for this CPU\n");
+		return 0;
+	}
 }
 
 unsigned long get_pwm_clk(void)
