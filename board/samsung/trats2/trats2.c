@@ -486,6 +486,21 @@ static void check_battery(void)
 	}
 }
 
+static void check_ta_usb(void)
+{
+	unsigned char pwron = max77686_get_reg_pwron();
+
+	if (ta_usb_connected)
+		return;
+
+	/* check whether ta or usb cable have been attached */
+	if (pwron == 0x04) {
+		writel(0, EXYNOS4_WDT_BASE);
+		max77686_rtc_disable_wtsr_smpl();
+		power_off();
+	}
+}
+
 static int init_charger(void)
 {
 	if (!pmic_has_battery())
@@ -794,6 +809,7 @@ int misc_init_r(void)
 	check_keypad();
 
 	ta_usb_connected = max77693_muic_check();
+	check_ta_usb();
 
 	init_battery();
 

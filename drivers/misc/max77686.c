@@ -60,7 +60,9 @@
 /*
  * MAX77686 RTC Registers
  */
-#define MAX77686_RTC_INT	0x0
+#define MAX77686_RTC_INT	0x00
+#define MAX77686_RTC_UPDATE0	0x04
+#define MAX77686_RTC_WTSR_SMPL	0x06
 
 struct pmic_opmode {
 	/* not supported mode has '0xff' */
@@ -180,6 +182,45 @@ static int max77686_rtc_probe(void)
 	return 0;
 }
 
+static void max77686_rtc_read_update()
+{
+	unsigned char addr = MAX77686_RTC_ADDR;
+	unsigned char val;
+
+	if (max77686_rtc_probe())
+		return;
+
+	val = 0x10;
+	i2c_write(addr, MAX77686_RTC_UPDATE0, 1, &val, 1);
+	udelay(16000);
+}
+
+static void max77686_rtc_write_update()
+{
+	unsigned char addr = MAX77686_RTC_ADDR;
+	unsigned char val;
+
+	if (max77686_rtc_probe())
+		return;
+
+	val = 0x01;
+	i2c_write(addr, MAX77686_RTC_UPDATE0, 1, &val, 1);
+	udelay(16000);
+}
+
+void max77686_rtc_disable_wtsr_smpl(void)
+{
+	unsigned char addr = MAX77686_RTC_ADDR;
+	unsigned char val;
+
+	if (max77686_rtc_probe())
+		return;
+
+	val = 0;
+	i2c_write(addr, MAX77686_RTC_WTSR_SMPL, 1, &val, 1);
+	max77686_rtc_write_update();
+}
+
 int max77686_rtc_init(void)
 {
 	unsigned char addr = MAX77686_RTC_ADDR;
@@ -241,6 +282,11 @@ int max77686_check_pwron_wtsr(void)
 int max77686_check_pwron_smpl(void)
 {
 	return !!(reg_pwron & MAX77686_PWRON_SMPLON);
+}
+
+unsigned char max77686_get_reg_pwron(void)
+{
+	return reg_pwron;
 }
 
 int max77686_check_acokb_pwron(void)
