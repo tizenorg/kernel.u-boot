@@ -27,12 +27,12 @@
 #define PARTS_MODEM		"modem"
 #define PARTS_PARAMS		"params"
 #define PARTS_QBOOT		"qboot"
-#define PARTS_ROOT		"rootfs"
+#define PARTS_ROOT		"platform"
 #define PARTS_CSA		"csa"
-#define PARTS_BOOT		"system-data"
+#define PARTS_BOOT		"boot"
 #define PARTS_DATA		"data"
 #define PARTS_CSC		"csc"
-#define PARTS_UMS		"user"
+#define PARTS_UMS		"ums"
 #define PARTS_PIT		"pit"
 
 /* OneNAND only */
