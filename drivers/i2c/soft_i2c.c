@@ -296,12 +296,12 @@ static int write_byte(uchar data)
 /*
  * Functions for multiple I2C bus handling
  */
-static unsigned int soft_i2c_get_bus_num(void)
+unsigned int i2c_get_bus_num(void)
 {
 	return i2c_bus_num;
 }
 
-static int soft_i2c_set_bus_num(unsigned int bus)
+int i2c_set_bus_num(unsigned int bus)
 {
 #if defined(CONFIG_I2C_MUX)
 	if (bus < CONFIG_SYS_MAX_I2C_BUS) {
@@ -361,7 +361,7 @@ static uchar read_byte(int ack)
 /*-----------------------------------------------------------------------
  * Initialization
  */
-static void soft_i2c_init (int speed, int slaveaddr)
+void i2c_init (int speed, int slaveaddr)
 {
 #if defined(CONFIG_SYS_I2C_INIT_BOARD)
 	/* call board specific i2c bus reset routine before accessing the   */
@@ -384,7 +384,7 @@ static void soft_i2c_init (int speed, int slaveaddr)
  * completion of EEPROM writes since the chip stops responding until
  * the write completes (typically 10mSec).
  */
-static int soft_i2c_probe(uchar addr)
+int i2c_probe(uchar addr)
 {
 	int rc;
 
@@ -402,7 +402,7 @@ static int soft_i2c_probe(uchar addr)
 /*-----------------------------------------------------------------------
  * Read bytes
  */
-static int soft_i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
+int  i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int shift;
 	PRINTD("i2c_read: chip %02X addr %02X alen %d buffer %p len %d\n",
@@ -473,7 +473,7 @@ static int soft_i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len
 /*-----------------------------------------------------------------------
  * Read bytes repeated
  */
-static int soft_i2c_read_r(uchar chip, uint addr, int alen, uchar *buffer, int len)
+int  i2c_read_r(uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int shift;
 	PRINTD("i2c_read: chip %02X addr %02X alen %d buffer %p len %d\n",
@@ -543,7 +543,7 @@ static int soft_i2c_read_r(uchar chip, uint addr, int alen, uchar *buffer, int l
 /*-----------------------------------------------------------------------
  * Write bytes
  */
-static int soft_i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
+int  i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
 	int shift, failures = 0;
 
@@ -573,54 +573,3 @@ static int soft_i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int le
 	send_stop();
 	return(failures);
 }
-
-#if defined(CONFIG_MULTI_I2C)
-struct i2c_ops soft_i2c_ops = {
-	.init        = soft_i2c_init,
-	.probe       = soft_i2c_probe,
-	.read        = soft_i2c_read,
-	.read_r      = soft_i2c_read_r,
-	.write       = soft_i2c_write,
-	.get_bus_num = soft_i2c_get_bus_num,
-	.set_bus_num = soft_i2c_set_bus_num,
-	.reset       = NULL,
-};
-#else
-void i2c_init (int speed, int slaveaddr)
-{
-	return soft_i2c_init(speed, slaveaddr);
-}
-
-int i2c_probe(uchar chip)
-{
-	return soft_i2c_probe(chip);
-}
-
-int i2c_read(uchar chip, uint addr, int alen,
-	uchar *buffer, int len)
-{
-	return soft_i2c_read(chip, addr, alen, buffer, len);
-}
-
-int i2c_read_r(uchar chip, uint addr, int alen,
-	uchar *buffer, int len)
-{
-	return soft_i2c_read_r(chip, addr, alen, buffer, len);
-}
-
-int i2c_write(uchar chip, uint addr, int alen,
-	uchar *buffer, int len)
-{
-	return soft_i2c_write(chip, addr, alen, buffer, len);
-}
-
-unsigned int i2c_get_bus_num(void)
-{
-	return soft_i2c_get_bus_num();
-}
-
-int i2c_set_bus_num(unsigned int bus)
-{
-	return soft_i2c_set_bus_num(bus);
-}
-#endif

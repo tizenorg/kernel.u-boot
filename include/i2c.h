@@ -30,13 +30,6 @@
 #define _I2C_H_
 
 /*
- * Multi_I2C header file.
- */
-#if defined(CONFIG_MULTI_I2C)
-#include <multi_i2c.h>
-#endif
-
-/*
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  *
  * The implementation MUST NOT use static or global variables if the
@@ -141,10 +134,6 @@ I2C_MUX_DEVICE	*i2c_mux_search_device(int id);
 I2C_MUX_DEVICE *i2c_mux_ident_muxstring (uchar *buf);
 int i2x_mux_select_mux(int bus);
 int i2c_mux_ident_muxstring_f (uchar *buf);
-#endif
-
-#if defined(CONFIG_MULTI_I2C)
-void i2c_reset(void);
 #endif
 
 /*

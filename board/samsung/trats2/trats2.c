@@ -34,7 +34,6 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/mipi_dsim.h>
 #include <asm/arch/regs-fb.h>
-#include <asm/arch/pinmux.h>
 #include <mmc.h>
 #include <fat.h>
 #include <fbutils.h>
@@ -76,6 +75,12 @@ enum {
 	I2C_0, I2C_1, I2C_2, I2C_3,
 	I2C_4, I2C_5, I2C_6, I2C_7,
 	I2C_8, I2C_9, I2C_10, I2C_NUM,
+};
+
+/* i2c7 (MAX77686)	SDA: GPD0[2] SCL: GPD0[3] */
+static struct i2c_gpio_bus_data i2c_7 = {
+	.sda_pin = 2,
+	.scl_pin = 3,
 };
 
 /* i2c9 (IF PMIC)	SDA: GPM2[0] SCL: GPM2[1] */
@@ -219,24 +224,16 @@ void i2c_init_board(void)
 	i2c_gpio[I2C_4].bus = NULL;
 	i2c_gpio[I2C_5].bus = NULL;
 	i2c_gpio[I2C_6].bus = NULL;
-	i2c_gpio[I2C_7].bus = NULL;
+	i2c_gpio[I2C_7].bus = &i2c_7;
 	i2c_gpio[I2C_8].bus = NULL;
 	i2c_gpio[I2C_9].bus = &i2c_9;
 	i2c_gpio[I2C_10].bus = &i2c_10;
 
+	i2c_gpio[I2C_7].bus->gpio_base = (unsigned int)&gpio1->d0;
 	i2c_gpio[I2C_9].bus->gpio_base = (unsigned int)&gpio2->m2;
 	i2c_gpio[I2C_10].bus->gpio_base = (unsigned int)&gpio1->f1;
 
 	i2c_gpio_init(i2c_gpio, I2C_NUM, I2C_9);
-}
-
-static void board_i2c_init(void)
-{
-	int err;
-
-	err = exynos_pinmux_config(I2C_7, PINMUX_FLAG_NONE);
-	if (err)
-		debug("I2C%d not configured\n", I2C_7);
 }
 #endif
 
@@ -252,10 +249,6 @@ int board_early_init_f(void)
 #ifdef CONFIG_OFFICIAL_REL
 	if (!check_home_key())
 		gd->flags |= GD_FLG_DISABLE_CONSOLE;
-#endif
-
-#ifdef CONFIG_SYS_I2C_INIT_BOARD
-	board_i2c_init();
 #endif
 
 	return 0;
@@ -816,10 +809,6 @@ int misc_init_r(void)
 #ifdef CONFIG_LCD
 	init_logo_info();
 	set_logo_image(boot_mode);
-#endif
-
-#ifdef CONFIG_MULTI_I2C
-	i2c_reset();
 #endif
 
 	return 0;
