@@ -847,7 +847,7 @@ int  mkfs_ext4(block_dev_desc_t *dev_desc_t, int part_no)
 	memset(&fs,'\0',sizeof(ext2_filsys));
 	/* Added to wipe out old file system headers */
 	u32 ofs;
-	u8 buf[FS_BLOCK_SIZE];
+	ALLOC_CACHE_ALIGN_BUFFER(u8, buf, FS_BLOCK_SIZE);
 
 	if (!dev_desc->block_read)
 		return -1;
