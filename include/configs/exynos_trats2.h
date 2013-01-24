@@ -382,19 +382,9 @@
 /* Bootloader LOG */
 #define CONFIG_LOGGER		1
 
-#if 0
-/* Secure Boot */
-#define CONFIG_SECURE_BOOTING	1
-#define CONFIG_CHECK_CUSTOM	1
-
 /* TrustZone */
 #define CONFIG_TRUSTZONE	1
 #define CONFIG_TRUSTZONE_RESERVED_DRAM	(1 << 20)
-
-/* FOTA */
-#define CONFIG_FOTA
-#define CONFIG_FOTA_DELTA_DOWNLOAD
-#endif
 
 /* ETC */
 #define CONFIG_STOPWATCH	1
