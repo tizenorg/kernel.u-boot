@@ -14,7 +14,7 @@
 #include "ext2fs.h"
 #include <ext2fs.h>
 extern block_dev_desc_t *dev_desc;
-
+volatile int journal_broken_cache_exit;
 
 struct ext2_struct_inode_scan {
 	errcode_t		magic;
@@ -735,13 +735,15 @@ errcode_t ext2fs_write_inode_full(ext2_filsys fs, ext2_ino_t ino,
 		if(ino==8)
 		{	
 			FLAG++;
-			if(FLAG==(my_journal_blocks+3))
+			if(journal_broken_cache_exit &&
+			   FLAG >= my_journal_blocks)
 			{
 				memcpy(my_buffer,fs->icache->buffer, fs->blocksize);
 				my_block_nr= block_nr;	
 				/*Fix for format of same blocksize twice */
 				FLAG = 0;  
 				buffer_allocated = 0;
+				journal_broken_cache_exit = 0;
 			}
 		}
 		else

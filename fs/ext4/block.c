@@ -11,6 +11,8 @@
 #include "ext2_fs.h"
 #include "ext2fs.h"
 
+extern int journal_broken_cache_exit;
+
 struct block_context {
 	ext2_filsys	fs;
 	int (*func)(ext2_filsys	fs,
@@ -385,8 +387,10 @@ errcode_t ext2fs_block_iterate2(ext2_filsys fs,
 						     (blk64_t) blockcnt++,
 						       (blk64_t) blk, 0);					
 					
-					if (ctx.errcode || (ret & BLOCK_ABORT))
-						break;					
+					if (ctx.errcode || (ret & BLOCK_ABORT)) {
+						journal_broken_cache_exit = 1;
+						break;
+					}
 					if (blk)
 						goto next_block_set;
 				}				
