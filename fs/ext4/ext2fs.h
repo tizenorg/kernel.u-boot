@@ -1289,7 +1289,7 @@ _INLINE_ errcode_t ext2fs_get_mem(unsigned long size, void *ptr)
 {
 	void *pp;
 
-	pp = malloc(size);
+	pp = memalign(ARCH_DMA_MINALIGN, size);
 	if (!pp)
 		return EXT2_ET_NO_MEMORY;
 	memcpy(ptr, &pp, sizeof (pp));
@@ -1310,8 +1310,8 @@ _INLINE_ errcode_t ext2fs_get_memalign(unsigned long size,
 	}
 	return 0;
 	#endif
-	*ptr= (char *)malloc(size);
-	if(ptr==NULL)	
+	*ptr = (char *)memalign(ARCH_DMA_MINALIGN, size);
+	if(ptr==NULL)
 		return EXT2_ET_NO_MEMORY;
 	else
 		return 0;
