@@ -196,6 +196,7 @@ extern int ext2fs_devread(int sector, int byte_offset, int byte_len, char *buf);
 #define EXT2_FT_DIR 				2
 #define SUCCESS 				1
 
+#define EXT_MAX_FILE_LEN 256
 // All fields are little-endian
 struct ext4_dir {
 	uint32_t inode1;
@@ -3756,8 +3757,8 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 
 	unsigned char *ptr = NULL;
 	struct ext2_dirent *temp_dir = NULL;
-	ALLOC_CACHE_ALIGN_BUFFER(char, filename, 256);
-	memset(filename, 0x00, sizeof(filename));
+	ALLOC_CACHE_ALIGN_BUFFER(char, filename, EXT_MAX_FILE_LEN);
+	memset(filename, 0x00, EXT_MAX_FILE_LEN);
 
 	unsigned int previous_blknr = -1;
 	unsigned int *zero_buffer = NULL;
@@ -3769,7 +3770,6 @@ int ext4fs_write(block_dev_desc_t *dev_desc, int part_no,char *fname,
 	unsigned int inodes_per_block;
 	unsigned int inode_bitmap_index;
 	int sizeof_void_space = 0;
-	memset(filename, 0x00, sizeof(filename));
 	g_parent_inode = (struct ext2_inode *)xzalloc(sizeof(struct ext2_inode));
 	if(!g_parent_inode)
 		goto fail;
