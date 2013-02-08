@@ -4489,12 +4489,7 @@ static int find_dir_depth(char *dirname)
 		token = strtok(NULL,"/");
 		count++;
 	}
-	return count+1 +1;
-	/*
-	*for example  for string /home/temp
-	*depth=home(1)+temp(1)+1 extra for NULL;
-	*so count is 4;
-	*/
+	return count;
 }
 
 static int	parse_path(char **arr,char *dirname)
@@ -5231,8 +5226,19 @@ int get_parent_inode_num_write(block_dev_desc_t *dev_desc,char *dirname, char *d
 	parse_dirname = (char *)xzalloc(strlen(dirname)+1);
 	memcpy(parse_dirname,dirname,strlen(dirname));
 
-	/*allocate memory for each directory level*/
-	ptr=(char**)xzalloc((depth)* sizeof(char *));
+	/*
+	 * NOTE:
+	 *
+	 * According to the code at parse_path we need two extra pointers
+	 * (+2 at xzalloc) to accomodate "/" pointer to root directory and extra
+	 * NULL pointer as a sentinel.
+	 *
+	 * However this path parsing shall be regarded as an overkill, since we
+	 * only store plain files at root "/" directory (e.g. /modem.bin
+	 * /uImage. etc.)
+	 *
+	 */
+	ptr = (char**)xzalloc((depth + 2)* sizeof(char *));
 	parse_path(ptr,parse_dirname);
 
 	parent_inode=(struct ext2_inode*)xzalloc(sizeof(struct ext2_inode));
