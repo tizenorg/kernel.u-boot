@@ -2952,7 +2952,8 @@ static revoke_blk_list *
 _get_node(void)
 {
 	revoke_blk_list *tmp_node;
-	tmp_node=(revoke_blk_list * )malloc(sizeof(revoke_blk_list));
+	tmp_node=(revoke_blk_list *)
+		memalign(ARCH_DMA_MINALIGN, sizeof(revoke_blk_list));
 	if(tmp_node==NULL) {
 		return NULL;
 	}
@@ -2979,7 +2980,7 @@ push_revoke_blk (char * buffer)
 	}
 	
 	/*fill the node*/
-	node->content=(char*) malloc(blocksize);
+	node->content = (char*) memalign(ARCH_DMA_MINALIGN, blocksize);
 	memcpy(node->content,buffer,blocksize);
 	
 	if(first_node==TRUE) {
@@ -3407,7 +3408,8 @@ int ext4fs_init(block_dev_desc_t *dev_desc )
 	}
 
 	/*load all the available bitmap block of the partition*/
-	bg=(unsigned char **)malloc(no_blockgroup * sizeof(unsigned char *));
+	bg = (unsigned char **) memalign(ARCH_DMA_MINALIGN,
+				 no_blockgroup * sizeof(unsigned char *));
 	for(i=0;i<no_blockgroup;i++)
 	{
 		bg[i]=(unsigned char*)xzalloc(blocksize);
@@ -3425,7 +3427,8 @@ int ext4fs_init(block_dev_desc_t *dev_desc )
 	}
 
 	/*load all the available inode bitmap of the partition*/
-	inode_bmaps=(unsigned char **)malloc(no_blockgroup * sizeof(unsigned char *));
+	inode_bmaps = (unsigned char **) memalign(ARCH_DMA_MINALIGN,
+				       no_blockgroup * sizeof(unsigned char *));
 	for(i=0;i<no_blockgroup;i++)
 	{
 		inode_bmaps[i]=(unsigned char*)xzalloc(blocksize);
@@ -4034,7 +4037,7 @@ RESTART:
 	/*allocation of single indirect blocks*/
 	if(total_remaining_blocks!=0)
 	{
-		single_indirect_buffer=malloc(blocksize);
+		single_indirect_buffer=memalign(ARCH_DMA_MINALIGN, blocksize);
 		single_indirect_start_address=single_indirect_buffer;
 		single_indirect_blockno=ext4fs_get_next_available_block_no(dev_desc,part_no);
 		if(single_indirect_blockno==-1)
