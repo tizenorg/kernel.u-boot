@@ -355,6 +355,29 @@ static void check_auto_burn(void)
 	memset((void *)magic_base, 0, 2);
 }
 
+static void check_uboot_backup()
+{
+	unsigned int magic_base = CONFIG_SYS_SDRAM_BASE + 0x02004000;
+	unsigned int count = 0;
+	char buf[64];
+
+	run_command("mmc boot 0 1 1 2", 0);
+	run_command("mmc read 0 0x42004000 0x0 0x10", 0);
+	run_command("mmc boot 0 1 1 0", 0);
+
+	if (readl(magic_base) != 0xea000013) {
+		puts("Auto uboot backup start..!!\n");
+		count += sprintf(buf + count, "run updatebootb; ");
+	}
+	if (count) {
+		count += sprintf(buf + count, "reset");
+		setenv("bootcmd", buf);
+	}
+
+	/* Clear the magic value */
+	memset((void *)magic_base, 0, 2);
+}
+
 int check_exit_key(void)
 {
 	static int count = 0;
@@ -847,6 +870,8 @@ int misc_init_r(void)
 	check_keypad();
 
 	check_auto_burn();
+
+	check_uboot_backup();
 
 	ta_usb_connected = max77693_muic_check();
 	check_ta_usb();
