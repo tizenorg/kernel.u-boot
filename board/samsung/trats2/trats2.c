@@ -317,6 +317,44 @@ void dram_init_banksize(void)
 #endif
 }
 
+static void check_auto_burn(void)
+{
+	unsigned int magic_base = CONFIG_SYS_SDRAM_BASE + 0x02000000;
+	unsigned int count = 0;
+	char buf[64];
+
+	/* Initial Setting */
+	if (readl(magic_base) == 0x534E5344) {	/* ASICC: SNSD */
+		puts("Auto buring intiail Setting (boot image)\n");
+		count += sprintf(buf + count, "run setupboot; ");
+		goto done;
+	}
+	/* MMC */
+	if (readl(magic_base) == 0x654D4D43) {	/* ASICC: eMMC */
+		puts("Auto buring bootloader (eMMC)\n");
+		count += sprintf(buf + count, "run updatemmc; ");
+	}
+	if (readl(magic_base + 0x4) == 0x4b65726e) {	/* ASICC: Kern */
+		puts("Auto buring kernel\n");
+		count += sprintf(buf + count, "run updatek; ");
+	}
+	/* Backup u-boot in eMMC */
+	if (readl(magic_base + 0x8) == 0x4261636B) {	/* ASICC: Back */
+		puts("Auto buring u-boot image (boot partition2 in eMMC)\n");
+		count += sprintf(buf + count, "run updatebackup; ");
+	}
+
+ done:
+	if (count) {
+		count += sprintf(buf + count, "reset");
+		setenv("bootcmd", buf);
+		setenv("updatestate", NULL);
+	}
+
+	/* Clear the magic value */
+	memset((void *)magic_base, 0, 2);
+}
+
 int check_exit_key(void)
 {
 	static int count = 0;
@@ -807,6 +845,8 @@ int misc_init_r(void)
 	init_muic();
 
 	check_keypad();
+
+	check_auto_burn();
 
 	ta_usb_connected = max77693_muic_check();
 	check_ta_usb();
