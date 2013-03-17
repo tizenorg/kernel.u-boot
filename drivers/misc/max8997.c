@@ -34,6 +34,7 @@
 #define MAX8997_MUIC_STATUS2	0x05
 #define MAX8997_MUIC_STATUS3	0x06
 #define MAX8997_MUIC_CONTROL1	0x0C
+#define MAX8997_MUIC_CONTROL2	0x0D
 
 /* MAX8997_MUIC_INT1 */
 #define MAX8997_MUIC_CHG_DETECT	0x01
@@ -476,9 +477,25 @@ static void set_muic_path_info(void)
 	setenv("muicpathinfo", buf);
 }
 
+static void enable_acc_det(void)
+{
+	unsigned char control2;
+	unsigned char addr = MAX8997_MUIC_ADDR;
+
+	if (muic_probe())
+		return;
+
+	i2c_read(addr, MAX8997_MUIC_CONTROL2, 1, &control2, 1);
+
+	control2 |= (1 << 5);	/* Enable accessory detection */
+
+	i2c_write(addr, MAX8997_MUIC_CONTROL2, 1, &control2, 1);
+}
+
 void muic_init(void)
 {
 	set_muic_path_info();
+	enable_acc_det();
 }
 
 int muic_check_type(void)
