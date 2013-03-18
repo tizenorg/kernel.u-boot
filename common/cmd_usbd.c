@@ -97,6 +97,48 @@ extern struct pitpart_data pitparts[];
 static int pkt_download(void *dest, const int size);
 static void send_data_rsp(s32 ack, s32 count);
 
+static int check_board_signature(int idx_down)
+{
+	struct boot_header *bh_down;
+	struct boot_header *bh_target;
+	struct partition_info_t *down;
+	struct partition_info_t *target;
+	int pit_index;
+
+	if (down_mode == MODE_FORCE)
+		return 0;
+
+	pit_index = get_pitpart_id_by_filename(PARTS_BOOTLOADER"-mmc.bin");
+	if (!pit_index)
+		return 0;
+	bh_target = (struct boot_header *)(_TEXT_BASE + (pitparts[pit_index].size) - HDR_SIZE);
+	if (bh_target->magic != HDR_BOOT_MAGIC) {
+		ERROR("can't found signature on target at %p\n", bh_target);
+		/* workaround: some target don't have a signature */
+		return 0;
+	}
+
+	if (!get_pitpart_name(pit_index))
+		return 0;
+	bh_down = (struct boot_header *)(download_addr + (pitparts[pit_index].size) - HDR_SIZE);
+	if (bh_down->magic != HDR_BOOT_MAGIC) {
+		ERROR("can't found signature on down image at %p\n", bh_down);
+		return -EAGAIN;
+	}
+
+	DEBUG(1, "check target - ");
+
+	if (strncmp(bh_target->boardname, bh_down->boardname,
+		ARRAY_SIZE(bh_target->boardname))) {
+		ERROR("Fail (%s != %s)\n", bh_target->boardname, bh_down->boardname);
+		return -EAGAIN;
+	}
+
+	DEBUG(1, "OK\n");
+	return 0;
+}
+
+
 #ifdef CONFIG_ENV_UPDATE_WITH_DL
 static unsigned char update_flag = 0;
 #endif
@@ -453,6 +495,24 @@ static int fusing_recv_data(u32 addr, int pit_idx, s32 size, int final)
 
 	name = pitparts[pit_idx].name;
 
+	/* check bootloader signature - for prevent target mismatch */
+	if (!strncmp(name, PARTS_BOOTLOADER, 6)) {
+		uboot_index = pit_idx;
+		if (check_board_signature(pit_idx) < 0) {
+			char *msg = "\nError: plz check target image\n"
+				    "\nPlease Press POWERKEY 3 times to RETRY downloading\n";
+
+			printf(msg);
+			set_font_color(FONT_YELLOW);
+			if (!board_no_lcd_support())
+				fb_printf(msg);
+
+			/* wait user */
+			while(!check_exit_key());
+
+			return -1;
+		}
+	}
 
 	switch (pitparts[pit_idx].dev_type) {
 	case PIT_DEVTYPE_MMC:
