@@ -2858,6 +2858,17 @@ void ext4fs_deinit(block_dev_desc_t *dev_desc)
 	}
 	gd=NULL;
 
+	/* Reinit global variables */
+	ext4fs_indir1_block = NULL;
+	ext4fs_indir1_size = 0;
+	ext4fs_indir1_blkno = -1;
+	ext4fs_indir2_block = NULL;
+	ext4fs_indir2_size = 0;
+	ext4fs_indir2_blkno = -1;
+	ext4fs_indir3_block = NULL;
+	ext4fs_indir3_size = 0;
+	ext4fs_indir3_blkno = -1;
+
 	/* Reinitiliazed the global inode and block bitmap first execution check variables */
 	first_execution_inode = 0;
 	first_execution = 0;
