@@ -50,6 +50,9 @@ enum {CHARGER_ENABLE, CHARGER_DISABLE};
 #define MAX77693_CHG_LOCK	(0x0 << 2)	/* MAX77693_CHG_CNFG_06	*/
 #define MAX77693_CHG_UNLOCK	(0x3 << 2)	/* MAX77693_CHG_CNFG_06	*/
 
+#define MAX77693_ENSAFEOUT1     (1 << 6)
+#define MAX77693_ENSAFEOUT2     (1 << 7)
+
 #define MAX77693_PMIC_I2C_ADDR	(0xCC >> 1)
 
 int pmic_init_max77693(unsigned char bus);
