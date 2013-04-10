@@ -46,6 +46,7 @@
 #include <usb_mass_storage.h>
 #include <libtizen.h>
 #include <errno.h>
+#include <usb/s3c_udc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -369,6 +370,75 @@ int board_mmc_init(bd_t *bis)
 
 	return err;
 }
+
+#ifdef CONFIG_USB_GADGET
+static int s5pc210_phy_control(int on)
+{
+	int ret = 0;
+	unsigned int val;
+
+	struct pmic *p = pmic_get("MAX77686_PMIC");
+	if (!p)
+		return -ENODEV;
+
+	if (pmic_probe(p))
+		return -1;
+
+	if (on) {
+		ret = max77686_set_ldo_mode(p, 12, OPMODE_ON);
+
+		p = pmic_get("MAX77693_PMIC");
+		pmic_probe(p);
+		if (pmic_probe(p))
+			return -1;
+
+		/* SAFEOUT */
+		ret |= pmic_reg_read(p, MAX77693_SAFEOUT, &val);
+		val |= MAX77693_ENSAFEOUT1;
+		ret |= pmic_reg_write(p, MAX77693_SAFEOUT, val);
+
+		p = pmic_get("MAX77693_MUIC");
+		if (pmic_probe(p))
+			return -1;
+
+		/* PATH: USB */
+		ret |= pmic_reg_write(p, MAX77693_MUIC_CONTROL1,
+			MAX77693_MUIC_CTRL1_DN1DP2);
+
+	} else {
+		ret |= max77686_set_ldo_mode(p, 12, OPMODE_LPM);
+
+		p = pmic_get("MAX77693_MUIC");
+		if (pmic_probe(p))
+			return -1;
+
+		/* PATH: UART */
+		ret |= pmic_reg_write(p, MAX77693_MUIC_CONTROL1,
+			MAX77693_MUIC_CTRL1_UT1UR2);
+	}
+
+	if (ret) {
+		puts("MAX77693 setting error!\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+struct s3c_plat_otg_data s5pc210_otg_data = {
+	.phy_control	= s5pc210_phy_control,
+	.regs_phy	= EXYNOS4X12_USBPHY_BASE,
+	.regs_otg	= EXYNOS4X12_USBOTG_BASE,
+	.usb_phy_ctrl	= EXYNOS4X12_USBPHY_CONTROL,
+	.usb_flags	= PHY0_SLEEP,
+};
+
+void board_usb_init(void)
+{
+	debug("USB_udc_probe\n");
+	s3c_udc_probe(&s5pc210_otg_data);
+}
+#endif
 
 static int pmic_init_max77686(void)
 {
