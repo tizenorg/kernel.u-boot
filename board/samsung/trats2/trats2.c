@@ -530,10 +530,8 @@ static void check_battery(void)
 	battery_uV = max77693_fg_get_vcell();
 
 	/* When JIG is connected, it may skip */
-	if (battery_uV > 3850000) {
-		check_uboot_backup();
+	if (battery_uV > 3850000)
 		return;
-	}
 
 	/* check power-off condition */
 	if (ta_usb_connected) {
