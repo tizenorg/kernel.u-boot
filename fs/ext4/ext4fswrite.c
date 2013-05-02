@@ -613,7 +613,7 @@ int ext4fs_read_allocated_block(struct ext2_inode *inode, int fileblock)
 	log2_blksz = LOG2_EXT2_BLOCK_SIZE (ext4fs_root);
 
 	if (le32_to_cpu(inode->flags) & EXT4_EXTENTS_FLAG) {
-		char buf[EXT2_BLOCK_SIZE(ext4fs_root)];
+		ALLOC_CACHE_ALIGN_BUFFER(char, buf, EXT2_BLOCK_SIZE(ext4fs_root));
 		struct ext4_extent_header *leaf;
 		struct ext4_extent *ext;
 		int i;
@@ -900,7 +900,7 @@ static int ext4fs_read_block (ext2fs_node_t node, int fileblock)
 	unsigned int perblock_child;
 
 	if (le32_to_cpu(inode->flags) & EXT4_EXTENTS_FLAG) {
-		char buf[EXT2_BLOCK_SIZE(data)];
+		ALLOC_CACHE_ALIGN_BUFFER(char, buf, EXT2_BLOCK_SIZE(data));
 		struct ext4_extent_header *leaf;
 		struct ext4_extent *ext;
 		int i;
