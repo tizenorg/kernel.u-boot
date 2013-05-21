@@ -155,6 +155,17 @@ enum {
 	EN_LDO = (0x3 << 6),
 };
 
+enum {
+	OPMODE_OFF = 0,
+	OPMODE_STANDBY,
+	OPMODE_LPM,
+	OPMODE_ON,
+};
+
+int max77686_set_ldo_voltage(struct pmic *p, int ldo, ulong uV);
+int max77686_set_ldo_mode(struct pmic *p, int ldo, char opmode);
+int max77686_set_buck_mode(struct pmic *p, int buck, char opmode);
+
 /* Buck1 1 volt value */
 #define MAX77686_BUCK1OUT_1V	0x5
 /* Buck1 1.05 volt value */
