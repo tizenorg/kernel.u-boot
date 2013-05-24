@@ -24,6 +24,31 @@
 #include <common.h>
 #include <i2c.h>
 
+#ifndef CONFIG_SOFT_I2C_I2C5_SCL
+#define CONFIG_SOFT_I2C_I2C5_SCL 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C7_SCL
+#define CONFIG_SOFT_I2C_I2C7_SCL 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C8_SCL
+#define CONFIG_SOFT_I2C_I2C8_SCL 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C9_SCL
+#define CONFIG_SOFT_I2C_I2C9_SCL 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C5_SDA
+#define CONFIG_SOFT_I2C_I2C5_SDA 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C7_SDA
+#define CONFIG_SOFT_I2C_I2C7_SDA 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C8_SDA
+#define CONFIG_SOFT_I2C_I2C8_SDA 0
+#endif
+#ifndef CONFIG_SOFT_I2C_I2C9_SDA
+#define CONFIG_SOFT_I2C_I2C9_SDA 0
+#endif
+
 /* Handle multiple I2C buses instances */
 int get_multi_scl_pin(void)
 {
@@ -33,6 +58,10 @@ int get_multi_scl_pin(void)
 	case I2C_0: /* I2C_0 definition - compatibility layer */
 	case I2C_5:
 		return CONFIG_SOFT_I2C_I2C5_SCL;
+	case I2C_7:
+		return CONFIG_SOFT_I2C_I2C7_SCL;
+	case I2C_8:
+		return CONFIG_SOFT_I2C_I2C8_SCL;
 	case I2C_9:
 		return CONFIG_SOFT_I2C_I2C9_SCL;
 	default:
@@ -50,6 +79,10 @@ int get_multi_sda_pin(void)
 	case I2C_0: /* I2C_0 definition - compatibility layer */
 	case I2C_5:
 		return CONFIG_SOFT_I2C_I2C5_SDA;
+	case I2C_7:
+		return CONFIG_SOFT_I2C_I2C7_SDA;
+	case I2C_8:
+		return CONFIG_SOFT_I2C_I2C8_SDA;
 	case I2C_9:
 		return CONFIG_SOFT_I2C_I2C9_SDA;
 	default:
