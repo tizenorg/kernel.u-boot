@@ -54,6 +54,7 @@ static int boot_mode = -1;
 enum {
 	BOARD_M0_PRXM,
 	BOARD_M0_REAL,
+	BOARD_REDWOOD,
 };
 
 static inline int board_is_m0_prxm(void)
@@ -69,6 +70,11 @@ static inline int board_is_m0_real(void)
 static inline int board_is_m0(void)
 {
 	return (board_is_m0_prxm() || board_is_m0_real());
+}
+
+static inline int board_is_redwood(void)
+{
+	return board_type == BOARD_REDWOOD;
 }
 
 enum {
@@ -115,6 +121,25 @@ static const char * const pcb_rev_m0[] = {
 	"unknown"
 };
 
+static const char *pcb_rev_redwood[30] = {
+	"unknown",
+	"unknown",
+	"unknown",
+	"unknown",
+	"REDWOOD_UNIV_REV0.1_0704",
+	"unknown",
+	"REDWOOD_MAIN_REV0.0_0724",
+	"GT-I8800_MAIN_REV0.1_120821",
+	"GT-I8800_REV0.2_120918",
+	"unknown",
+	"unknown",
+	"unknown",
+	"REDWOOD_UNIV_REV0.1_0425",
+	"unknown",
+	"unknown"
+	"unknown",
+};
+
 int check_home_key(void);
 
 static void check_hw_revision(void)
@@ -144,12 +169,18 @@ static void check_board_type(void)
 	 * BOARD  | F2.4    | F2.7
 	 * ---------------------------------------
 	 * M0     | NC      | s_led_sda
+	 * REDWOOD| NC      | NC
 	 */
 
 	gpio_set_pull(&gpio1->f2, 4, GPIO_PULL_NONE);
 	gpio_set_pull(&gpio1->f2, 7, GPIO_PULL_NONE);
 
 	udelay(1);
+
+	if (!gpio_get_value(&gpio1->f2, 7)) {
+		board_type = BOARD_REDWOOD;
+		return;
+	}
 
 	if (!gpio_get_value(&gpio1->f2, 4)) {
 		if (gpio_get_value(&gpio1->f2, 7)) {
@@ -168,6 +199,9 @@ static void show_hw_revision(void)
 	if (board_is_m0())
 		printf("PCB Revision:\t%s\n",
 			pcb_rev_m0[board_rev & 0xf]);
+	else if (board_is_redwood())
+		printf("PCB Revision:\t%s\n",
+			pcb_rev_redwood[board_rev & 0xf]);
 	else
 		printf("PCB Revision:\tunknown\n");
 }
@@ -260,7 +294,7 @@ int board_init(void)
 	gpio2 = (struct exynos4_gpio_part2 *)EXYNOS4_GPIO_PART2_BASE;
 
 	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
-	if (board_is_m0())
+	if (board_is_m0() || board_is_redwood())
 		gd->bd->bi_arch_number = MACH_TYPE_SMDK4412 + 1;
 	else
 		gd->bd->bi_arch_number = MACH_TYPE_SMDK4412;
@@ -753,6 +787,7 @@ static int lcd_reset(void)
 
 	return 0;
 }
+
 extern void s6e8ax0_init(void);
 extern void s5p_set_dsim_platform_data(struct s5p_platform_mipi_dsim *dsim_pd);
 
@@ -860,6 +895,8 @@ int misc_init_r(void)
 		setenv("board", "M0_PROXIMA");
 	else if (board_is_m0_real())
 		setenv("board", "M0_REAL");
+	else if (board_is_redwood())
+		setenv("board", "REDWOOD_rev_0.1");
 	else
 		setenv("board", "unknown");
 
