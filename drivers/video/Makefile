@@ -46,6 +46,7 @@ COBJS-$(CONFIG_S6E39A0X) += s6e39a0x.o
 COBJS-$(CONFIG_S6E39A0X02) += s6e39a0x02.o
 COBJS-$(CONFIG_S5PC1XXFB) += s5p-fb.o s5p-fimd.o
 COBJS-$(CONFIG_DSIM) += s5p_mipi_dsi.o s5p_mipi_dsi_lowlevel.o s5p_mipi_dsi_common.o
+COBJS-$(CONFIG_S6D6AA1) += s6d6aa1.o
 COBJS-$(CONFIG_S6E63M0) += s6e63m0.o
 COBJS-$(CONFIG_S6E8AX0) += s6e8ax0.o
 COBJS-$(CONFIG_S6D16A0X) += s6d16a0x.o

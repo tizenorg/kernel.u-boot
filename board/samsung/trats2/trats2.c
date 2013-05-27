@@ -765,6 +765,10 @@ static int lcd_power(void)
 		/* LCD_2.2V_EN: GPC0[1] */
 		gpio_set_pull(&gpio1->c0, 1, GPIO_PULL_UP);
 		gpio_direction_output(&gpio1->c0, 1, 1);
+	} else if (board_is_redwood()) {
+		/* LED_VDD_EN: GPM0[0] */
+		gpio_set_pull(&gpio2->m0, 0, GPIO_PULL_UP);
+		gpio_direction_output(&gpio2->m0, 0, 1);
 	} else {
 		/* LDO24 LCD_VDD_2.2V */
 		max77686_set_ldo_voltage(24, 2200000);
@@ -786,6 +790,11 @@ static int lcd_reset(void)
 	gpio_set_value(&gpio1->f2, 1, 1);
 
 	return 0;
+}
+
+static void backlight_on(int on)
+{
+	gpio_direction_output(&gpio1->f2, 5, on);
 }
 
 extern void s6e8ax0_init(void);
@@ -827,6 +836,20 @@ void init_panel_info(vidinfo_t *vid)
 	vid->power_on_delay = 25;
 	vid->reset_delay = 0;
 	vid->interface_mode = FIMD_RGB_INTERFACE;
+ 
+	if (board_is_redwood()) {
+		/* s6d6aa1 Panel */
+		vid->vl_hspw	= 3;
+		vid->vl_hbpd	= 15;
+		vid->vl_hfpd	= 50;
+
+		vid->vl_vspw	= 2;
+		vid->vl_vbpd	= 2;
+		vid->vl_vfpd	= 3;
+
+		strcpy(mipi_lcd_device.name, "s6d6aa1");
+		strcpy(mipi_lcd_device.panel_id, "acx445akm");
+	}
 
 	strcpy(dsim_platform_data.lcd_panel_name, mipi_lcd_device.name);
 	dsim_platform_data.lcd_power = lcd_power;
@@ -835,11 +858,15 @@ void init_panel_info(vidinfo_t *vid)
 	dsim_platform_data.lcd_panel_info = (void *)vid;
 	s5p_mipi_dsi_register_lcd_device(&mipi_lcd_device);
 
-	s6e8ax0_init();
+	if (board_is_m0()) {
+		s6e8ax0_init();
+		setenv("lcdinfo", "lcd=s6e8ax0");
+	} else {
+		s6d6aa1_init();
+		setenv("lcdinfo", "lcd=s6d6aa1");
+	}
 
 	s5p_set_dsim_platform_data(&dsim_platform_data);
-
-	setenv("lcdinfo", "lcd=s6e8ax0");
 }
 
 #include <mobile/logo_rgb16_hd720_portrait.h>

@@ -366,6 +366,7 @@
 #define CONFIG_FB_SIZE		24
 #define CONFIG_S5PC1XXFB	1
 #define CONFIG_S6E8AX0		1
+#define CONFIG_S6D6AA1		1
 #define CONFIG_DSIM		1
 /* Insert bmp animation compressed */
 #define CONFIG_CMD_BMP
