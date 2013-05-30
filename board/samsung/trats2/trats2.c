@@ -103,6 +103,9 @@ static struct i2c_gpio_bus_data i2c_10 = {
 
 static struct i2c_gpio_bus i2c_gpio[I2C_NUM];
 
+#define M0_BOARD_REV_PREFIX		0x00
+#define REDWODD_BOARD_REV_PREFIX	0x10
+
 static const char * const pcb_rev_m0[] = {
 	"M0_PROXIMA_REV0.1_1125",
 	"unknown",
@@ -208,7 +211,10 @@ static void show_hw_revision(void)
 
 u32 get_board_rev(void)
 {
-	return board_rev;
+	if (board_is_m0())
+		return board_rev | M0_BOARD_REV_PREFIX;
+	else
+		return board_rev | REDWOOD_BOARD_REV_PREFIX;
 }
 
 void get_rev_info(char *rev_info)
