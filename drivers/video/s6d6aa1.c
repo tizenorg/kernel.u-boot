@@ -26,7 +26,7 @@
 #include <lcd.h>
 #include <mipi_ddi.h>
 #include <mipi_display.h>
-#include <linux/errno.h>
+#include <asm/errno.h>
 #include <asm/arch/regs-dsim.h>
 #include <asm/arch/mipi_dsim.h>
 #include <asm/arch/power.h>
