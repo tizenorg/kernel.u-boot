@@ -104,7 +104,7 @@ static struct i2c_gpio_bus_data i2c_10 = {
 static struct i2c_gpio_bus i2c_gpio[I2C_NUM];
 
 #define M0_BOARD_REV_PREFIX		0x00
-#define REDWODD_BOARD_REV_PREFIX	0x10
+#define REDWOOD_BOARD_REV_PREFIX	0x10
 
 static const char * const pcb_rev_m0[] = {
 	"M0_PROXIMA_REV0.1_1125",
