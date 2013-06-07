@@ -348,6 +348,19 @@ static void s6e8ax0_etc_pentile_control(struct mipi_dsim_device *dsim_dev)
 	}
 }
 
+static void s6e8ax0_elvss_nvm_set(struct mipi_dsim_device *dsim_dev)
+{
+	struct mipi_dsim_master_ops *ops = dsim_dev->master_ops;
+
+	unsigned char data_to_send[] = {
+		0xd9, 0x14, 0x40, 0x0c, 0xcb, 0xce, 0x6e, 0xc4, 0x0f,
+		0x40, 0x41, 0xd0, 0x00, 0x60, 0x19
+	};
+
+	ops->cmd_write(dsim_dev, MIPI_DSI_DCS_LONG_WRITE,
+		(unsigned int)data_to_send, ARRAY_SIZE(data_to_send));
+}
+
 static void s6e8ax0_etc_mipi_control1(struct mipi_dsim_device *dsim_dev)
 {
 	struct mipi_dsim_master_ops *ops = dsim_dev->master_ops;
@@ -588,6 +601,7 @@ static void s6e8ax0_panel_init(struct mipi_dsim_device *dsim_dev)
 	s6e8ax0_etc_source_control(dsim_dev);
 	s6e8ax0_elvss_set(dsim_dev);
 	s6e8ax0_etc_pentile_control(dsim_dev);
+	s6e8ax0_elvss_nvm_set(dsim_dev);
 	s6e8ax0_etc_mipi_control1(dsim_dev);
 	s6e8ax0_etc_mipi_control2(dsim_dev);
 	if (panel != TYPE_AMS767KC01) {
