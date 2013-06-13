@@ -295,11 +295,11 @@
 	"bootk=run loaduimage; bootm 0x40007FC0\0" \
 	"updatemmc=mmc boot 0 1 1 1; mmc write 0 0x50800000 0 0x200;" \
 		" mmc boot 0 1 1 0\0" \
-	"updatebackup=mmc boot 0 1 1 2; mmc write 0 0x51000000 0 0x400;" \
+	"updatebackup=mmc boot 0 1 1 2; mmc write 0 0x51000000 0 0x800;" \
 		" mmc boot 0 1 1 0\0" \
-	"updatebootb=mmc read 0 0x51000000 0x80 0x400; run updatebackup\0" \
-	"updateuboot=mmc write 0 0x50000000 0x80 0x400\0" \
-	"updaterestore=mmc boot 0 1 1 2; mmc read 0 0x50000000 0 0x400;" \
+	"updatebootb=mmc read 0 0x51000000 0x80 0x800; run updatebackup\0" \
+	"updateuboot=mmc write 0 0x50000000 0x80 0x800\0" \
+	"updaterestore=mmc boot 0 1 1 2; mmc read 0 0x50000000 0 0x800;" \
 		"mmc boot 0 1 1 0; run updateuboot\0" \
 	"setupboot=run updatemmc; run updateuboot; run updatebootb\0" \
 	"nfsboot=set bootargs root=/dev/nfs rw " \
