@@ -72,6 +72,10 @@
 #define OTG_IN_FIFO		(OTG_EP0_FIFO + 0x1000 * BULK_IN_EP)
 #define OTG_OUT_FIFO		(OTG_EP0_FIFO + 0x1000 * BULK_OUT_EP)
 
+#define OTG_DIEPCTL_INTR		(OTG_DIEPCTL0 + 0x20 * INTR_IN_EP)
+#define OTG_DIEPINT_INTR		(OTG_DIEPINT0 + 0x20 * INTR_IN_EP)
+#define OTG_DIEPTSIZ_INTR		(OTG_DIEPTSIZ0 + 0x20 * INTR_IN_EP)
+
 typedef struct XLLP_UDC_USB_CDC_HEADER_DESCRIPTOR_S {
 	u8    bLength;
 	u8    bDescriptorType;
@@ -206,6 +210,7 @@ typedef struct {
 	u8 ep_ctrl;
 	u8 ep_in;
 	u8 ep_out;
+	u8 ep_int;
 } __attribute__ ((packed)) get_status_t;
 
 typedef struct {
