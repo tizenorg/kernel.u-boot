@@ -138,3 +138,88 @@ U_BOOT_CMD(ext4load, 6, 0, do_ext4_load,
 	   "    - load binary file 'filename' from 'dev' on 'interface'\n"
 	   "      to address 'addr' from ext4 filesystem.\n"
 	   "      All numeric parameters are assumed to be hex.");
+
+static int total_sector;
+
+int do_ext4_format(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int part;
+	disk_partition_t info;
+	block_dev_desc_t *dev_desc;
+
+	if (argc < 3)
+		return cmd_usage(cmdtp);
+
+	part = get_device_and_partition(argv[1], argv[2], &dev_desc, &info, 1);
+
+	if (part < 0)
+		return 1;
+
+	/* set the device as block device */
+	ext4fs_set_blk_dev(dev_desc, &info);
+	total_sector = (info.size * info.blksz) / SECTOR_SIZE;
+
+	printf("formatting...\n\n");
+
+	if (mkfs_ext4(dev_desc, part))
+		return 1;
+
+	return 0;
+}
+
+
+U_BOOT_CMD(ext4format, 3, 1, do_ext4_format,
+	   "format device as EXT4 filesystem",
+	   "<interface> <dev[:part]>\n"
+	   "	  - format device as EXT4 filesystem on 'dev'");
+
+void put_ext4fs(block_dev_desc_t *dev_desc,
+			uint64_t off, void *buf, uint32_t size)
+{
+	uint64_t startblock, remainder;
+	unsigned int sector_size = 512;
+	unsigned char *temp_ptr = NULL;
+	char sec_buf[SECTOR_SIZE];
+
+	startblock = off / (uint64_t)sector_size;
+	startblock += part_offset;
+	remainder = off % (uint64_t)sector_size;
+	remainder &= SECTOR_SIZE - 1;
+
+	if (dev_desc == NULL)
+		return;
+
+	if ((startblock + (size/SECTOR_SIZE)) > (part_offset + total_sector)) {
+		printf("part_offset is %lu\n", part_offset);
+		printf("total_sector is %u\n", total_sector);
+		printf("error: overflow occurs\n");
+		return;
+	}
+
+	if (remainder) {
+		if (dev_desc->block_read) {
+			dev_desc->block_read(dev_desc->dev, startblock, 1,
+				(unsigned char *)sec_buf);
+			temp_ptr = (unsigned char *)sec_buf;
+			memcpy((temp_ptr + remainder),
+			       (unsigned char *)buf, size);
+			dev_desc->block_write(dev_desc->dev, startblock, 1,
+				(unsigned char *)sec_buf);
+		}
+	} else {
+		if (size/SECTOR_SIZE != 0)	{
+			dev_desc->block_write(dev_desc->dev, startblock,
+			size/SECTOR_SIZE, (unsigned long *)buf);
+		} else {
+			dev_desc->block_read(dev_desc->dev, startblock, 1,
+			(unsigned char *)sec_buf);
+			temp_ptr = (unsigned char *)sec_buf;
+			memcpy(temp_ptr, buf, size);
+			dev_desc->block_write(dev_desc->dev, startblock, 1,
+					(unsigned long *)sec_buf);
+		}
+	}
+
+	return;
+}
+

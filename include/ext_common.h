@@ -189,4 +189,5 @@ int do_ext4_load(cmd_tbl_t *cmdtp, int flag, int argc,
 int do_ext4_ls(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]);
 int do_ext4_write(cmd_tbl_t *cmdtp, int flag, int argc,
 				char *const argv[]);
+int  mkfs_ext4(block_dev_desc_t *dev_desc_t, int part_no);
 #endif
