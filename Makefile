@@ -304,6 +304,7 @@ LIBS-y += drivers/power/libpower.o \
 	drivers/power/battery/libbattery.o
 LIBS-y += drivers/spi/libspi.o
 LIBS-y += drivers/dfu/libdfu.o
+LIBS-y += drivers/mobile/libmobile.o
 ifeq ($(CPU),mpc83xx)
 LIBS-y += drivers/qe/libqe.o
 LIBS-y += arch/powerpc/cpu/mpc8xxx/ddr/libddr.o
