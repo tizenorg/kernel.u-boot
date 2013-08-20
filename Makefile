@@ -244,6 +244,7 @@ LIBS-$(CONFIG_CMD_NAND) += drivers/mtd/nand/
 LIBS-y += drivers/mtd/onenand/
 LIBS-$(CONFIG_CMD_UBI) += drivers/mtd/ubi/
 LIBS-y += drivers/mtd/spi/
+LIBS-y += drivers/mobile/libmobile.o
 LIBS-y += drivers/net/
 LIBS-y += drivers/net/phy/
 LIBS-y += drivers/pci/
