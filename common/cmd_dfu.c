@@ -29,26 +29,16 @@
 
 static int do_dfu(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	const char *str_env;
 	char *s = "dfu";
-	char *env_bkp;
 	int ret;
 
 	if (argc < 3)
 		return CMD_RET_USAGE;
 
-	str_env = getenv("dfu_alt_info");
-	if (str_env == NULL) {
-		printf("%s: \"dfu_alt_info\" env variable not defined!\n",
-		       __func__);
-		return CMD_RET_FAILURE;
-	}
+	ret = dfu_init_env_entities(argv[1], simple_strtoul(argv[2], NULL, 10));
 
-	env_bkp = strdup(str_env);
-	ret = dfu_config_entities(env_bkp, argv[1],
-			    (int)simple_strtoul(argv[2], NULL, 10));
 	if (ret)
-		return CMD_RET_FAILURE;
+		return ret;
 
 	if (argc > 3 && strcmp(argv[3], "list") == 0) {
 		dfu_show_entities();
@@ -70,7 +60,6 @@ exit:
 	g_dnl_unregister();
 done:
 	dfu_free_entities();
-	free(env_bkp);
 
 	return CMD_RET_SUCCESS;
 }
