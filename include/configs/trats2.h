@@ -131,6 +131,12 @@
 #define CONFIG_G_DNL_MANUFACTURER "Samsung"
 
 /* To use the TFTPBOOT over USB, Please enable the CONFIG_CMD_NET */
+/* USB Downloader */
+#define CONFIG_CMD_USBDOWN
+#define CONFIG_S5P_USB_DMA	/* DMA mode */
+#define CONFIG_SYS_DOWN_ADDR	0x53000000
+#define CONFIG_SYS_BACKUP_ADDR	CONFIG_SYS_DOWN_ADDR + (80 << 20)
+
 #undef CONFIG_CMD_NET
 
 /* MMC */
