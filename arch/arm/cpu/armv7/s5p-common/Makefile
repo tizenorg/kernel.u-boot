@@ -30,6 +30,8 @@ ifndef CONFIG_SPL_BUILD
 COBJS-y		+= timer.o
 COBJS-y		+= sromc.o
 COBJS-$(CONFIG_PWM)	+= pwm.o
+COBJS-$(CONFIG_CMD_USBDOWN)	+= usb_downloader.o
+COBJS-$(CONFIG_S5P_USB_DMA)	+= usb-hs-otg-dma.o
 endif
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
