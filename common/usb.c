@@ -51,6 +51,7 @@
 #include <linux/ctype.h>
 #include <asm/byteorder.h>
 #include <asm/unaligned.h>
+#include <compiler.h>
 
 #include <usb.h>
 #ifdef CONFIG_4xx
@@ -1000,4 +1001,9 @@ int usb_new_device(struct usb_device *dev)
 	return 0;
 }
 
+__weak
+int board_usb_init(int index, enum usb_init_type init)
+{
+	return 0;
+}
 /* EOF */

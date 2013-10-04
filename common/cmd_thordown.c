@@ -18,6 +18,7 @@ int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (argc < 4)
 		return CMD_RET_USAGE;
 
+	char *usb_controller = argv[1];
 	char *interface = argv[2];
 	char *devstring = argv[3];
 
@@ -31,8 +32,13 @@ int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (ret)
 		return ret;
 
-	/* args (controller,interface,dev) not yet used in usb_init */
-	board_usb_init();
+	int controller_index = simple_strtoul(usb_controller, NULL, 0);
+	ret = board_usb_init(controller_index, USB_INIT_DEVICE);
+	if (ret) {
+		error("USB init failed: %d", ret);
+		ret = CMD_RET_FAILURE;
+		goto exit;
+	}
 
 	g_dnl_register(s);
 

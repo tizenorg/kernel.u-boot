@@ -8,12 +8,16 @@
 
 int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+	if (argc < 3)
+		return CMD_RET_USAGE;
+
+	char *interface = argv[1];
+	char *devstring = argv[2];
+
 	char *s = "thor";
 	int ret;
 	int retry;
 
-	if (argc < 3)
-		return CMD_RET_USAGE;
 retry:
 	puts("TIZEN \"THOR\" Downloader\n");
 
@@ -27,11 +31,12 @@ retry:
 	if (ret)
 		return ret;
 
-	ret = dfu_init_pit_entities(argv[1], simple_strtoul(argv[2], NULL, 10));
+	ret = dfu_init_pit_entities(interface,
+				    simple_strtoul(devstring, NULL, 10));
 	if (ret)
 		return ret;
 
-	ret = board_usb_init();
+	ret = board_usb_init(0, USB_INIT_DEVICE);
 	if (ret) {
 		error("USB init failed: %d", ret);
 		ret = CMD_RET_FAILURE;

@@ -43,6 +43,7 @@
 #include <power/max77693_pmic.h>
 #include <power/max77693_muic.h>
 #include <power/max77693_fg.h>
+#include <usb.h>
 #include <usb_mass_storage.h>
 #include <libtizen.h>
 #include <errno.h>
@@ -438,7 +439,7 @@ struct s3c_plat_otg_data s5pc210_otg_data = {
 	.usb_flags	= PHY0_SLEEP,
 };
 
-int board_usb_init(void)
+int board_usb_init(int index, enum usb_init_type init)
 {
 	debug("USB_udc_probe\n");
 	return s3c_udc_probe(&s5pc210_otg_data);
