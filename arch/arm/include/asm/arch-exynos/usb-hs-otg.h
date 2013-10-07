@@ -417,7 +417,7 @@ enum e_ep_type {
 #define EP_TYPE enum e_ep_type
 
 struct otg_dev {
-	descriptors_t desc;
+	descriptors_t desc;	/* unaligned */
 	device_req_t dev_req;
 
 	u32 ep0_state;
@@ -436,7 +436,7 @@ struct otg_dev {
 	u32 set_config;
 	u32 req_length;
 	u8 ep0_zlp;
-} __packed;
+};
 
 #define otg_dev_t struct otg_dev
 
