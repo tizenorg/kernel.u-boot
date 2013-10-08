@@ -122,6 +122,8 @@ const char *dfu_get_dev_type(enum dfu_device_type t);
 const char *dfu_get_layout(enum dfu_layout l);
 struct dfu_entity *dfu_get_entity(int alt);
 char *dfu_extract_token(char** e, int *n);
+unsigned char *dfu_get_buf(void);
+unsigned char *dfu_free_buf(void);
 int dfu_get_alt(const char *name);
 int dfu_init_env_entities(char *interface, int dev);
 
