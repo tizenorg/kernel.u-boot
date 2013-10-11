@@ -25,6 +25,7 @@
 #include <linux/usb/cdc.h>
 #include <g_dnl.h>
 #include <dfu.h>
+#include <asm/arch/power.h>
 
 #include "f_thor.h"
 
@@ -123,6 +124,9 @@ static int process_rqt_cmd(const struct rqt_box *rqt)
 		send_rsp(rsp);
 		g_dnl_unregister();
 		dfu_free_entities();
+
+		/* set normal boot */
+		board_inform_clear();
 		run_command("reset", 0);
 		break;
 	case RQT_CMD_POWEROFF:
