@@ -25,6 +25,9 @@
 #include <linux/usb/cdc.h>
 #include <g_dnl.h>
 #include <dfu.h>
+#include <libtizen.h>
+#include <samsung/misc.h>
+#include <usb.h>
 
 #include "f_thor.h"
 
@@ -48,6 +51,10 @@ DEFINE_CACHE_ALIGN_BUFFER(unsigned char, thor_rx_data_buf,
 /* ********************************************************** */
 DEFINE_CACHE_ALIGN_BUFFER(char, f_name, F_NAME_BUF_SIZE);
 static unsigned long long int thor_file_size;
+#ifdef CONFIG_TIZEN
+static unsigned long long int total_file_size;
+static unsigned long long int downloaded_file_size;
+#endif
 static int alt_setting_num;
 
 static void send_rsp(const struct rsp_box *rsp)
@@ -123,6 +130,7 @@ static int process_rqt_cmd(const struct rqt_box *rqt)
 		send_rsp(rsp);
 		g_dnl_unregister();
 		dfu_free_entities();
+
 		run_command("reset", 0);
 		break;
 	case RQT_CMD_POWEROFF:
@@ -247,6 +255,10 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 	switch (rqt->rqt_data) {
 	case RQT_DL_INIT:
 		thor_file_size = rqt->int_data[0];
+#ifdef CONFIG_TIZEN
+		total_file_size = thor_file_size;
+		downloaded_file_size = 0;
+#endif
 		debug("INIT: total %d bytes\n", rqt->int_data[0]);
 		break;
 	case RQT_DL_FILE_INFO:
@@ -543,11 +555,17 @@ static int thor_rx_data(void)
 
 		while (!dev->rxdata) {
 			usb_gadget_handle_interrupts();
+
 			if (ctrlc())
-				return -1;
+				return -EINTR;
 		}
+
 		dev->rxdata = 0;
 		data_to_rx -= dev->out_req->actual;
+#ifdef CONFIG_TIZEN
+		downloaded_file_size += dev->out_req->actual;
+		draw_thor_progress(total_file_size, downloaded_file_size);
+#endif
 	} while (data_to_rx);
 
 	return tmp;
@@ -689,12 +707,28 @@ static void thor_set_dma(void *addr, int len)
 int thor_init(void)
 {
 	struct thor_dev *dev = thor_func->dev;
+	int power_key_cnt = 0;
 
+#ifdef CONFIG_TIZEN
+	draw_thor_init_screen();
+#endif
 	/* Wait for a device enumeration and configuration settings */
 	debug("THOR enumeration/configuration setting....\n");
-	while (!dev->configuration_done)
+	while (!dev->configuration_done) {
 		usb_gadget_handle_interrupts();
 
+		power_key_cnt += key_pressed(KEY_POWER);
+
+		if (ctrlc() || power_key_cnt >= 3) {
+#ifdef CONFIG_BOOT_INFORM
+			boot_inform_clear();
+#endif
+			return -EINTR;
+		}
+	}
+#ifdef CONFIG_TIZEN
+	draw_thor_screen();
+#endif
 	thor_set_dma(thor_rx_data_buf, strlen("THOR"));
 	/* detect the download request from Host PC */
 	if (thor_rx_data() < 0) {
@@ -731,7 +765,7 @@ int thor_handle(void)
 				return ret;
 		} else {
 			printf("%s: No data received!\n", __func__);
-			break;
+			return ret;
 		}
 	}
 
@@ -888,6 +922,8 @@ static void thor_func_disable(struct usb_function *f)
 		usb_ep_disable(dev->int_ep);
 		dev->int_ep->driver_data = NULL;
 	}
+
+	dev->configuration_done = 0;
 }
 
 static int thor_eps_setup(struct usb_function *f)
