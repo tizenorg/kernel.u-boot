@@ -12,6 +12,7 @@
 #include <dfu.h>
 #include <g_dnl.h>
 #include <usb.h>
+#include <libtizen.h>
 
 int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -45,7 +46,11 @@ int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ret = thor_init();
 	if (ret) {
 		error("THOR DOWNLOAD failed: %d", ret);
-		ret = CMD_RET_FAILURE;
+		if (ret == -EINTR)
+			ret = CMD_RET_SUCCESS;
+		else
+			ret = CMD_RET_FAILURE;
+
 		goto exit;
 	}
 
@@ -60,6 +65,12 @@ exit:
 	g_dnl_unregister();
 	dfu_free_entities();
 
+#ifdef CONFIG_TIZEN
+	if (ret != CMD_RET_SUCCESS)
+		draw_thor_fail_screen();
+	else
+		lcd_clear();
+#endif
 	return ret;
 }
 
