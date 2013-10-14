@@ -18,10 +18,48 @@ static u32 download_addr;
 static struct usbd_ops usbd_ops;
 static struct mmc *mmc;
 
+static int thor_handshake(struct usbd_ops *usbd)
+{
+	int ret;
+	static const char dl_key[] = "THOR";
+	static const char dl_ack[] = "ROHT";
+
+	/* setup rx buffer and transfer length */
+	usbd->recv_setup(usbd->rx_data, strlen(dl_key));
+	/* detect the download request from HOST PC */
+	ret = usbd->recv_data();
+
+	if (ret > 0) {
+		/* recv request from HOST PC */
+		if (!strncmp(usbd->rx_data, dl_key, strlen(dl_key))) {
+			DEBUG(1, "Download request from the Host PC\n");
+
+			/* send ack to HOST PC */
+			strcpy(usbd->tx_data, dl_ack);
+			usbd->send_data(usbd->tx_data, strlen(dl_ack));
+		} else {
+			DEBUG(1, "Invalid request from the HOST PC!\n");
+			DEBUG(1, "(len=%lu)\n", usbd->rx_len);
+			usbd->cancel(END_RETRY);
+
+			return -1;
+		}
+	} else if (ret < 0) {
+		usbd->cancel(END_RETRY);
+		return -1;
+	} else {
+		usbd->cancel(END_BOOT);
+		return -1;
+	}
+
+	return 0;
+}
+
 int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct usbd_ops *usbd;
 	char *p;
+	int ret;
 
 	/* check debug level */
 	p = getenv("usbdebug");
@@ -65,6 +103,12 @@ setup_usb:
 		usbd->cancel(END_BOOT);
 		return 0;
 	}
+
+	/* thor handsake */
+	ret = thor_handshake(usbd);
+
+	if (!ret)
+		DEBUG(1, "Hand shake complete!\n");
 
 	printf("USB DOWN\n");
 
