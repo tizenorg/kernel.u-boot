@@ -18,6 +18,8 @@ static u32 download_addr;
 static struct usbd_ops usbd_ops;
 static struct mmc *mmc;
 
+struct usbd_file_info finfo;
+
 static int thor_handshake(struct usbd_ops *usbd)
 {
 	int ret;
