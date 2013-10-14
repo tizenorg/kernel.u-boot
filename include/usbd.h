@@ -68,6 +68,20 @@ struct usbd_ops {
 	void (*cancel)(int);
 };
 
+struct usbd_file_info {
+	u32 download_total_size;
+	u32 download_packet_size;
+	u32 download_unit;
+	u32 download_prog;
+	u32 download_prog_check;
+
+	int file_size;
+	int file_type;
+	char *file_name;
+
+	int file_offset;
+};
+
 /* This function is interfaced between USB Device Controller and USB Downloader
  * Must Implementation this function at USB Controller!! */
 struct usbd_ops *usbd_set_interface(struct usbd_ops *, int);
