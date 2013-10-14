@@ -849,6 +849,8 @@ struct exynos5_power {
 };
 #endif	/* __ASSEMBLY__ */
 
+void board_inform_clear(void);
+
 void set_mipi_phy_ctrl(unsigned int dev_index, unsigned int enable);
 
 #define EXYNOS_MIPI_PHY_ENABLE		(1 << 0)
