@@ -2,6 +2,7 @@
 #include <usbd.h>
 #include <mmc.h>
 #include <thor-proto.h>
+#include <asm/arch/power.h>
 
 /* download packet size */
 #define PKT_DOWNLOAD_SIZE			(1 << 20)
@@ -222,6 +223,37 @@ static int thor_request_download(const struct rqt_pkt *rqt)
 	return 1;
 }
 
+static int thor_request_cmd(const struct rqt_pkt *rqt)
+{
+	struct res_pkt rsp = {0, };
+
+	rsp.id = rqt->id;
+	rsp.sub_id = rqt->sub_id;
+
+	switch (rqt->sub_id) {
+	case RQT_CMD_REBOOT:
+		DEBUG(1, "Target Reset\n");
+		/* send ACK to thor */
+		send_rsp(&rsp);
+
+		/* set normal boot */
+		board_inform_clear();
+		run_command("reset", 0);
+		break;
+	case RQT_CMD_POWEROFF:
+		DEBUG(1, "Target PowerOff\n");
+		/* send ACK to thor */
+		send_rsp(&rsp);
+
+		/* power_off(); */
+		break;
+	default:
+		return 0;
+	}
+
+	return 1;
+}
+
 static int thor_download_data(struct usbd_ops *usbd)
 {
 	struct rqt_pkt rqt;
@@ -237,6 +269,7 @@ static int thor_download_data(struct usbd_ops *usbd)
 	case RQT_INFO:
 		break;
 	case RQT_CMD:
+		ret = thor_request_cmd(&rqt);
 		break;
 	case RQT_DL:
 		ret = thor_request_download(&rqt);
