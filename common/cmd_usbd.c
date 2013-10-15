@@ -254,6 +254,42 @@ static int thor_request_cmd(const struct rqt_pkt *rqt)
 	return 1;
 }
 
+static int thor_request_info(const struct rqt_pkt *rqt)
+{
+	struct res_pkt rsp = {0, };
+
+	rsp.id = rqt->id;
+	rsp.sub_id = rqt->sub_id;
+
+	switch (rqt->sub_id) {
+	case RQT_INFO_VER_PROTOCOL:
+		rsp.int_data[0] = VER_PROTOCOL_MAJOR;
+		rsp.int_data[1] = VER_PROTOCOL_MINOR;
+		break;
+	case RQT_INFO_VER_HW:
+		snprintf(rsp.str_data[0], sizeof(rsp.str_data[0]),
+			 "%x", checkboard());
+		break;
+	case RQT_INFO_VER_BOOT:
+		sprintf(rsp.str_data[0], "%s", getenv("ver"));
+		break;
+	case RQT_INFO_VER_KERNEL:
+		sprintf(rsp.str_data[0], "%s", "k unknown");
+		break;
+	case RQT_INFO_VER_PLATFORM:
+		sprintf(rsp.str_data[0], "%s", "p unknown");
+		break;
+	case RQT_INFO_VER_CSC:
+		sprintf(rsp.str_data[0], "%s", "c unknown");
+		break;
+	default:
+		return 0;
+	}
+
+	send_rsp(&rsp);
+	return 1;
+}
+
 static int thor_download_data(struct usbd_ops *usbd)
 {
 	struct rqt_pkt rqt;
@@ -267,6 +303,7 @@ static int thor_download_data(struct usbd_ops *usbd)
 
 	switch (rqt.id) {
 	case RQT_INFO:
+		ret = thor_request_info(&rqt);
 		break;
 	case RQT_CMD:
 		ret = thor_request_cmd(&rqt);
