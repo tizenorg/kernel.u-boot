@@ -118,6 +118,7 @@
 #define DFU_DEFAULT_POLL_TIMEOUT 300
 #define CONFIG_DFU_FUNCTION
 #define CONFIG_DFU_MMC
+#define CONFIG_CMD_DFU
 
 /* TIZEN THOR downloader support */
 #define CONFIG_CMD_THOR_DOWNLOAD
