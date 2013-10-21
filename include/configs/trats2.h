@@ -150,6 +150,8 @@
 /* USB Downloader */
 #define CONFIG_CMD_USBDOWN
 #define CONFIG_S5P_USB_DMA	/* DMA mode */
+#define CONFIG_USB_DEVGURU	/* USB driver */
+#define CONFIG_S5P_USB_NON_ZLP	/* NON-ZLP mode on DEVGURU */
 #define CONFIG_SYS_DOWN_ADDR	0x53000000
 #define CONFIG_SYS_BACKUP_ADDR	CONFIG_SYS_DOWN_ADDR + (80 << 20)
 
