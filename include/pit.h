@@ -111,4 +111,5 @@ struct pitpart_data {
 #define QBOOT_ERASE_SIZE	0x1000
 
 void check_pit(void);
+void pit_to_dfu_alt_info(void);
 #endif /* _PITINFO_H_ */
