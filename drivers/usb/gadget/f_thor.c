@@ -26,6 +26,7 @@
 #include <g_dnl.h>
 #include <dfu.h>
 #include <asm/arch/power.h>
+#include <pit.h>
 
 #include "f_thor.h"
 
@@ -282,6 +283,8 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 		break;
 	case RQT_DL_FILE_START:
 		send_rsp(rsp);
+		/* support for s-boot */
+		pit_mmc_boot_part_access(f_name, 1);
 		ret_head = download_head(thor_file_size, THOR_PACKET_SIZE,
 					 &left, &cnt);
 		if (ret_head < 0) {
@@ -295,6 +298,8 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 		ret = rsp->ack;
 		left = 0;
 		cnt = 0;
+		/* support for s-boot */
+		pit_mmc_boot_part_access(f_name, 0);
 		break;
 	case RQT_DL_EXIT:
 		debug("DL EXIT\n");
