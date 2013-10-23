@@ -533,3 +533,98 @@ void check_pit(void)
 	sprintf(buf, "pit update %x", CONFIG_PIT_DOWN_ADDR);
 	run_command(buf, 0);
 }
+
+/*
+ * set dfu_alt_info_# using pit information
+ *
+ * The result of the conversion of PIT to dfu_alt_info is too long
+ * So, Split the dfu_alt_info environment to dfu_alt_info_#
+ *
+ * dfu_alt_group: a number of dfu_alt_info_#
+ * dfu_alt_num: a number of total dfu_alt_info entity
+ */
+#define SPLIT_NUM 10
+
+void pit_to_dfu_alt_info(void)
+{
+	int i;
+	char dfu_alt_info[256] = { 0, };
+	char dfu_alt_group[4] = { 0, };
+	char dfu_alt_num[4] = { 0, };
+
+	int count_buf = 0;
+	int part_num = 0;
+
+	int env_count = 0;
+
+	pit_header_t *hd;
+	partition_info_t *pi;
+
+	hd = (pit_header_t *)pit;
+	pi = (partition_info_t *)(pit + sizeof(pit_header_t));
+
+	for (i = 0; i < hd->count; i++, pi++) {
+		char dev_name[8] = { 0, };
+
+		unsigned int blk_num = 0;
+		unsigned int blk_start = 0;
+
+		if (pi->dev_type == PIT_DEVTYPE_MMC) {
+			strcpy(dev_name, "mmc");
+			blk_num = pi->blk_num;
+			blk_start = pi->blk_start;
+		} else {
+			strcpy(dev_name, "ext4");
+			blk_num = ++part_num;
+			blk_start = 0;
+		}
+
+		/* ums */
+		if (!strcmp(pi->name, PARTS_UMS)) {
+			int tmp_id = get_pitpart_id(PARTS_UMS);
+			strcpy(dev_name, "part");
+			blk_num = pit_adjust_id_on_mmc(tmp_id);
+			blk_start = 0;
+		}
+
+		/* set dfu_alt_info env value */
+		count_buf += sprintf(dfu_alt_info + count_buf,
+				      "%s %s %x %x",
+				       pi->file_name, dev_name,
+				       blk_start, blk_num);
+
+		/* split into SPLIT_NUM */
+		if ((i+1) % SPLIT_NUM) {
+			count_buf += sprintf(dfu_alt_info + count_buf, ";");
+		} else {
+			char env_name[32] = { 0, };
+
+			count_buf += sprintf(dfu_alt_info + count_buf, "\n");
+			sprintf(env_name, "dfu_alt_info_%d", env_count);
+			setenv(env_name, dfu_alt_info);
+
+			env_count++;
+			count_buf = 0;
+			memset(dfu_alt_info, 0, sizeof(dfu_alt_info));
+		}
+	}
+
+	/* set remained environment */
+	if (count_buf > 0) {
+		char env_name[32] = { 0, };
+
+		sprintf(dfu_alt_info + count_buf-1, "\n");
+		sprintf(env_name, "dfu_alt_info_%d", env_count);
+
+		setenv(env_name, dfu_alt_info);
+		env_count++;
+	}
+
+	/* a number of dfu_alt_info_# */
+	sprintf(dfu_alt_group, "%d", env_count);
+	setenv("dfu_alt_group", dfu_alt_group);
+
+	/* a number of total dfu_alt_entity */
+	sprintf(dfu_alt_num, "%d", hd->count);
+	setenv("dfu_alt_num", dfu_alt_num);
+}
