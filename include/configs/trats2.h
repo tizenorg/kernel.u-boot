@@ -123,6 +123,7 @@
 /* TIZEN THOR downloader support */
 #define CONFIG_CMD_THOR_DOWNLOAD
 #define CONFIG_THOR_FUNCTION
+#define CONFIG_SUPPORT_EMMC_BOOT
 
 /* USB Samsung's IDs */
 #define CONFIG_G_DNL_VENDOR_NUM 0x04E8
