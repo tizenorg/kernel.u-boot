@@ -450,3 +450,79 @@ int dfu_get_alt(const char *name)
 
 	return -ENODEV;
 }
+
+int dfu_init_pit_entities(char *interface, int dev)
+{
+	int ret;
+	const char *str_env_count;
+	const char *str_env_num;
+	int env_count;
+	int i;
+	int entities_i = 0;
+	struct dfu_entity *dfu;
+
+	/* get dfu_alt_info_env group count */
+	str_env_count = getenv("dfu_alt_group");
+
+	if (!str_env_count) {
+		error("\"dfu_alt_group\" env variable not defined!\n");
+		return -EINVAL;
+	}
+
+	env_count = simple_strtoul(str_env_count, NULL, 10);
+
+	/* get dfu_alt_num */
+	str_env_num = getenv("dfu_alt_num");
+
+	if (!str_env_num) {
+		error("\"dfu_alt_num\" env variable not defined!\n");
+		return -EINVAL;
+	}
+
+	dfu_alt_num = simple_strtoul(str_env_num, NULL, 10);
+	debug("%s: dfu_alt_num=%d\n", __func__, dfu_alt_num);
+
+	dfu = calloc(sizeof(*dfu), dfu_alt_num);
+	if (!dfu)
+		return -1;
+
+	for (i = 0; i < env_count; i++) {
+		char env_name[32] = { 0, };
+		const char *str_env;
+		char *env_bkp;
+
+		int dfu_alt_pit_num = 0;
+		int j;
+		char *s;
+
+		/* get dfu_alt_info_num env */
+		sprintf(env_name, "dfu_alt_info_%d", i);
+		str_env = getenv(env_name);
+
+		if (!str_env) {
+			error("\"dfu_alt_info\" env variable not defined!\n");
+			return -EINVAL;
+		}
+
+		env_bkp = strdup(str_env);
+
+		/* dfu_config_entities */
+		dfu_alt_pit_num = dfu_find_alt_num(env_bkp);
+		debug("%s: dfu_alt_pit_num=%d\n", __func__, dfu_alt_pit_num);
+
+		for (j = 0; j < dfu_alt_pit_num; j++) {
+			s = strsep(&env_bkp, ";");
+			ret = dfu_fill_entity(&dfu[entities_i], s,
+					      entities_i, interface, dev);
+			if (ret)
+				return -1;
+
+			list_add_tail(&dfu[entities_i].list, &dfu_list);
+			entities_i++;
+		}
+
+		free(env_bkp);
+	}
+
+	return 0;
+}
