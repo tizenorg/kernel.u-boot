@@ -345,6 +345,7 @@
 /* TIZEN THOR downloader support */
 #define CONFIG_CMD_THOR_DOWNLOAD
 #define CONFIG_THOR_FUNCTION
+#define CONFIG_SUPPORT_EMMC_BOOT
 
 /* PWM */
 #define CONFIG_PWM
