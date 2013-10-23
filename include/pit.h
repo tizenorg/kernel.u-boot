@@ -112,4 +112,5 @@ struct pitpart_data {
 
 void check_pit(void);
 void pit_to_dfu_alt_info(void);
+int pit_mmc_boot_part_access(char *file_name, u8 access);
 #endif /* _PITINFO_H_ */

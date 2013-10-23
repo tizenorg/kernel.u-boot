@@ -628,3 +628,41 @@ void pit_to_dfu_alt_info(void)
 	sprintf(dfu_alt_num, "%d", hd->count);
 	setenv("dfu_alt_num", dfu_alt_num);
 }
+
+/*
+ * access: selects partitions to access
+ *	0x0 - No access to boot partition (default)
+ *	0x1 - R/W boot partition 1
+ *	0x2 - R/W boot partition 2
+ *	0x3 - R/W Replay Protected Memory Block (RPMB)
+ */
+int pit_mmc_boot_part_access(char *file_name, u8 access)
+{
+	int pit_idx;
+	int part_id;
+
+	pit_idx = get_pitpart_id_by_filename(file_name);
+	if (pit_idx < 0)
+		return -1;
+
+	/* Unnecessary except s-boot */
+	if (strcmp(pitparts[pit_idx].name, "s-boot-mmc"))
+		return -1;
+
+	part_id = pitparts[pit_idx].id;
+
+	/* part_id > 80 */
+	if (part_id >= PIT_BOOTPART0_ID) {
+		struct mmc *mmc = find_mmc_device(0);
+		int part_num = PIT_BOOTPARTN_GET(part_id);
+
+		if (mmc_boot_part_access(mmc, 1, part_num, access) == 0)
+			return 0;
+		else
+			return -1;
+	} else {
+		return -1;
+	}
+
+	return 0;
+}
