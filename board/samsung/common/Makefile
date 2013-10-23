@@ -30,6 +30,7 @@ COBJS-y += inform.o
 COBJS-$(CONFIG_SOFT_I2C_MULTI_BUS) += multi_i2c.o
 COBJS-$(CONFIG_THOR_FUNCTION) += thor.o
 COBJS-$(CONFIG_SIG) += sig_header.o
+COBJS-$(CONFIG_CMD_USB_MASS_STORAGE) += ums.o
 
 SRCS    := $(COBJS-y:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS-y))
