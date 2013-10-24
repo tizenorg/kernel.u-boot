@@ -655,15 +655,15 @@ int pit_mmc_boot_part_access(char *file_name, u8 access)
 
 	pit_idx = get_pitpart_id_by_filename(file_name);
 	if (pit_idx < 0)
-		return -1;
+		return 0;
 
 	/* Unnecessary except s-boot */
 	if (strcmp(pitparts[pit_idx].name, "s-boot-mmc"))
-		return -1;
+		return 0;
 
 	part_id = pitparts[pit_idx].id;
 
-	/* part_id > 80 */
+	/* It is necessary when part_id >= 80 */
 	if (part_id >= PIT_BOOTPART0_ID) {
 		struct mmc *mmc = find_mmc_device(0);
 		int part_num = PIT_BOOTPARTN_GET(part_id);
@@ -672,8 +672,6 @@ int pit_mmc_boot_part_access(char *file_name, u8 access)
 			return 0;
 		else
 			return -1;
-	} else {
-		return -1;
 	}
 
 	return 0;
