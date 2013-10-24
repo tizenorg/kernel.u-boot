@@ -32,6 +32,8 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		ret = CMD_RET_FAILURE;
 		goto exit;
 	}
+	/* set pit update support */
+	thor_set_pit_support(PIT_SUPPORT_NORMAL);
 
 	ret = thor_handle();
 	if (ret) {
@@ -41,6 +43,8 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 exit:
+	thor_set_pit_support(PIT_SUPPORT_NO);
+
 	g_dnl_unregister();
 	dfu_free_entities();
 
