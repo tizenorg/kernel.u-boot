@@ -26,6 +26,7 @@
 #include <asm/errno.h>
 #include <mmc.h>
 #include <pit.h>
+#include <part.h>
 
 #include "Tizen_GPT_Ver08.h"
 
@@ -278,7 +279,7 @@ int pit_no_partition_support(void)
 	if (partition_count <= 0)
 		return 1;
 
-	if (getenv("mbrparts") == NULL)
+	if (getenv("partitions") == NULL)
 		return 1;
 
 	return 0;
@@ -427,30 +428,40 @@ static int get_pitpart_info(void)
 static int count_mbr;
 static void set_mmcparts(char *buf, unsigned long long size, char *name, int id)
 {
+	/* name */
+	count_mbr += sprintf(buf + count_mbr, "name=%s,", name);
+
 	if (!strcmp(name, "ums")) {
 		/* UMS is the last partition */
-		count_mbr += sprintf(buf + count_mbr, "-(%s)", name);
+		count_mbr += sprintf(buf + count_mbr, "size=-,");
+		count_mbr += sprintf(buf + count_mbr,
+				     "uuid=${uuid_gpt_%s}", name);
 	} else {
 		if (size % 1024 == 0) {
 			size /= 1024;
 			if (size % 1024 == 0)
-				count_mbr += sprintf(buf + count_mbr, "%llum",
-						size / 1024);
+				count_mbr += sprintf(buf + count_mbr,
+						     "size=%lluMiB,",
+						     size / 1024);
 			else
 				count_mbr +=
-					sprintf(buf + count_mbr, "%lluk", size);
+					sprintf(buf + count_mbr, "%lluKiB,",
+						size);
 		} else {
-			count_mbr += sprintf(buf + count_mbr, "%llu", size);
+			count_mbr += sprintf(buf + count_mbr, "%llu,", size);
 		}
-		count_mbr += sprintf(buf + count_mbr, "(%s),", name);
+		count_mbr += sprintf(buf + count_mbr, "uuid=${uuid_gpt_%s};",
+				     name);
 	}
+	/* set uuid_gpt_name environment */
+	set_env_uuid_name(name);
 }
 
 static void update_parts(void)
 {
 	int i;
 	unsigned long long size;
-	char mbr_parts[256] = { 0, };
+	char mbr_parts[512] = { 0, };
 	pit_header_t *hd;
 	partition_info_t *pi;
 	int partition_base = pit_get_partition_base();
@@ -459,6 +470,8 @@ static void update_parts(void)
 	pi = (partition_info_t *)(pit + sizeof(pit_header_t));
 
 	count_mbr = 0;
+
+	count_mbr += sprintf(mbr_parts, "uuid_disk=${uuid_gpt_disk};");
 	for (i = 0; i < hd->count; i++, pi++) {
 		size = pi->blk_num * 512;
 
@@ -470,7 +483,8 @@ static void update_parts(void)
 		}
 	}
 
-	setenv("mbrparts", mbr_parts);
+	setenv("uuid_gpt_disk", "eMMC DISK");
+	setenv("partitions", mbr_parts);
 }
 
 static int do_pit_update(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -485,8 +499,6 @@ static int do_pit_update(cmd_tbl_t *cmdtp, int flag, int argc,
 		return 1;
 
 	ret = get_pitpart_info();
-
-	update_parts();
 
 	return ret;
 }
@@ -665,4 +677,38 @@ int pit_mmc_boot_part_access(char *file_name, u8 access)
 	}
 
 	return 0;
+}
+
+/*
+ * pit_support:
+ *	PIT_SUPPORT_NO - not support PIT update
+ *	PIT_SUPPORT_NORMAL - support PIT update
+ *	PIT_SUPPORT_GPT - GPT update necessary based on PIT
+ */
+static int pit_support;
+void thor_set_pit_support(enum pit_support value)
+{
+	pit_support = value;
+	debug("PIT support: %d\n", pit_support);
+}
+
+int thor_get_pit_support(void)
+{
+	return pit_support;
+}
+
+void thor_gpt_update(void)
+{
+	char cmd[32];
+
+	pit_support = PIT_SUPPORT_NORMAL;
+
+	sprintf(cmd, "pit read %x", CONFIG_PIT_DOWN_ADDR);
+	run_command(cmd, 0);
+	sprintf(cmd, "pit update %x", CONFIG_PIT_DOWN_ADDR);
+	run_command(cmd, 0);
+
+	/* set partitions environment */
+	update_parts();
+	run_command("gpt write mmc 0 $partitions", 0);
 }
