@@ -290,7 +290,11 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 	case RQT_DL_FILE_START:
 		send_rsp(rsp);
 		/* support for s-boot */
-		pit_mmc_boot_part_access(f_name, 1);
+		if (pit_mmc_boot_part_access(f_name, 1)) {
+			debug("boot partition access failed");
+			return -1;
+		}
+
 		ret_head = download_head(thor_file_size, THOR_PACKET_SIZE,
 					 &left, &cnt);
 		if (ret_head < 0) {
@@ -305,7 +309,10 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 		left = 0;
 		cnt = 0;
 		/* support for s-boot */
-		pit_mmc_boot_part_access(f_name, 0);
+		if (pit_mmc_boot_part_access(f_name, 0)) {
+			debug("boot partition access failed");
+			return -1;
+		}
 
 		/* update GPT based on updated PIT */
 		if (thor_get_pit_support() == PIT_SUPPORT_GPT)
