@@ -502,6 +502,26 @@ err:
 	free(gpt_h);
 	return ret;
 }
+/*
+ * This function set uuid_gpt_[part_name] env using part_name
+ */
+void set_env_uuid_name(char *name)
+{
+	int i;
+	char uuid[37];
+	efi_char16_t u_name[PARTNAME_SZ] = { 0, };
+	int str_len = MIN(PARTNAME_SZ, strlen(name));
+	char env_name[32] = { 0, };
+
+	/* convert char to unicode */
+	for (i = 0; i < str_len; i++)
+		u_name[i] = (efi_char16_t)name[i];
+
+	uuid_string((unsigned char *)u_name, uuid);
+
+	sprintf(env_name, "uuid_gpt_%s", name);
+	setenv(env_name, uuid);
+}
 #endif
 
 /*

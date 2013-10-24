@@ -241,6 +241,11 @@ int gpt_fill_header(block_dev_desc_t *dev_desc, gpt_header *gpt_h,
  */
 int gpt_restore(block_dev_desc_t *dev_desc, char *str_disk_guid,
 		disk_partition_t *partitions, const int parts_count);
+
+/*
+ * This function set uuid_gpt_[part_name] env using part_name
+ */
+void set_env_uuid_name(char *name);
 #endif
 
 #endif /* _PART_H */
