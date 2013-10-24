@@ -259,10 +259,16 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 	case RQT_DL_FILE_INFO:
 		file_type = rqt->int_data[0];
 		if (file_type == FILE_TYPE_PIT) {
-			puts("PIT table file - not supported\n");
-			rsp->ack = -ENOTSUPP;
-			ret = rsp->ack;
-			break;
+			if (thor_get_pit_support() == PIT_SUPPORT_NO) {
+				puts("PIT table file - not supported\n");
+				rsp->ack = -ENOTSUPP;
+				ret = rsp->ack;
+				break;
+			} else if (thor_get_pit_support() ==
+				   PIT_SUPPORT_NORMAL) {
+				/* GPT update necessary */
+				thor_set_pit_support(PIT_SUPPORT_GPT);
+			}
 		}
 
 		thor_file_size = rqt->int_data[1];
@@ -300,6 +306,11 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 		cnt = 0;
 		/* support for s-boot */
 		pit_mmc_boot_part_access(f_name, 0);
+
+		/* update GPT based on updated PIT */
+		if (thor_get_pit_support() == PIT_SUPPORT_GPT)
+			thor_gpt_update();
+
 		break;
 	case RQT_DL_EXIT:
 		debug("DL EXIT\n");
