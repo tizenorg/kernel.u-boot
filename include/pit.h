@@ -66,6 +66,12 @@ enum part_filesys {
 	PART_FS_TYPE_EXT4,
 };
 
+enum pit_support {
+	PIT_SUPPORT_NO = 0,
+	PIT_SUPPORT_NORMAL,
+	PIT_SUPPORT_GPT,
+};
+
 /* PIT Structure = pit_header + partition_info + ... */
 struct pit_header {
 	unsigned int magic;		/* magic code */
@@ -113,4 +119,7 @@ struct pitpart_data {
 void check_pit(void);
 void pit_to_dfu_alt_info(void);
 int pit_mmc_boot_part_access(char *file_name, u8 access);
+void thor_set_pit_support(enum pit_support value);
+int thor_get_pit_support(void);
+void thor_gpt_update(void);
 #endif /* _PITINFO_H_ */
