@@ -177,6 +177,7 @@ static long long int download_head(unsigned long long total,
 		      rcv_cnt, *cnt);
 
 		if ((rcv_cnt % THOR_STORE_UNIT_SIZE) == 0) {
+
 			ret = dfu_write(dfu_get_entity(alt_setting_num),
 					transfer_buffer, THOR_STORE_UNIT_SIZE,
 					(*cnt)++);
@@ -278,21 +279,18 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 		break;
 	case RQT_DL_FILE_INFO:
 		file_type = rqt->int_data[0];
-		if (file_type == FILE_TYPE_PIT) {
-			puts("PIT table file - not supported\n");
-			rsp->ack = -ENOTSUPP;
-			ret = rsp->ack;
-			break;
-		}
 
 		thor_file_size = rqt->int_data[1];
-		memcpy(f_name, rqt->str_data[0], F_NAME_BUF_SIZE);
+
+		if (file_type == FILE_TYPE_PIT)
+			f_name = "pit";
+		else
+			memcpy(f_name, rqt->str_data[0], F_NAME_BUF_SIZE);
 
 		debug("INFO: name(%s, %d), size(%llu), type(%d)\n",
 		      f_name, 0, thor_file_size, file_type);
 
 		rsp->int_data[0] = THOR_PACKET_SIZE;
-
 		alt_setting_num = dfu_get_alt(f_name);
 		if (alt_setting_num < 0) {
 			error("Alt setting [%d] to write not found!",

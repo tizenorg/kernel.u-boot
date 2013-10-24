@@ -13,6 +13,7 @@
 #include <g_dnl.h>
 #include <usb.h>
 #include <libtizen.h>
+#include <samsung/pit.h>
 
 int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -22,14 +23,21 @@ int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	char *usb_controller = argv[1];
 	char *interface = argv[2];
 	char *devstring = argv[3];
+	int dev = simple_strtoul(devstring, NULL, 10);
 
 	const char *s = "thor";
 	int ret;
 
 	puts("TIZEN \"THOR\" Downloader\n");
 
-	ret = dfu_init_env_entities(interface, simple_strtoul(devstring,
-							      NULL, 10));
+#ifdef CONFIG_CMD_PIT
+	/* convert pit to dfu_alt_info env */
+	pit_to_dfu_alt_info();
+
+	ret = dfu_init_pit_entities(interface, dev);
+#else
+	ret = dfu_init_env_entities(interface, dev);
+#endif
 	if (ret)
 		return ret;
 
@@ -54,6 +62,11 @@ int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		goto exit;
 	}
 
+#ifdef CONFIG_CMD_PIT
+	/* set pit update support */
+	thor_set_pit_support(PIT_SUPPORT_NORMAL);
+#endif
+
 	ret = thor_handle();
 	if (ret) {
 		error("THOR failed: %d", ret);
@@ -62,6 +75,9 @@ int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 exit:
+#ifdef CONFIG_CMD_PIT
+	thor_set_pit_support(PIT_SUPPORT_NO);
+#endif
 	g_dnl_unregister();
 	dfu_free_entities();
 
