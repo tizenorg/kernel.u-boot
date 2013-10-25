@@ -200,4 +200,7 @@ int max77686_set_buck_mode(struct pmic *p, int buck, char opmode);
  */
 #define MAX77686_BBCHOSTEN	(1 << 0)
 #define MAX77686_BBCVS_3_5V	(3 << 3)
+
+/* INT1 Bit Map */
+#define MAX77686_INT1_PWRONR	(1 << 1)
 #endif /* __MAX77686_PMIC_H_ */
