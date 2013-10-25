@@ -29,6 +29,9 @@
 #include <usb.h>
 #include <usb/s3c_udc.h>
 #include <usb_mass_storage.h>
+#ifdef CONFIG_CMD_PIT
+#include <pit.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -703,7 +706,9 @@ int misc_init_r(void)
 	setenv("board", "TRATS2");
 
 	show_hw_revision();
-
+#ifdef CONFIG_CMD_PIT
+	check_pit();
+#endif
 	check_usbdown_key();
 
 	return 0;
