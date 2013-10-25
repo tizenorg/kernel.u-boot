@@ -179,6 +179,34 @@ int board_init(void)
 	return 0;
 }
 
+static int check_pwr_on(void)
+{
+	struct pmic *p = pmic_get("MAX77686_PMIC");
+	unsigned char val;
+
+	if (pmic_probe(p))
+		return -1;
+
+	i2c_read(pmic_i2c_addr, MAX77686_REG_PMIC_INT1, 1, &val, 1);
+	return !!(val & MAX77686_INT1_PWRONR);
+}
+
+static int check_vol_down(void)
+{
+	/* GPX3[3] - VOL_DOWN */
+	return !(s5p_gpio_get_value(&gpio2->x3, 3));
+}
+
+static void check_usbdown_key(void)
+{
+	if (check_pwr_on()) {
+		if (check_vol_down()) {
+			debug("run usbdown command");
+			setenv("bootcmd", "usbdown mmc 0");
+		}
+	}
+}
+
 int power_init_board(void)
 {
 	int chrg;
@@ -646,6 +674,8 @@ int misc_init_r(void)
 	setenv("board", "TRATS2");
 
 	show_hw_revision();
+
+	check_usbdown_key();
 
 	return 0;
 }
