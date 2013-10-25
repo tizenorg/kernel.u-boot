@@ -10,6 +10,4 @@ ifndef CONFIG_SPL_BUILD
 obj-y		+= timer.o
 obj-y		+= sromc.o
 obj-$(CONFIG_PWM)	+= pwm.o
-COBJS-$(CONFIG_CMD_USBDOWN)   += usb_downloader.o
-COBJS-$(CONFIG_S5P_USB_DMA)   += usb-hs-otg-dma.o
 endif
