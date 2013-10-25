@@ -55,10 +55,6 @@
 #include <logbuff.h>
 #include <asm/sections.h>
 
-#ifdef CONFIG_CMD_PIT
-#include <pit.h>
-#endif
-
 #ifdef CONFIG_BITBANGMII
 #include <miiphy.h>
 #endif
@@ -701,10 +697,6 @@ void board_init_r(gd_t *id, ulong dest_addr)
 		sprintf((char *)memsz, "%ldk", (gd->ram_size / 1024) - pram);
 		setenv("mem", (char *)memsz);
 	}
-#endif
-
-#ifdef CONFIG_CMD_PIT
-	check_pit();
 #endif
 
 	/* main_loop() can return to retry autoboot, if so just run it again. */
