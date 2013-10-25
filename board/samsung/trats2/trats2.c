@@ -47,7 +47,9 @@
 #include <libtizen.h>
 #include <errno.h>
 #include <usb/s3c_udc.h>
-
+#ifdef CONFIG_CMD_PIT
+#include <pit.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 static struct exynos4x12_gpio_part1 *gpio1;
@@ -674,7 +676,9 @@ int misc_init_r(void)
 	setenv("board", "TRATS2");
 
 	show_hw_revision();
-
+#ifdef CONFIG_CMD_PIT
+	check_pit();
+#endif
 	check_usbdown_key();
 
 	return 0;
