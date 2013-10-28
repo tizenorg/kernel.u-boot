@@ -27,6 +27,7 @@
 #include <dfu.h>
 #include <asm/arch/power.h>
 #include <pit.h>
+#include <sighdr.h>
 
 #include "f_thor.h"
 
@@ -230,6 +231,14 @@ static int download_tail(long long int left, int cnt)
 	 * This also frees memory malloc'ed by dfu_get_buf(), so no explicit
 	 * need fo call dfu_free_buf() is needed.
 	 */
+
+	/* check board signature when download u-boot-mmc.bin */
+	ret = check_board_signature(f_name, (phys_addr_t)transfer_buffer);
+
+	if (ret) {
+		error("check board signature fail\n");
+		return ret;
+	}
 
 	ret = dfu_write(dfu_get_entity(alt_setting_num),
 			transfer_buffer, 0, cnt);
