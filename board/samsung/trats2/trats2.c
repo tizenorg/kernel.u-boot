@@ -274,49 +274,6 @@ int power_init_board(void)
 	return 0;
 }
 
-static int usb_safeout_control(void)
-{
-	int ret = 0;
-	unsigned char val[2];
-	struct pmic *p = pmic_get("MAX77686_PMIC");
-
-	if (pmic_probe(p))
-		return -1;
-
-	i2c_read(p->hw.i2c.addr, MAX77686_REG_PMIC_INT1, 1, val, 2);
-
-	ret = max77686_set_ldo_mode(p, 12, OPMODE_ON);
-
-	if (ret)
-		return -1;
-
-	printf("max77686 ldo 12 on\n");
-
-	p = pmic_get("MAX77693_PMIC");
-
-	if (pmic_probe(p))
-		return -1;
-
-	ret |= i2c_read(p->hw.i2c.addr, MAX77693_SAFEOUT, 1, val, 1);
-
-	val[0] |= (1 << 6);
-
-	ret |= i2c_write(p->hw.i2c.addr ,MAX77693_SAFEOUT, 1, val, 1);
-	ret |= i2c_read(p->hw.i2c.addr, MAX77693_SAFEOUT, 1, val, 1);
-
-	if (ret)
-		return -1;
-
-	printf("max77693 safeout 1 on\n");
-
-	return 0;
-}
-
-int usb_board_init(void)
-{
-	return usb_safeout_control();
-}
-
 int dram_init(void)
 {
 	u32 size_mb;
