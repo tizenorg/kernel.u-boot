@@ -716,6 +716,7 @@ ifneq ($(CONFIG_SPL_TARGET),)
 ALL-$(CONFIG_SPL) += $(CONFIG_SPL_TARGET:"%"=%)
 endif
 ALL-$(CONFIG_REMAKE_ELF) += u-boot.elf
+ALL-$(CONFIG_SIG) += u-boot-sig.bin
 
 # enable combined SPL/u-boot/dtb rules for tegra
 ifneq ($(CONFIG_TEGRA),)
@@ -1074,6 +1075,24 @@ nand_spl: prepare
 	@echo >&2 "Otherwise, this board will be removed."
 	@echo >&2 "=================================================="
 	@echo >&2
+
+u-boot-sig.bin:	u-boot.bin
+		@echo -n "BoOt" > sig-magic
+		@echo -n `date +%Y%m%d%H` > sig-date
+		@echo -n "none" > sig-product
+ifeq ($(BOARD),trats)
+		@echo -n "slp_u1" > sig-board
+else
+		@echo -n "slp_midasq" > sig-board
+endif
+		@cat sig-magic /dev/zero | head -c 12 > sig-tmp
+		@cat sig-tmp sig-date /dev/zero | head -c 24 > sig-tmp2
+		@cat sig-tmp2 sig-product /dev/zero | head -c 48 > sig-tmp
+		@cat sig-tmp sig-board /dev/zero | head -c 512 > sig-hdr
+		@cat u-boot.bin /dev/zero | head -c 1048064 > u-boot-pad.bin
+		@cat u-boot-pad.bin sig-hdr > u-boot-mmc.bin
+
+		@rm -f sig-* u-boot-pad.bin
 
 nand_spl/u-boot-spl-16k.bin: nand_spl
 	@:
