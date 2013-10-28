@@ -21,7 +21,6 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (ret)
 		return ret;
 
-	dfu_show_entities();
 	board_usb_init();
 
 	g_dnl_register(s);
