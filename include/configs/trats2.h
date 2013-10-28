@@ -35,6 +35,7 @@
 #define CONFIG_S5P		/* which is in a S5P Family */
 #define CONFIG_EXYNOS4		/* which is in a EXYNOS4XXX */
 #define CONFIG_TIZEN		/* TIZEN lib */
+#define CONFIG_SIG		/* make signature header */
 
 #define PLATFORM_NO_UNALIGNED
 
