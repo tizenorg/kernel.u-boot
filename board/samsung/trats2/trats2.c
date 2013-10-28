@@ -201,11 +201,9 @@ static int check_vol_down(void)
 
 static void check_usbdown_key(void)
 {
-	if (check_pwr_on()) {
-		if (check_vol_down()) {
-			debug("run usbdown command");
-			setenv("bootcmd", "usbdown mmc 0");
-		}
+	if (check_pwr_on() && check_vol_down()) {
+		debug("run usbdown command");
+		setenv("bootcmd", "usbdown mmc 0");
 	}
 }
 
