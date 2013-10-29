@@ -902,4 +902,6 @@ uint32_t get_reset_status(void);
 
 /* Read the resume function and call it */
 void power_exit_wakeup(void);
+/* check power key */
+int check_pwr_key(int cnt);
 #endif
