@@ -442,10 +442,10 @@ struct s3c_plat_otg_data s5pc210_otg_data = {
 	.usb_flags	= PHY0_SLEEP,
 };
 
-void board_usb_init(void)
+int board_usb_init(void)
 {
 	debug("USB_udc_probe\n");
-	s3c_udc_probe(&s5pc210_otg_data);
+	return s3c_udc_probe(&s5pc210_otg_data);
 }
 #endif
 
