@@ -8,12 +8,14 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char *s = "thor";
 	int ret;
+	int retry;
 
 	if (argc < 3)
 		return CMD_RET_USAGE;
-
+retry:
 	puts("TIZEN \"THOR\" Downloader\n");
 
+	retry = 0;
 	/* convert pit to dfu_alt_info env */
 	pit_to_dfu_alt_info();
 
@@ -29,6 +31,8 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (ret) {
 		error("THOR DOWNLOAD failed: %d", ret);
 		ret = CMD_RET_FAILURE;
+		/* retry usbdown */
+		retry = 1;
 		goto exit;
 	}
 	/* set pit update support */
@@ -46,6 +50,9 @@ exit:
 
 	g_dnl_unregister();
 	dfu_free_entities();
+
+	if (retry)
+		goto retry;
 
 	return 0;
 }
