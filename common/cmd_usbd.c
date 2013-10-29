@@ -23,7 +23,12 @@ retry:
 	if (ret)
 		return ret;
 
-	board_usb_init();
+	ret = board_usb_init();
+	if (ret) {
+		error("USB init failed: %d", ret);
+		ret = CMD_RET_FAILURE;
+		goto exit;
+	}
 
 	g_dnl_register(s);
 
