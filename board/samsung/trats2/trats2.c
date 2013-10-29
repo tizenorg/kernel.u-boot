@@ -208,6 +208,20 @@ static void check_usbdown_key(void)
 	}
 }
 
+int check_pwr_key(int cnt)
+{
+	static int count;
+
+	count += check_pwr_on();
+
+	if (count >= cnt) {
+		count = 0;
+		return 1;
+	}
+
+	return 0;
+}
+
 int power_init_board(void)
 {
 	int chrg;
