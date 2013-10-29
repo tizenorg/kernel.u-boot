@@ -31,6 +31,8 @@
 
 #include "f_thor.h"
 
+static int downloading;
+
 static void thor_tx_data(unsigned char *data, int len);
 static void thor_set_dma(void *addr, int len);
 static int thor_rx_data(void);
@@ -581,6 +583,10 @@ static int thor_rx_data(void)
 
 		while (!dev->rxdata) {
 			usb_gadget_handle_interrupts();
+			/* check pwr key pressed 3 */
+			if (!downloading && check_pwr_key(3))
+				return -1;
+
 			if (ctrlc())
 				return -1;
 		}
@@ -760,6 +766,8 @@ int thor_handle(void)
 {
 	int ret;
 
+	/* start downloading */
+	downloading = 1;
 	/* receive the data from Host PC */
 	while (1) {
 		thor_set_dma(thor_rx_data_buf, sizeof(struct rqt_box));
@@ -775,6 +783,8 @@ int thor_handle(void)
 		}
 	}
 
+	/* end downloading */
+	downloading = 0;
 	return 0;
 }
 
