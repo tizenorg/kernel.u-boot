@@ -3,6 +3,7 @@
 #include <dfu.h>
 #include <g_dnl.h>
 #include <pit.h>
+#include <usb.h>
 
 int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {

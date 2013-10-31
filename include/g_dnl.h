@@ -27,6 +27,4 @@ int g_dnl_bind_fixup(struct usb_device_descriptor *, const char *);
 int g_dnl_register(const char *s);
 void g_dnl_unregister(void);
 
-/* USB initialization declaration - board specific */
-int board_usb_init(void);
 #endif /* __G_DOWNLOAD_H_ */

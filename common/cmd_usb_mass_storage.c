@@ -22,6 +22,7 @@
 #include <command.h>
 #include <g_dnl.h>
 #include <usb_mass_storage.h>
+#include <usb.h>
 
 int do_usb_mass_storage(cmd_tbl_t *cmdtp, int flag,
 			       int argc, char * const argv[])

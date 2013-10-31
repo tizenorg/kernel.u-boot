@@ -45,8 +45,6 @@ struct ums_board_info {
 	struct ums_device ums_dev;
 };
 
-int board_usb_init(void);
-
 extern int fsg_init(struct ums_board_info *);
 extern void fsg_cleanup(void);
 extern struct ums_board_info *board_ums_init(unsigned int,

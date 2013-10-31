@@ -182,9 +182,16 @@ int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 
 extern void udc_disconnect(void);
 
-#else
-#error USB Lowlevel not defined
 #endif
+
+/*
+ * board-specific hardware initialization, called by
+ * usb drivers and u-boot commands
+ *
+ * @param index USB controller number
+ * @param init initializes controller as USB host or device
+ */
+int board_usb_init(void);
 
 #ifdef CONFIG_USB_STORAGE
 

@@ -11,6 +11,7 @@
 #include <thor.h>
 #include <dfu.h>
 #include <g_dnl.h>
+#include <usb.h>
 
 int do_thor_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
