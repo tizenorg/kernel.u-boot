@@ -736,16 +736,9 @@ int check_board_signature(char *fname, phys_addr_t dn_addr)
 	phys_size_t part_size;
 	int pit_idx;
 	int ret;
-	char *mode;
 
 	/* u-boot-mmc.bin */
 	if (strcmp(fname, PARTS_BOOTLOADER"-mmc.bin"))
-		return 0;
-
-	/* check force mode */
-	mode = getenv("thor_mode");
-
-	if (mode && !strcmp(mode, "force"))
 		return 0;
 
 	pit_idx = get_pitpart_id_by_filename(fname);
