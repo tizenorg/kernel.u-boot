@@ -79,6 +79,7 @@
 #define CONFIG_S5P_SDHCI
 #define CONFIG_SDHCI
 #define CONFIG_MMC_SDMA
+#define CONFIG_MMC_DEFAULT_DEV	0
 
 /* PWM */
 #define CONFIG_PWM
@@ -112,6 +113,7 @@
 /* TIZEN THOR downloader support */
 #define CONFIG_CMD_THOR_DOWNLOAD
 #define CONFIG_THOR_FUNCTION
+#define CONFIG_SUPPORT_EMMC_BOOT
 
 #define CONFIG_SYS_DFU_DATA_BUF_SIZE SZ_32M
 #define CONFIG_DFU_FUNCTION
@@ -341,4 +343,11 @@
 /* Pass open firmware flat tree */
 #define CONFIG_OF_LIBFDT    1
 
+/* PIT */
+#define CONFIG_CMD_PIT
+#define CONFIG_SYS_MMC_PIT_DEV	CONFIG_MMC_DEFAULT_DEV
+#define CONFIG_PIT_DEFAULT_ADDR	0x8000	/* block */
+#define CONFIG_PIT_DEFAULT_SIZE 0x1000
+
+#define CONFIG_PIT_DOWN_ADDR	CONFIG_SYS_SDRAM_BASE + 0x5110000
 #endif	/* __CONFIG_H */
