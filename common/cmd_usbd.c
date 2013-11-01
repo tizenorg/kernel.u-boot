@@ -58,6 +58,8 @@ retry:
 	if (ret) {
 		error("THOR failed: %d", ret);
 		ret = CMD_RET_FAILURE;
+		/* retry usbdown */
+		retry = 1;
 		goto exit;
 	}
 
