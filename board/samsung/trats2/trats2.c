@@ -170,14 +170,14 @@ static int pmic_init_max77686(void);
 
 int board_init(void)
 {
-	gpio1 = (struct exynos4x12_gpio_part1 *)EXYNOS4X12_GPIO_PART1_BASE;
-	gpio2 = (struct exynos4x12_gpio_part2 *)EXYNOS4X12_GPIO_PART2_BASE;
+	struct exynos4_power *pwr =
+		(struct exynos4_power *)EXYNOS4X12_POWER_BASE;
 
 	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
 
 	/* workaround: clear INFORM4..5 */
-	writel(0, 0x10020810);
-	writel(0, 0x10020810 + 4);
+	writel(0, (unsigned int)&pwr->inform4);
+	writel(0, (unsigned int)&pwr->inform5);
 
 	return 0;
 }
