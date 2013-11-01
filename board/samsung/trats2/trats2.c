@@ -717,11 +717,11 @@ struct ums_board_info *board_ums_init(unsigned int dev_num, unsigned int offset,
 #endif
 
 static int get_board_signature(phys_addr_t base_addr,
-			       phys_size_t size, struct sig_header *hdr)
+			       phys_size_t size, struct sig_header **hdr)
 {
-	hdr = (struct sig_header *)(base_addr + size - HDR_SIZE);
+	*hdr = (struct sig_header *)(base_addr + size - HDR_SIZE);
 
-	if (hdr->magic != HDR_BOOT_MAGIC) {
+	if ((*hdr)->magic != HDR_BOOT_MAGIC) {
 		debug("can't found signature\n");
 		return -1;
 	}
@@ -731,8 +731,8 @@ static int get_board_signature(phys_addr_t base_addr,
 
 int check_board_signature(char *fname, phys_addr_t dn_addr)
 {
-	struct sig_header bh_target;
-	struct sig_header bh_addr;
+	struct sig_header *bh_target;
+	struct sig_header *bh_addr;
 	phys_size_t part_size;
 	int pit_idx;
 	int ret;
@@ -761,8 +761,8 @@ int check_board_signature(char *fname, phys_addr_t dn_addr)
 	if (ret)
 		return -1;
 
-	if (strncmp(bh_target.bd_name, bh_addr.bd_name,
-		    ARRAY_SIZE(bh_target.bd_name))) {
+	if (strncmp(bh_target->bd_name, bh_addr->bd_name,
+		    ARRAY_SIZE(bh_target->bd_name))) {
 		debug("board name Inconsistency\n");
 		return -1;
 	}
