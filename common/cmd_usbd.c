@@ -12,16 +12,6 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (argc < 3)
 		return CMD_RET_USAGE;
-
-	/* check option */
-	if (argc > 3) {
-		char *opt = argv[3];
-		/* u-boot signature check pass */
-		if (!strncmp(opt, "force", 5)) {
-			debug("thor mode: force\n");
-			setenv("thor_mode", "force");
-		}
-	}
 retry:
 	puts("TIZEN \"THOR\" Downloader\n");
 
