@@ -397,7 +397,6 @@ static int s5pc210_phy_control(int on)
 		ret = max77686_set_ldo_mode(p, 12, OPMODE_ON);
 
 		p = pmic_get("MAX77693_PMIC");
-		pmic_probe(p);
 		if (pmic_probe(p))
 			return -1;
 
