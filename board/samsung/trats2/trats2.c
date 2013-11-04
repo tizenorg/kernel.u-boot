@@ -372,15 +372,6 @@ int board_mmc_init(bd_t *bis)
 	return err;
 }
 
-void board_inform_clear(void)
-{
-	struct exynos4_power *power =
-		(struct exynos4_power *)samsung_get_base_power();
-
-	/* set INFORM2 for normal boot */
-	writel(0x12345678, &power->inform2);
-}
-
 #ifdef CONFIG_USB_GADGET
 static int s5pc210_phy_control(int on)
 {
