@@ -195,6 +195,7 @@ static int check_pwr_on(void)
 
 static int check_vol_down(void)
 {
+	gpio2 = (struct exynos4x12_gpio_part2 *)EXYNOS4X12_GPIO_PART2_BASE;
 	/* GPX3[3] - VOL_DOWN */
 	return !(s5p_gpio_get_value(&gpio2->x3, 3));
 }
