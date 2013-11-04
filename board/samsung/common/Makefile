@@ -25,6 +25,8 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)libsamsung.o
 
+COBJS-y += inform.o
+
 COBJS-$(CONFIG_SOFT_I2C_MULTI_BUS) += multi_i2c.o
 COBJS-$(CONFIG_THOR_FUNCTION) += thor.o
 COBJS-$(CONFIG_SIG) += sig_header.o
