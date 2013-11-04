@@ -131,6 +131,10 @@ static int process_rqt_cmd(const struct rqt_box *rqt)
 		g_dnl_unregister();
 		dfu_free_entities();
 
+#ifdef CONFIG_BOOT_INFORM
+		/* set normal boot */
+		boot_inform_clear();
+#endif
 		run_command("reset", 0);
 		break;
 	case RQT_CMD_POWEROFF:
