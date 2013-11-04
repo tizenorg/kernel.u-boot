@@ -213,7 +213,7 @@
 	"updatebootb=" \
 		"mmc read 0x51000000 0x80 0x200; run updatebackup\0" \
 	"updateuboot=" \
-		"mmc write 0x50000000 0x80 0x400\0" \
+		"mmc write 0x50000000 0x80 0x800\0" \
 	"updaterestore=" \
 		"mmc boot 0 1 1 2; mmc read 0x50000000 0 0x800;" \
 		"mmc boot 0 1 1 0; run updateuboot\0" \
