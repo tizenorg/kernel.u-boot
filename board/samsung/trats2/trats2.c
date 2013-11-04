@@ -65,6 +65,7 @@ static void check_hw_revision(void)
 	int modelrev = 0;
 	int i;
 
+	gpio2 = (struct exynos4x12_gpio_part2 *)EXYNOS4X12_GPIO_PART2_BASE;
 	/*
 	 * GPM1[1:0]: MODEL_REV[1:0]
 	 * Don't set as pull-none for these N/C pin.
@@ -113,6 +114,8 @@ static inline u32 get_model_rev(void)
 
 static void board_external_gpio_init(void)
 {
+	gpio2 = (struct exynos4x12_gpio_part2 *)EXYNOS4X12_GPIO_PART2_BASE;
+
 	/*
 	 * some pins which in alive block are connected with external pull-up
 	 * but it's default setting is pull-down.
@@ -155,9 +158,6 @@ static void board_init_i2c(void)
 
 int board_early_init_f(void)
 {
-	gpio1 = (struct exynos4x12_gpio_part1 *)EXYNOS4X12_GPIO_PART1_BASE;
-	gpio2 = (struct exynos4x12_gpio_part2 *)EXYNOS4X12_GPIO_PART2_BASE;
-
 	check_hw_revision();
 	board_external_gpio_init();
 
@@ -318,6 +318,8 @@ void dram_init_banksize(void)
 int board_mmc_init(bd_t *bis)
 {
 	int err;
+
+	gpio2 = (struct exynos4x12_gpio_part2 *)EXYNOS4X12_GPIO_PART2_BASE;
 
 	/* eMMC_EN: SD_0_CDn: GPK0[2] Output High */
 	s5p_gpio_direction_output(&gpio2->k0, 2, 1);
@@ -562,6 +564,8 @@ void exynos_lcd_power_on(void)
 {
 	struct pmic *p = pmic_get("MAX77686_PMIC");
 
+	gpio1 = (struct exynos4x12_gpio_part1 *)EXYNOS4X12_GPIO_PART1_BASE;
+
 	/* LCD_2.2V_EN: GPC0[1] */
 	s5p_gpio_set_pull(&gpio1->c0, 1, GPIO_PULL_UP);
 	s5p_gpio_direction_output(&gpio1->c0, 1, 1);
@@ -575,6 +579,8 @@ void exynos_lcd_power_on(void)
 
 void exynos_reset_lcd(void)
 {
+	gpio1 = (struct exynos4x12_gpio_part1 *)EXYNOS4X12_GPIO_PART1_BASE;
+
 	/* reset lcd */
 	s5p_gpio_direction_output(&gpio1->f2, 1, 0);
 	udelay(10);
