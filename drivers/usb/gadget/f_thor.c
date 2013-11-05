@@ -583,8 +583,9 @@ static int thor_rx_data(void)
 
 		while (!dev->rxdata) {
 			usb_gadget_handle_interrupts();
-			/* check pwr key pressed 3 */
-			if (!downloading && check_pwr_key(3))
+
+			/* usb disconnected */
+			if (!dev->configuration_done)
 				return -1;
 
 			if (ctrlc())
@@ -619,8 +620,13 @@ static void thor_tx_data(unsigned char *data, int len)
 	}
 
 	/* Wait until tx interrupt received */
-	while (!dev->txdata)
+	while (!dev->txdata) {
 		usb_gadget_handle_interrupts();
+
+		/* usb disconnected */
+		if (!dev->configuration_done)
+			break;
+	}
 
 	dev->txdata = 0;
 }
@@ -779,7 +785,7 @@ int thor_handle(void)
 				return ret;
 		} else {
 			printf("%s: No data received!\n", __func__);
-			break;
+			return ret;
 		}
 	}
 
@@ -938,6 +944,8 @@ static void thor_func_disable(struct usb_function *f)
 		usb_ep_disable(dev->int_ep);
 		dev->int_ep->driver_data = NULL;
 	}
+
+	dev->configuration_done = 0;
 }
 
 static int thor_eps_setup(struct usb_function *f)
