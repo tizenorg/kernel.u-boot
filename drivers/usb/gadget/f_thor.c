@@ -588,6 +588,11 @@ static int thor_rx_data(void)
 			if (!dev->configuration_done)
 				return -1;
 
+			if (!downloading && check_pwr_key(3)) {
+				board_inform_clear();
+				run_command("reset", 0);
+			}
+
 			if (ctrlc())
 				return -1;
 		}
@@ -744,8 +749,14 @@ int thor_init(void)
 
 	/* Wait for a device enumeration and configuration settings */
 	debug("THOR enumeration/configuration setting....\n");
-	while (!dev->configuration_done)
+	while (!dev->configuration_done) {
 		usb_gadget_handle_interrupts();
+
+		if (check_pwr_key(3)) {
+			board_inform_clear();
+			run_command("reset", 0);
+		}
+	}
 
 	thor_set_dma(thor_rx_data_buf, strlen("THOR"));
 	/* detect the download request from Host PC */
@@ -789,8 +800,6 @@ int thor_handle(void)
 		}
 	}
 
-	/* end downloading */
-	downloading = 0;
 	return 0;
 }
 
@@ -946,6 +955,7 @@ static void thor_func_disable(struct usb_function *f)
 	}
 
 	dev->configuration_done = 0;
+	downloading = 0;
 }
 
 static int thor_eps_setup(struct usb_function *f)
