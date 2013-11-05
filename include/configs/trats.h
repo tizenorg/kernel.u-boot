@@ -35,6 +35,7 @@
 #define CONFIG_EXYNOS4210	/* which is in a EXYNOS4210 */
 #define CONFIG_TRATS		/* working with TRATS */
 #define CONFIG_TIZEN		/* TIZEN lib */
+#define CONFIG_SIG		/* make signature header */
 
 #include <asm/arch/cpu.h>	/* get chip and board defs */
 
