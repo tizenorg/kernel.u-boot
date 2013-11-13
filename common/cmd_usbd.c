@@ -23,6 +23,10 @@ retry:
 	/* convert pit to dfu_alt_info env */
 	pit_to_dfu_alt_info();
 
+	ret = add_dtb_to_dfu_alt_info();
+	if (ret)
+		return ret;
+
 	ret = dfu_init_pit_entities(argv[1], simple_strtoul(argv[2], NULL, 10));
 	if (ret)
 		return ret;
