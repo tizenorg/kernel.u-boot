@@ -641,6 +641,52 @@ void pit_to_dfu_alt_info(void)
 	setenv("dfu_alt_num", dfu_alt_num);
 }
 
+/* support for kernel's dtb file download */
+int add_dtb_to_dfu_alt_info(void)
+{
+	char env_name[32] = { 0, };
+	char env_value[64] = { 0, };
+	char dfu_alt_group[4] = { 0, };
+	char dfu_alt_num[4] = { 0, };
+
+	const char *str_env_count;
+	const char *str_env_fdtfile;
+	const char *str_dfu_alt_num;
+	int env_count = 0;
+
+	str_env_fdtfile = getenv("fdtfile");
+	if (!str_env_fdtfile)
+		return 0;
+
+	str_env_count = getenv("dfu_alt_group");
+	if (!str_env_count)
+		return 1;
+
+	env_count = simple_strtoul(str_env_count, NULL, 10);
+
+	/* add kernel's dtb environment in dfu_alt_info_# */
+	sprintf(env_name, "dfu_alt_info_%d", env_count);
+	sprintf(env_value, "%s ext4 0 2", str_env_fdtfile);
+	setenv(env_name, env_value);
+
+	/* increase dfu_alt_info_# count */
+	sprintf(dfu_alt_group, "%d", ++env_count);
+	setenv("dfu_alt_group", dfu_alt_group);
+
+	/* total dfu_alt_entity */
+	str_dfu_alt_num = getenv("dfu_alt_num");
+	if (!str_dfu_alt_num)
+		return 1;
+
+	env_count = simple_strtoul(str_dfu_alt_num, NULL, 10);
+
+	/* env_count make int */
+	sprintf(dfu_alt_num, "%d", ++env_count);
+	setenv("dfu_alt_num", dfu_alt_num);
+
+	return 0;
+}
+
 /*
  * access: selects partitions to access
  *	0x0 - No access to boot partition (default)

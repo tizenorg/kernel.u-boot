@@ -119,6 +119,7 @@ struct pitpart_data {
 void check_pit(void);
 int pit_get_version(void);
 void pit_to_dfu_alt_info(void);
+int add_dtb_to_dfu_alt_info(void);
 int pit_mmc_boot_part_access(char *file_name, u8 access);
 void thor_set_pit_support(enum pit_support value);
 int thor_get_pit_support(void);
