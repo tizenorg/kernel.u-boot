@@ -408,6 +408,11 @@ static void check_hw_revision(void)
 	board_rev |= hwrev;
 }
 
+int check_pwr_key(int cnt)
+{
+	return 0;
+}
+
 #ifdef CONFIG_DISPLAY_BOARDINFO
 int checkboard(void)
 {
