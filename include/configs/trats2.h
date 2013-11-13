@@ -153,6 +153,8 @@
 
 #undef CONFIG_CMD_NET
 
+#define CONFIG_OF_LIBFDT
+
 /* MMC */
 #define CONFIG_GENERIC_MMC
 #define CONFIG_MMC
@@ -197,13 +199,13 @@
 	"data.img mmc 3A1800 96000;" \
 	"uImage ext4 0 2;" \
 	"modules.img ext4 0 6;" \
-	"exynos4412-m0.dtb ext4 0 2;" \
+	"exynos4412-trats2.dtb ext4 0 2;" \
 	""PARTS_UMS".img part 0 7;" \
 	""PARTS_CSC" part 0 4\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"bootk=" \
-		"run loaduimage; bootm 0x40007FC0\0" \
+		"run loaddtb; run loaduimage; bootm 0x40007FC0 - ${fdtaddr}\0" \
 	"updatemmc=" \
 		"mmc boot 0 1 1 1; mmc write 0x42008000 0 0x200;" \
 		"mmc boot 0 1 1 0\0" \
@@ -222,7 +224,7 @@
 		"mmcboot=" \
 		"setenv bootargs root=/dev/mmcblk${mmcdev}p${mmcrootpart} " \
 		"${lpj} rootwait ${console} ${meminfo} ${opts} ${lcdinfo}; " \
-		"run loaduimage; bootm 0x40007FC0\0" \
+		"run loaddtb; run loaduimage; bootm 0x40007FC0 - ${fdtaddr}\0" \
 	"bootchart=set opts init=/sbin/bootchartd; run bootcmd\0" \
 	"boottrace=setenv opts initcall_debug; run bootcmd\0" \
 	"verify=n\0" \
@@ -231,6 +233,8 @@
 	"kernelname=uImage\0" \
 	"loaduimage=" FSTYPE_DEFAULT "load mmc ${mmcdev}:${mmcbootpart} " \
 		"0x40007FC0 ${kernelname}\0" \
+	"loaddtb=" FSTYPE_DEFAULT "load mmc ${mmcdev}:${mmcbootpart} " \
+		"${fdtaddr} ${fdtfile}\0" \
 	"mmcdev=0\0" \
 	"mmcbootpart=2\0" \
 	"mmcrootpart=5\0" \
@@ -259,7 +263,9 @@
 		   " /${splfile} ${spl_imgaddr} ${spl_imgsize};" \
 		   "setenv spl_imgsize;" \
 		   "setenv spl_imgaddr;" \
-		   "setenv spl_addr_tmp;\0"
+		   "setenv spl_addr_tmp;\0" \
+	"fdtaddr=40800000\0" \
+	"fdtfile=exynos4412-trats2.dtb\0"
 /*
  * Miscellaneous configurable options
  */
