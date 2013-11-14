@@ -42,7 +42,6 @@
 #endif
 #include <lcd.h>
 #include <watchdog.h>
-#include <asm/unaligned.h>
 
 #include <splash.h>
 
@@ -914,9 +913,9 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 		return 1;
 	}
 
-	width = get_unaligned_le32(&bmp->header.width);
-	height = get_unaligned_le32(&bmp->header.height);
-	bmp_bpix = get_unaligned_le32(&bmp->header.bit_count);
+	width = le32_to_cpu(bmp->header.width);
+	height = le32_to_cpu(bmp->header.height);
+	bmp_bpix = le16_to_cpu(bmp->header.bit_count);
 	colors = 1 << bmp_bpix;
 
 	bpix = NBITS(panel_info.vl_bpix);
@@ -1001,7 +1000,7 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 	if ((y + height) > panel_info.vl_row)
 		height = panel_info.vl_row - y;
 
-	bmap = (uchar *)bmp + get_unaligned_le32(&bmp->header.data_offset);
+	bmap = (uchar *) bmp + le32_to_cpu(bmp->header.data_offset);
 	fb   = (uchar *) (lcd_base +
 		(y + height - 1) * lcd_line_length + x * bpix / 8);
 
@@ -1009,8 +1008,7 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 	case 1: /* pass through */
 	case 8:
 #ifdef CONFIG_LCD_BMP_RLE8
-		if (get_unaligned_le32(&bmp->header.compression) ==
-		    BMP_BI_RLE8) {
+		if (le32_to_cpu(bmp->header.compression) == BMP_BI_RLE8) {
 			if (bpix != 16) {
 				/* TODO implement render code for bpix != 16 */
 				printf("Error: only support 16 bpix");
