@@ -33,6 +33,7 @@
 #include <pit.h>
 #endif
 #include <sighdr.h>
+#include <libtizen.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -208,12 +209,15 @@ static int check_vol_down(void)
 	return !(s5p_gpio_get_value(&gpio2->x3, 3));
 }
 
-static void check_usbdown_key(void)
+static int check_usbdown_key(void)
 {
 	if (check_pwr_on() && check_vol_down()) {
 		debug("run usbdown command");
 		setenv("bootcmd", "usbdown mmc 0");
+		return 1;
 	}
+
+	return 0;
 }
 
 int check_pwr_key(int cnt)
@@ -664,6 +668,7 @@ void init_panel_info(vidinfo_t *vid)
 #ifdef CONFIG_MISC_INIT_R
 int misc_init_r(void)
 {
+	int is_usbdown_mode = 0;
 	setenv("model", "GT-I8800");
 	setenv("board", "TRATS2");
 
@@ -671,7 +676,10 @@ int misc_init_r(void)
 #ifdef CONFIG_CMD_PIT
 	check_pit();
 #endif
-	check_usbdown_key();
+	is_usbdown_mode = check_usbdown_key();
+
+	if (is_usbdown_mode == 0)
+		draw_tizen_logo(panel_info);
 
 	return 0;
 }
