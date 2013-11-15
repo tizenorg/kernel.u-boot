@@ -3,6 +3,8 @@
 #include <dfu.h>
 #include <g_dnl.h>
 #include <pit.h>
+#include <usb.h>
+#include <libtizen.h>
 
 int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -14,6 +16,8 @@ int do_usbd_down(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return CMD_RET_USAGE;
 retry:
 	puts("TIZEN \"THOR\" Downloader\n");
+
+	set_download_logo(0);
 
 	retry = 0;
 	/* convert pit to dfu_alt_info env */
@@ -53,6 +57,8 @@ retry:
 	}
 
 exit:
+	set_download_logo(1);
+
 	thor_set_pit_support(PIT_SUPPORT_NO);
 
 	g_dnl_unregister();
