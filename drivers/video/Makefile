@@ -30,7 +30,7 @@ COBJS-$(CONFIG_ATMEL_HLCD) += atmel_hlcdfb.o
 COBJS-$(CONFIG_ATMEL_LCD) += atmel_lcdfb.o
 COBJS-$(CONFIG_CFB_CONSOLE) += cfb_console.o
 COBJS-$(CONFIG_EXYNOS_DP) += exynos_dp.o exynos_dp_lowlevel.o
-COBJS-$(CONFIG_EXYNOS_FB) += exynos_fb.o exynos_fimd.o
+COBJS-$(CONFIG_EXYNOS_FB) += exynos_fb.o exynos_fimd.o font_8x16.o fbutils.o
 COBJS-$(CONFIG_EXYNOS_MIPI_DSIM) += exynos_mipi_dsi.o exynos_mipi_dsi_common.o \
 				exynos_mipi_dsi_lowlevel.o
 COBJS-$(CONFIG_EXYNOS_PWM_BL) += exynos_pwm_bl.o

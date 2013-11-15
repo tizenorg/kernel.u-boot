@@ -28,6 +28,7 @@
 #include <asm/arch/power.h>
 #include <pit.h>
 #include <sighdr.h>
+#include <libtizen.h>
 
 #include "f_thor.h"
 
@@ -53,6 +54,8 @@ DEFINE_CACHE_ALIGN_BUFFER(unsigned char, thor_rx_data_buf,
 /* ********************************************************** */
 DEFINE_CACHE_ALIGN_BUFFER(char, f_name, F_NAME_BUF_SIZE);
 static unsigned long long int thor_file_size;
+static unsigned long long int total_file_size;
+static unsigned long long int downloaded_file_size;
 static int alt_setting_num;
 
 static void send_rsp(const struct rsp_box *rsp)
@@ -265,6 +268,8 @@ static long long int process_rqt_download(const struct rqt_box *rqt)
 	switch (rqt->rqt_data) {
 	case RQT_DL_INIT:
 		thor_file_size = rqt->int_data[0];
+		total_file_size = thor_file_size;
+		downloaded_file_size = 0;
 		debug("INIT: total %d bytes\n", rqt->int_data[0]);
 		break;
 	case RQT_DL_FILE_INFO:
@@ -598,6 +603,9 @@ static int thor_rx_data(void)
 		}
 		dev->rxdata = 0;
 		data_to_rx -= dev->out_req->actual;
+		downloaded_file_size += dev->out_req->actual;
+
+		draw_progress(total_file_size, downloaded_file_size);
 	} while (data_to_rx);
 
 	return tmp;
