@@ -914,8 +914,11 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 		return 1;
 	}
 
-	/* We support displaying 8bpp BMPs on 16bpp LCDs */
-	if (bpix != bmp_bpix && !(bmp_bpix == 8 && bpix == 16)) {
+	/* We support displaying
+	 * 8bpp BMPs on 16bpp LCDs
+	 * 16bpp BMPs on 32bpp LCDs */
+	if (bpix != bmp_bpix && !(bmp_bpix == 8 && bpix == 16) &&
+	    !(bmp_bpix == 16 && bpix == 32)) {
 		printf ("Error: %d bit/pixel mode, but BMP has %d bit/pixel\n",
 			bpix,
 			le16_to_cpu(bmp->header.bit_count));
@@ -1026,15 +1029,34 @@ int lcd_display_bitmap(ulong bmp_image, int x, int y)
 		}
 		break;
 
-#if defined(CONFIG_BMP_16BPP)
+#if defined(CONFIG_BMP_16BPP) || defined(CONFIG_BMP_32BPP)
 	case 16:
 		for (i = 0; i < height; ++i) {
 			WATCHDOG_RESET();
-			for (j = 0; j < width; j++)
-				fb_put_word(&fb, &bmap);
+			if (bpix == 16) {
+				for (j = 0; j < width; j++) {
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+				}
+				bmap += (padded_width - width) * 2;
+			} else if (bpix == 32) {
+				for (j = 0; j < width; j++) {
+					ushort rgb565 = *(ushort *)bmap;
+					uchar r, g, b;
 
-			bmap += (padded_width - width) * 2;
-			fb -= width * 2 + lcd_line_length;
+					r = ((rgb565 & 0xF800) >> 11) << 3;
+					g = ((rgb565 & 0x7E0) >> 5) << 2;
+					b = ((rgb565 & 0x1F)) << 3;
+
+					*(fb++) = b;
+					*(fb++) = g;
+					*(fb++) = r;
+					*(fb++) = 0xff;
+					bmap += 2;
+				}
+			}
+
+			fb   -= (width * (bpix / 8) + lcd_line_length);
 		}
 		break;
 #endif /* CONFIG_BMP_16BPP */
