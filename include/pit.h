@@ -117,6 +117,7 @@ struct pitpart_data {
 #define QBOOT_ERASE_SIZE	0x1000
 
 void check_pit(void);
+int pit_get_version(void);
 void pit_to_dfu_alt_info(void);
 int pit_mmc_boot_part_access(char *file_name, u8 access);
 void thor_set_pit_support(enum pit_support value);
