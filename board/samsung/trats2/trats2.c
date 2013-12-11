@@ -383,50 +383,59 @@ static int s5pc210_phy_control(int on)
 {
 	int ret = 0;
 	unsigned int val;
+	struct pmic *p, *p_pmic, *p_muic;
 
-	struct pmic *p = pmic_get("MAX77686_PMIC");
-	if (!p)
+	p_pmic = pmic_get("MAX77686_PMIC");
+	if (!p_pmic)
 		return -ENODEV;
 
-	if (pmic_probe(p))
+	if (pmic_probe(p_pmic))
+		return -1;
+
+	p_muic = pmic_get("MAX77693_MUIC");
+	if (!p_muic)
+		return -ENODEV;
+
+	if (pmic_probe(p_muic))
 		return -1;
 
 	if (on) {
-		ret = max77686_set_ldo_mode(p, 12, OPMODE_ON);
-
+		ret = max77686_set_ldo_mode(p_pmic, 12, OPMODE_ON);
+		if (ret)
+			return -1;
 		p = pmic_get("MAX77693_PMIC");
+		if (!p)
+			return -ENODEV;
+
 		if (pmic_probe(p))
 			return -1;
 
 		/* SAFEOUT */
-		ret |= pmic_reg_read(p, MAX77693_SAFEOUT, &val);
-		val |= MAX77693_ENSAFEOUT1;
-		ret |= pmic_reg_write(p, MAX77693_SAFEOUT, val);
+		ret = pmic_reg_read(p, MAX77693_SAFEOUT, &val);
+		if (ret)
+			return -1;
 
-		p = pmic_get("MAX77693_MUIC");
-		if (pmic_probe(p))
+		val |= MAX77693_ENSAFEOUT1;
+		ret = pmic_reg_write(p, MAX77693_SAFEOUT, val);
+		if (ret)
 			return -1;
 
 		/* PATH: USB */
-		ret |= pmic_reg_write(p, MAX77693_MUIC_CONTROL1,
+		ret = pmic_reg_write(p_muic, MAX77693_MUIC_CONTROL1,
 			MAX77693_MUIC_CTRL1_DN1DP2);
 
 	} else {
-		ret |= max77686_set_ldo_mode(p, 12, OPMODE_LPM);
-
-		p = pmic_get("MAX77693_MUIC");
-		if (pmic_probe(p))
+		ret = max77686_set_ldo_mode(p_pmic, 12, OPMODE_LPM);
+		if (ret)
 			return -1;
 
 		/* PATH: UART */
-		ret |= pmic_reg_write(p, MAX77693_MUIC_CONTROL1,
+		ret = pmic_reg_write(p_muic, MAX77693_MUIC_CONTROL1,
 			MAX77693_MUIC_CTRL1_UT1UR2);
 	}
 
-	if (ret) {
-		puts("MAX77693 setting error!\n");
+	if (ret)
 		return -1;
-	}
 
 	return 0;
 }
@@ -444,6 +453,17 @@ int board_usb_init(int index, enum usb_init_type init)
 	debug("USB_udc_probe\n");
 	return s3c_udc_probe(&s5pc210_otg_data);
 }
+
+#ifdef CONFIG_USB_CABLE_CHECK
+int usb_cable_connected(void)
+{
+	struct pmic *muic = pmic_get("MAX77693_MUIC");
+	if (!muic)
+		return 0;
+
+	return !!muic->chrg->chrg_type(muic);
+}
+#endif
 #endif
 
 static int pmic_init_max77686(void)
