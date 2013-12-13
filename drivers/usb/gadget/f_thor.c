@@ -29,6 +29,7 @@
 #include <pit.h>
 #include <sighdr.h>
 #include <libtizen.h>
+#include <usb.h>
 
 #include "f_thor.h"
 
@@ -589,9 +590,11 @@ static int thor_rx_data(void)
 		while (!dev->rxdata) {
 			usb_gadget_handle_interrupts();
 
+#ifdef CONFIG_USB_CABLE_CHECK
 			/* usb disconnected */
-			if (!dev->configuration_done)
+			if (!usb_cable_connected())
 				return -1;
+#endif
 
 			if (!downloading && check_pwr_key(3)) {
 				board_inform_clear();
@@ -636,9 +639,11 @@ static void thor_tx_data(unsigned char *data, int len)
 	while (!dev->txdata) {
 		usb_gadget_handle_interrupts();
 
+#ifdef CONFIG_USB_CABLE_CHECK
 		/* usb disconnected */
-		if (!dev->configuration_done)
+		if (!usb_cable_connected())
 			break;
+#endif
 	}
 
 	dev->txdata = 0;
