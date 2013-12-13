@@ -592,7 +592,7 @@ static int thor_rx_data(void)
 
 #ifdef CONFIG_USB_CABLE_CHECK
 			/* usb disconnected */
-			if (!usb_cable_connected())
+			if (!downloading && !usb_cable_connected())
 				return -1;
 #endif
 
