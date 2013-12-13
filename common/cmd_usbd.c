@@ -61,8 +61,6 @@ retry:
 	}
 
 exit:
-	set_download_logo(1);
-
 	thor_set_pit_support(PIT_SUPPORT_NO);
 
 	g_dnl_unregister();
@@ -70,6 +68,8 @@ exit:
 
 	if (retry)
 		goto retry;
+
+	set_download_logo(1);
 
 	return 0;
 }
