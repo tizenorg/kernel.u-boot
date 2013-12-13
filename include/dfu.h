@@ -132,7 +132,7 @@ char *dfu_extract_token(char** e, int *n);
 void dfu_trigger_reset(void);
 unsigned char *dfu_get_buf(void);
 unsigned char *dfu_free_buf(void);
-int dfu_get_alt(const char *name);
+int dfu_get_alt(char *name);
 bool dfu_reset(void);
 int dfu_init_env_entities(char *interface, int dev);
 int dfu_init_pit_entities(char *interface, int dev);

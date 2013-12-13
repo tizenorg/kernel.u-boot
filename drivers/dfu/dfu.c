@@ -451,7 +451,7 @@ struct dfu_entity *dfu_get_entity(int alt)
 	return NULL;
 }
 
-int dfu_get_alt(const char *name)
+int dfu_get_alt(char *name)
 {
 	struct dfu_entity *dfu;
 
