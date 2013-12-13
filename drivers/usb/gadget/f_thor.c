@@ -771,6 +771,8 @@ int thor_init(void)
 		}
 	}
 
+	set_usb_connected();
+
 	thor_set_dma(thor_rx_data_buf, strlen("THOR"));
 	/* detect the download request from Host PC */
 	if (thor_rx_data() < 0) {
