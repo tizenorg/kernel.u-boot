@@ -106,6 +106,11 @@ void set_download_logo(int fail)
 	fb_printf("\nPlease Press POWERKEY 3 times to CANCEL downloading\n");
 }
 
+void set_usb_connected(void)
+{
+	fb_printf("Cable is connected");
+}
+
 void draw_progress(
 		unsigned long long int total_file_size,
 		unsigned long long int downloaded_file_size)
