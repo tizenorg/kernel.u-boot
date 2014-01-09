@@ -228,7 +228,6 @@ int get_pitpart_id(char *name)
 			return i;
 	}
 
-	printf("Can't found partition (%s)\n", name);
 	return -1;
 }
 
@@ -246,7 +245,6 @@ int get_pitpart_id_by_filename(char *file_name)
 		}
 	}
 
-	printf("Can't found partition (%s)\n", file_name);
 	return -1;
 }
 
@@ -260,7 +258,6 @@ int get_pitpart_id_for_pit(char *file_name)
 				return i;
 	}
 
-	printf("Can't found partition (%s)\n", file_name);
 	return -1;
 }
 
