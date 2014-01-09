@@ -108,7 +108,6 @@
  ***********************************************************/
 #include <config_cmd_default.h>
 
-#undef CONFIG_CMD_ECHO
 #undef CONFIG_CMD_FPGA
 #undef CONFIG_CMD_FLASH
 #undef CONFIG_CMD_IMLS
@@ -199,13 +198,14 @@
 	"data.img mmc 3A1800 96000;" \
 	"uImage ext4 0 2;" \
 	"modules.img ext4 0 6;" \
-	"exynos4412-trats2.dtb ext4 0 2;" \
+	".dtb ext4 0 2;" \
 	""PARTS_UMS".img part 0 7;" \
 	""PARTS_CSC" part 0 4\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"bootk=" \
-		"run loaddtb; run loaduimage; bootm 0x40007FC0 - ${fdtaddr}\0" \
+		"run findfdt; run loaddtb; run loaduimage; " \
+		"bootm 0x40007FC0 - ${fdtaddr}\0" \
 	"updatemmc=" \
 		"mmc boot 0 1 1 1; mmc write 0x42008000 0 0x200;" \
 		"mmc boot 0 1 1 0\0" \
@@ -224,7 +224,8 @@
 		"mmcboot=" \
 		"setenv bootargs root=/dev/mmcblk${mmcdev}p${mmcrootpart} " \
 		"${lpj} rootwait ${console} ${meminfo} ${opts} ${lcdinfo}; " \
-		"run loaddtb; run loaduimage; bootm 0x40007FC0 - ${fdtaddr}\0" \
+		"run findfdt; run loaddtb; run loaduimage; " \
+		"bootm 0x40007FC0 - ${fdtaddr}\0" \
 	"bootchart=set opts init=/sbin/bootchartd; run bootcmd\0" \
 	"boottrace=setenv opts initcall_debug; run bootcmd\0" \
 	"verify=n\0" \
@@ -265,7 +266,14 @@
 		   "setenv spl_imgaddr;" \
 		   "setenv spl_addr_tmp;\0" \
 	"fdtaddr=40800000\0" \
-	"fdtfile=exynos4412-trats2.dtb\0"
+	"fdtfile=.dtb\0" \
+	"findfdt=" \
+		"if test $board = TRATS2; then " \
+			"setenv fdtfile exynos4412-m0.dtb; fi; " \
+		"if test $board = .dtb; then " \
+			"echo WARNING: Could not determine devicetree to use;" \
+			"fi;\0"
+
 /*
  * Miscellaneous configurable options
  */
