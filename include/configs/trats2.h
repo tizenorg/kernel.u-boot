@@ -160,6 +160,7 @@
 
 /* Tizen - partitions definitions */
 #define PARTS_CSA		"csa"
+#define PARTS_BOOTLOADER	"u-boot"
 #define PARTS_BOOT		"boot"
 #define PARTS_MODEM		"modem"
 #define PARTS_CSC		"csc"
