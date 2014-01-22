@@ -31,7 +31,7 @@ retry:
 	if (ret)
 		return ret;
 
-	ret = board_usb_init();
+	ret = board_usb_init(0, 0);
 	if (ret) {
 		error("USB init failed: %d", ret);
 		ret = CMD_RET_FAILURE;
