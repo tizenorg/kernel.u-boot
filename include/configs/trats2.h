@@ -382,4 +382,11 @@ int get_soft_i2c_sda_pin(void);
 /* Pass open firmware flat tree */
 #define CONFIG_OF_LIBFDT    1
 
+/* PIT */
+#define CONFIG_CMD_PIT
+#define CONFIG_SYS_MMC_PIT_DEV	CONFIG_MMC_DEFAULT_DEV
+#define CONFIG_PIT_DEFAULT_ADDR	0x8000	/* block */
+#define CONFIG_PIT_DEFAULT_SIZE 0x1000
+#define CONFIG_PIT_DOWN_ADDR	CONFIG_SYS_SDRAM_BASE + 0x5110000
+#define CONFIG_SUPPORT_EMMC_BOOT
 #endif	/* __CONFIG_H */

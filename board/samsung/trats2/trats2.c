@@ -29,6 +29,7 @@
 #include <usb/s3c_udc.h>
 #include <usb_mass_storage.h>
 #include <samsung/misc.h>
+#include <samsung/pit.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -618,6 +619,9 @@ int misc_init_r(void)
 {
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 	set_board_info();
+#endif
+#ifdef CONFIG_CMD_PIT
+	check_pit();
 #endif
 #ifdef CONFIG_LCD_MENU
 	keys_init();
