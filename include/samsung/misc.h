@@ -1,6 +1,8 @@
 #ifndef __SAMSUNG_MISC_COMMON_H__
 #define __SAMSUNG_MISC_COMMON_H__
 
+#include <linux/input.h>
+
 #ifdef CONFIG_REVISION_TAG
 u32 get_board_rev(void);
 #endif
@@ -19,6 +21,8 @@ enum {
 };
 
 void keys_init(void);
+int check_keys(void);
+int key_pressed(int key);
 void check_boot_mode(void);
 #endif /* CONFIG_LCD_MENU */
 
