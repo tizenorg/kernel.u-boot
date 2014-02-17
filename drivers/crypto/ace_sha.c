@@ -111,3 +111,44 @@ void hw_sha1(const unsigned char *pbuf, unsigned int buf_len,
 	if (ace_sha_hash_digest(pbuf, buf_len, pout, ACE_SHA_TYPE_SHA1))
 		debug("ACE was not setup properly or it is faulty\n");
 }
+
+unsigned int hw_rand(void)
+{
+	struct exynos_ace_sfr *reg =
+		(struct exynos_ace_sfr *)samsung_get_base_ace_sfr();
+	int status, i;
+	int seed[5];
+	unsigned int ret = 0;
+
+	/* Seed data */
+	for (i=0; i < ACE_HASH_PRNG_REG_NUM; i++)
+		writel(seed[i], &reg->hash_seed[i]);
+
+	status = 0;
+	/* Wait for seed setup done */
+	while (!(status & ACE_HASH_SEEDSETTING_MASK)) {
+		status = readl(&reg->hash_status);
+		if (status & ACE_HASH_PRNGERROR_MASK)
+			return 0;
+	}
+
+	/* Start PRNG */
+	writel(ACE_HASH_ENGSEL_PRNG | ACE_HASH_STARTBIT_ON, &reg->hash_control);
+
+	status = 0;
+	/* Wait for PRNG done */
+	while(!(status & ACE_HASH_PRNGDONE_MASK)) {
+		status = readl(&reg->hash_status);
+		if (status & ACE_HASH_PRNGERROR_MASK)
+			return 0;
+	}
+
+	/* Clear Done IRQ */
+	writel(ACE_HASH_PRNGDONE_MASK, &reg->hash_status);
+
+	/* Read a PRNG result */
+	for (i=0; i < ACE_HASH_PRNG_REG_NUM; i++)
+		ret += readl(&reg->hash_prng[i]);
+
+	return ret;
+}
