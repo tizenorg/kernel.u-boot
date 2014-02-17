@@ -224,6 +224,10 @@
 #define CONFIG_POWER_BATTERY
 #define CONFIG_POWER_BATTERY_TRATS
 
+/* Security subsystem - enable hw_rand() */
+#define CONFIG_EXYNOS_ACE_SHA
+#define CONFIG_RAND_HW_ACCEL
+
 /* Common misc for Samsung */
 #define CONFIG_MISC_COMMON
 
