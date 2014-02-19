@@ -23,7 +23,11 @@ unsigned int rand_r(unsigned int *seedp)
 
 unsigned int rand(void)
 {
+#ifdef CONFIG_RAND_HW_ACCEL
+	return hw_rand();
+#else
 	return rand_r(&y);
+#endif
 }
 
 void srand(unsigned int seed)
