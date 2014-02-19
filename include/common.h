@@ -840,6 +840,9 @@ void srand(unsigned int seed);
 unsigned int rand(void);
 unsigned int rand_r(unsigned int *seedp);
 #endif
+#ifdef CONFIG_RAND_HW_ACCEL
+unsigned int hw_rand(void);
+#endif
 
 /* common/console.c */
 int	console_init_f(void);	/* Before relocation; uses the serial  stuff	*/
