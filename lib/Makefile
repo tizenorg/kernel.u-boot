@@ -65,3 +65,7 @@ obj-y += vsprintf.o
 obj-$(CONFIG_RANDOM_MACADDR) += rand.o
 obj-$(CONFIG_BOOTP_RANDOM_DELAY) += rand.o
 obj-$(CONFIG_CMD_LINK_LOCAL) += rand.o
+ifdef CONFIG_PARTITION_UUIDS
+obj-y += rand.o
+obj-y += uuid.o
+endif

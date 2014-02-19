@@ -819,7 +819,9 @@ void	udelay        (unsigned long);
 void mdelay(unsigned long);
 
 /* lib/uuid.c */
-void uuid_str_to_bin(const char *uuid, unsigned char *out);
+char *get_uuid_str(void);
+int uuid_bin_to_str(unsigned char *uuid, char *str);
+int uuid_str_to_bin(char *uuid, unsigned char *out);
 int uuid_str_valid(const char *uuid);
 
 /* lib/vsprintf.c */
@@ -834,7 +836,8 @@ char *	strmhz(char *buf, unsigned long hz);
 /* lib/rand.c */
 #if defined(CONFIG_RANDOM_MACADDR) || \
 	defined(CONFIG_BOOTP_RANDOM_DELAY) || \
-	defined(CONFIG_CMD_LINK_LOCAL)
+	defined(CONFIG_CMD_LINK_LOCAL) || \
+	defined(CONFIG_PARTITION_UUIDS)
 #define RAND_MAX -1U
 void srand(unsigned int seed);
 unsigned int rand(void);
