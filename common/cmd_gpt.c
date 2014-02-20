@@ -31,6 +31,7 @@
  */
 static char extract_env(const char *str, char **env)
 {
+	int ret = -1;
 	char *e, *s;
 
 	if (!str || strlen(str) < 4)
@@ -43,16 +44,23 @@ static char extract_env(const char *str, char **env)
 		memset(s + strlen(s) - 1, '\0', 1);
 		memmove(s, s + 2, strlen(s) - 1);
 		e = getenv(s);
-		free(s);
 		if (e == NULL) {
-			printf("Environmental '%s' not set\n", str);
-			return -1; /* env not set */
+			printf("%s unset. ", str);
+			e = get_uuid_str();
+			if (e) {
+				printf("Setting to: %s\n", e);
+				setenv(s, e);
+				ret = 0;
+			}
+		} else {
+			ret = 0;
 		}
+
 		*env = e;
-		return 0;
+		free(s);
 	}
 
-	return -1;
+	return ret;
 }
 
 /**
@@ -299,8 +307,17 @@ static int do_gpt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return CMD_RET_FAILURE;
 		}
 
-		if (gpt_default(blk_dev_desc, argv[4]))
+		puts("Writing GPT: ");
+
+		ret = gpt_default(blk_dev_desc, argv[4]);
+		if (!ret) {
+			puts("success!\n");
+			saveenv();
+			return CMD_RET_SUCCESS;
+		} else {
+			puts("error!\n");
 			return CMD_RET_FAILURE;
+		}
 	} else {
 		return CMD_RET_USAGE;
 	}

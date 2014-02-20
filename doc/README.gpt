@@ -176,3 +176,4 @@ Please, pay attention at -l switch for parted.
 "uuid" program is recommended to generate UUID string. Moreover it can decode
 (-d switch) passed in UUID string. It can be used to generate partitions UUID
 passed to u-boot environment variables.
+If each partition "uuid" no exists then it will be randomly generated.
