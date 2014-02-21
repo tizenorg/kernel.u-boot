@@ -156,29 +156,37 @@
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 
 /* Tizen - partitions definitions */
-#define PARTS_CSA		"csa"
+#define PARTS_CSA		"csa-mmc"
 #define PARTS_BOOT		"boot"
-#define PARTS_MODEM		"modem"
+#define PARTS_QBOOT		"qboot"
 #define PARTS_CSC		"csc"
 #define PARTS_ROOT		"platform"
 #define PARTS_DATA		"data"
 #define PARTS_UMS		"ums"
 
-#define PARTS_DEFAULT \
+#define TIZEN_PARTITIONS_V8 \
 	"uuid_disk=${uuid_gpt_disk};" \
 	"name="PARTS_CSA",start=5MiB,size=8MiB,uuid=${uuid_gpt_"PARTS_CSA"};" \
-	"name="PARTS_BOOT",size=64MiB,uuid=${uuid_gpt_"PARTS_BOOT"};" \
-	"name="PARTS_MODEM",size=100MiB,uuid=${uuid_gpt_"PARTS_MODEM"};" \
+	"name="PARTS_BOOT",size=60MiB,uuid=${uuid_gpt_"PARTS_BOOT"};" \
+	"name="PARTS_QBOOT",size=100MiB,uuid=${uuid_gpt_"PARTS_QBOOT"};" \
 	"name="PARTS_CSC",size=150MiB,uuid=${uuid_gpt_"PARTS_CSC"};" \
 	"name="PARTS_ROOT",size=1536MiB,uuid=${uuid_gpt_"PARTS_ROOT"};" \
-	"name="PARTS_DATA",size=512MiB,uuid=${uuid_gpt_"PARTS_DATA"};" \
+	"name="PARTS_DATA",size=3000MiB,uuid=${uuid_gpt_"PARTS_DATA"};" \
 	"name="PARTS_UMS",size=-,uuid=${uuid_gpt_"PARTS_UMS"}\0" \
 
-#define CONFIG_DFU_ALT \
-	"u-boot mmc 80 800;" \
+#define TIZEN_DFU_ALT_VERSION	"08\0"
+
+#define TIZEN_DFU_ALT_INFO_V8 \
+	"s-boot-mmc.bin mmc 0 400 mmcpart 1;" \
+	"u-boot-mmc.bin mmc 80 800;" \
 	"uImage ext4 0 2;" \
+	"modules.img ext4 0 2;" \
+	"modem.bin ext4 0 2;" \
 	"exynos4412-trats2.dtb ext4 0 2;" \
+	""PARTS_CSA" part 0 1;" \
 	""PARTS_BOOT" part 0 2;" \
+	""PARTS_QBOOT" part 0 3;" \
+	""PARTS_CSC" part 0 4;" \
 	""PARTS_ROOT" part 0 5;" \
 	""PARTS_DATA" part 0 6;" \
 	""PARTS_UMS" part 0 7;" \
@@ -219,8 +227,9 @@
 	"mmcbootpart=2\0" \
 	"mmcrootpart=5\0" \
 	"opts=always_resume=1\0" \
-	"partitions=" PARTS_DEFAULT \
-	"dfu_alt_info=" CONFIG_DFU_ALT \
+	"partitions=" TIZEN_PARTITIONS_V8 \
+	"dfu_alt_info=" TIZEN_DFU_ALT_INFO_V8 \
+	"dfu_alt_pit_compatible=" TIZEN_DFU_ALT_VERSION \
 	"uartpath=ap\0" \
 	"usbpath=ap\0" \
 	"consoleon=set console console=ttySAC2,115200n8; save; reset\0" \
