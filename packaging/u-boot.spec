@@ -12,7 +12,6 @@ Source1001: packaging/u-boot.manifest
 %description
 bootloader for Embedded boards based on ARM processor
 
-
 #TODO: Describe rpm package information depending on board
 %package -n u-boot-pkg
 Summary: A bootloader for Embedded system
@@ -35,20 +34,22 @@ This package includes the mkimage program, which allows generation of U-Boot
 images in various formats, and the fw_printenv and fw_setenv programs to read
 and modify U-Boot's environment.
 
-
 %ifarch %{arm}
 %global use_mmc_storage 1
 %endif
-
 
 %prep
 %setup -q
 
 %build
 cp %{SOURCE1001} .
-make distclean
+
+make mrproper
+
+# Set configuration
 make trats2_config
 
+# Build tools
 make HOSTCC="gcc $RPM_OPT_FLAGS" HOSTSTRIP=/bin/true tools
 
 %if 1%{?use_mmc_storage}
@@ -57,16 +58,29 @@ make HOSTCC="gcc $RPM_OPT_FLAGS" CONFIG_ENV_IS_IN_MMC=y env
 make HOSTCC="gcc $RPM_OPT_FLAGS" env
 %endif
 
+# Build u-boot
+make
 
 %install
 rm -rf %{buildroot}
+
+# Tools installation
 mkdir -p %{buildroot}%{_bindir}
 install -p -m 0755 tools/mkimage %{buildroot}%{_bindir}
 install -p -m 0755 tools/env/fw_printenv %{buildroot}%{_bindir}
 ( cd %{buildroot}%{_bindir}; ln -sf fw_printenv fw_setenv )
 
+# u-boot installation
+install -d %{buildroot}/boot/u-boot
+install -m 755 u-boot.bin %{buildroot}/boot/u-boot
+install -m 755 u-boot-mmc.bin %{buildroot}/boot/u-boot
+
 %clean
 
+%files
+%manifest u-boot.manifest
+%defattr(-,root,root,-)
+/boot/u-boot/
 
 %files -n u-boot-tools
 %manifest u-boot.manifest
