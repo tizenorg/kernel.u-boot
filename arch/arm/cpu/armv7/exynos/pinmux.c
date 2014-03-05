@@ -39,6 +39,9 @@ static void exynos5_uart_config(int peripheral)
 		start = 4;
 		count = 2;
 		break;
+	default:
+		error("UART device %d not implemented\n", peripheral);
+		return;
 	}
 	for (i = start; i < start + count; i++) {
 		s5p_gpio_set_pull(bank, i, GPIO_PULL_NONE);
@@ -74,6 +77,9 @@ static void exynos5420_uart_config(int peripheral)
 		start = 4;
 		count = 2;
 		break;
+	default:
+		error("UART device %d not implemented\n", peripheral);
+		return;
 	}
 
 	for (i = start; i < start + count; i++) {
@@ -683,6 +689,9 @@ static void exynos4_uart_config(int peripheral)
 		start = 4;
 		count = 2;
 		break;
+	default:
+		error("UART device %d not implemented\n", peripheral);
+		return;
 	}
 	for (i = start; i < start + count; i++) {
 		s5p_gpio_set_pull(bank, i, GPIO_PULL_NONE);
