@@ -67,7 +67,7 @@ make HOSTCC="gcc $RPM_OPT_FLAGS" env
 
 # Build u-boot
 export PATH="$PATH:tools/dtc/"
-make DTC=tools/dtc/dtc
+make DTC=tools/dtc/dtc EXTRAVERSION=`echo %{vcs} | sed 's/.*u-boot#\(.\{9\}\).*/-g\1-TIZEN.org/'`
 cp u-boot-dtb.bin u-boot-mmc.bin
 
 %install
