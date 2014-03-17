@@ -59,7 +59,7 @@ make HOSTCC="gcc $RPM_OPT_FLAGS" env
 %endif
 
 # Build u-boot
-make
+make EXTRAVERSION=`echo %{vcs} | sed 's/.*u-boot#\(.\{9\}\).*/-g\1-TIZEN.org/'`
 
 %install
 rm -rf %{buildroot}
