@@ -13,6 +13,7 @@
 #include <asm/arch/dwmmc.h>
 #include <asm/arch/clk.h>
 #include <asm/arch/pinmux.h>
+#include <asm/gpio.h>
 
 #define	DWMMC_MAX_CH_NUM		4
 #define	DWMMC_MAX_FREQ			52000000
@@ -82,6 +83,7 @@ int exynos_dwmci_add_port(int index, u32 regbase, int bus_width, u32 clksel)
 	freq = 52000000;
 	sclk = get_mmc_clk(index);
 	div = DIV_ROUND_UP(sclk, freq);
+	div -= 1;
 	/* set the clock divisor for mmc */
 	set_mmc_clk(index, div);
 
@@ -118,15 +120,21 @@ int exynos_dwmmc_init(const void *blob)
 {
 	int index, bus_width;
 	int node_list[DWMMC_MAX_CH_NUM];
-	int err = 0, dev_id, flag, count, i;
+	int err = 0, dev_id, flag, count, i, compat_id;
 	u32 clksel_val, base, timing[3];
 
+#ifdef CONFIG_EXYNOS4
+	compat_id = COMPAT_SAMSUNG_EXYNOS4_DWMMC;
+#else
+	compat_id = COMPAT_SAMSUNG_EXYNOS5_DWMMC;
+#endif
+
 	count = fdtdec_find_aliases_for_id(blob, "mmc",
-				COMPAT_SAMSUNG_EXYNOS5_DWMMC, node_list,
-				DWMMC_MAX_CH_NUM);
+				compat_id, node_list, DWMMC_MAX_CH_NUM);
 
 	for (i = 0; i < count; i++) {
 		int node = node_list[i];
+		struct fdt_gpio_state pwr_gpio;
 
 		if (node <= 0)
 			continue;
@@ -145,6 +153,9 @@ int exynos_dwmmc_init(const void *blob)
 		else
 			flag = PINMUX_FLAG_NONE;
 
+		fdtdec_decode_gpio(blob, node, "pwr-gpios", &pwr_gpio);
+		if (fdt_gpio_isvalid(&pwr_gpio))
+			gpio_direction_output(pwr_gpio.gpio, 1);
 		/* config pinmux for each mmc channel */
 		err = exynos_pinmux_config(dev_id, flag);
 		if (err) {
@@ -152,7 +163,9 @@ int exynos_dwmmc_init(const void *blob)
 			return err;
 		}
 
-		index = dev_id - PERIPH_ID_SDMMC0;
+		index = fdtdec_get_int(blob, node, "index", dev_id);
+		if (index == dev_id)
+			index = dev_id - PERIPH_ID_SDMMC0;
 
 		/* Get the base address from the device node */
 		base = fdtdec_get_addr(blob, node, "reg");
