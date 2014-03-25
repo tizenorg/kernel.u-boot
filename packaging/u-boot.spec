@@ -9,6 +9,9 @@ URL: https://review.tizen.org/git/?p=kernel/u-boot.git
 Source0: %{name}-%{version}.tar.bz2
 Source1001: u_boot.manifest
 
+BuildRequires: flex
+BuildRequires: bison
+
 %description
 u-boot - Tizen bootloader for Embedded boards based on ARM processor
 
@@ -46,6 +49,9 @@ cp %{SOURCE1001} .
 
 make mrproper
 
+# Build dtc
+make HOSTCC="gcc $RPM_OPT_FLAGS" -C tools/dtc
+
 # Set configuration
 make trats2_config
 
@@ -59,7 +65,9 @@ make HOSTCC="gcc $RPM_OPT_FLAGS" env
 %endif
 
 # Build u-boot
-make
+export PATH="$PATH:tools/dtc/"
+make DTC=tools/dtc/dtc
+cp u-boot-dtb.bin u-boot-mmc.bin
 
 %install
 rm -rf %{buildroot}
