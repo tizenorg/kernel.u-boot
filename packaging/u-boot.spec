@@ -71,16 +71,17 @@ install -p -m 0755 tools/env/fw_printenv %{buildroot}%{_bindir}
 ( cd %{buildroot}%{_bindir}; ln -sf fw_printenv fw_setenv )
 
 # u-boot installation
-install -d %{buildroot}/boot/u-boot
-install -m 755 u-boot.bin %{buildroot}/boot/u-boot
-install -m 755 u-boot-mmc.bin %{buildroot}/boot/u-boot
+mkdir -p %{buildroot}/var/tmp/u-boot
+install -d %{buildroot}/var/tmp/u-boot
+install -m 755 u-boot.bin %{buildroot}/var/tmp/u-boot
+install -m 755 u-boot-mmc.bin %{buildroot}/var/tmp/u-boot
 
 %clean
 
 %files
 %manifest u_boot.manifest
 %defattr(-,root,root,-)
-/boot/u-boot/
+/var/tmp/u-boot
 
 %files -n u-boot-tools
 %manifest u_boot.manifest
