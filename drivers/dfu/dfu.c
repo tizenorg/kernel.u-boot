@@ -20,6 +20,7 @@ static bool dfu_reset_request;
 static LIST_HEAD(dfu_list);
 static int dfu_alt_num;
 static int alt_num_cnt;
+static int dfu_checksum_method;
 
 bool dfu_reset(void)
 {
@@ -99,6 +100,23 @@ unsigned char *dfu_get_buf(void)
 	return dfu_buf;
 }
 
+static int dfu_get_checksum_method(void)
+{
+	char *s;
+
+	s = getenv("dfu_checksum_method");
+	if (!s)
+		return DFU_NO_CHECKSUM;
+
+	if (!strcmp(s, "crc32")) {
+		debug("%s: DFU checksum method: %s\n", __func__, s);
+		return DFU_CRC32;
+	} else {
+		error("DFU checksum method: %s not supported!\n", s);
+		return -EINVAL;
+	}
+}
+
 static int dfu_write_buffer_drain(struct dfu_entity *dfu)
 {
 	long w_size;
@@ -109,8 +127,8 @@ static int dfu_write_buffer_drain(struct dfu_entity *dfu)
 	if (w_size == 0)
 		return 0;
 
-	/* update CRC32 */
-	dfu->crc = crc32(dfu->crc, dfu->i_buf_start, w_size);
+	if (dfu_checksum_method == DFU_CRC32)
+		dfu->crc = crc32(dfu->crc, dfu->i_buf_start, w_size);
 
 	ret = dfu->write_medium(dfu, dfu->offset, dfu->i_buf_start, &w_size);
 	if (ret)
@@ -202,8 +220,9 @@ int dfu_write(struct dfu_entity *dfu, void *buf, int size, int blk_seq_num)
 		/* Now try and flush to the medium if needed. */
 		if (dfu->flush_medium)
 			ret = dfu->flush_medium(dfu);
-		printf("\nDFU complete CRC32: 0x%08x\n", dfu->crc);
 
+		if (dfu_checksum_method == DFU_CRC32)
+			printf("\nDFU complete CRC32: 0x%08x\n", dfu->crc);
 		/* clear everything */
 		dfu_free_buf();
 		dfu->crc = 0;
@@ -232,7 +251,8 @@ static int dfu_read_buffer_fill(struct dfu_entity *dfu, void *buf, int size)
 		/* consume */
 		if (chunk > 0) {
 			memcpy(buf, dfu->i_buf, chunk);
-			dfu->crc = crc32(dfu->crc, buf, chunk);
+			if (dfu_checksum_method == DFU_CRC32)
+				dfu->crc = crc32(dfu->crc, buf, chunk);
 			dfu->i_buf += chunk;
 			dfu->b_left -= chunk;
 			dfu->r_left -= chunk;
@@ -316,7 +336,9 @@ int dfu_read(struct dfu_entity *dfu, void *buf, int size, int blk_seq_num)
 	}
 
 	if (ret < size) {
-		debug("%s: %s CRC32: 0x%x\n", __func__, dfu->name, dfu->crc);
+		if (dfu_checksum_method == DFU_CRC32)
+			debug("%s: %s CRC32: 0x%x\n", __func__, dfu->name,
+			      dfu->crc);
 		puts("\nUPLOAD ... done\nCtrl+C to exit ...\n");
 
 		dfu_free_buf();
@@ -390,6 +412,11 @@ int dfu_config_entities(char *env, char *interface, int num)
 
 	dfu_alt_num = dfu_find_alt_num(env);
 	debug("%s: dfu_alt_num=%d\n", __func__, dfu_alt_num);
+
+	ret = dfu_get_checksum_method();
+	if (ret < 0)
+		return ret;
+	dfu_checksum_method = ret;
 
 	dfu = calloc(sizeof(*dfu), dfu_alt_num);
 	if (!dfu)

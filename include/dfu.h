@@ -37,6 +37,11 @@ enum dfu_op {
 	DFU_OP_WRITE,
 };
 
+enum dfu_checksum {
+	DFU_NO_CHECKSUM = 0,
+	DFU_CRC32,
+};
+
 #define DFU_NOT_SUPPORTED -1
 
 struct mmc_internal_data {
