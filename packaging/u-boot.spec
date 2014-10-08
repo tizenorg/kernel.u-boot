@@ -1,6 +1,6 @@
 Name: u-boot
 Version: 1.3.4
-Release: 1%{?dist}
+Release: 0
 Summary: bootloader for Embedded boards based on ARM processor
 Group: System Environment/Kernel
 License: GPL
@@ -12,13 +12,11 @@ Source1001: packaging/u-boot.manifest
 %description
 bootloader for Embedded boards based on ARM processor
 
-
-#TODO: Describe rpm package information depending on board
-%package -n u-boot-pkg
+%package -n u-boot-trats2
 Summary: A bootloader for Embedded system
 Group: System Environment/Kernel
 
-%description -n u-boot-pkg
+%description -n u-boot-trats2
 A boot loader for embedded systems.
 Das U-Boot is a cross-platform bootloader for embedded systems,
 used as the default boot loader by several board vendors.  It is
@@ -47,16 +45,17 @@ and modify U-Boot's environment.
 %build
 cp %{SOURCE1001} .
 make distclean
-make omap1510inn_config
+make exynos_trats2_config
 
-make HOSTCC="gcc $RPM_OPT_FLAGS" HOSTSTRIP=/bin/true tools
+make %{?_smp_mflags} HOSTCC="gcc $RPM_OPT_FLAGS" HOSTSTRIP=/bin/true tools
 
 %if 1%{?use_mmc_storage}
-make HOSTCC="gcc $RPM_OPT_FLAGS" CONFIG_ENV_IS_IN_MMC=y env
+make %{?_smp_mflags} HOSTCC="gcc $RPM_OPT_FLAGS" CONFIG_ENV_IS_IN_MMC=y env
 %else
-make HOSTCC="gcc $RPM_OPT_FLAGS" env
+make %{?_smp_mflags} HOSTCC="gcc $RPM_OPT_FLAGS" env
 %endif
 
+make %{?_smp_mflags} EXTRAVERSION=`echo %{vcs} | sed 's/.*u-boot.*#\(.\{9\}\).*/-g\1-TIZEN.org/'`
 
 %install
 rm -rf %{buildroot}
@@ -65,8 +64,19 @@ install -p -m 0755 tools/mkimage %{buildroot}%{_bindir}
 install -p -m 0755 tools/env/fw_printenv %{buildroot}%{_bindir}
 ( cd %{buildroot}%{_bindir}; ln -sf fw_printenv fw_setenv )
 
+# u-boot installation
+mkdir -p %{buildroot}/var/tmp/u-boot
+install -d %{buildroot}/var/tmp/u-boot
+install -m 755 u-boot.bin %{buildroot}/var/tmp/u-boot
+install -m 755 u-boot-mmc.bin %{buildroot}/var/tmp/u-boot
+install -m 755 params.bin %{buildroot}/var/tmp/u-boot
+
 %clean
 
+%files -n u-boot-trats2
+%manifest u_boot.manifest
+%defattr(-,root,root,-)
+/var/tmp/u-boot
 
 %files -n u-boot-tools
 %manifest u-boot.manifest
