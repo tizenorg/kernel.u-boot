@@ -21,13 +21,14 @@
 #include <malloc.h>
 
 
+#if 0 /* not used - was: #ifndef __HAVE_ARCH_STRNICMP */
 /**
- * strncasecmp - Case insensitive, length-limited string comparison
+ * strnicmp - Case insensitive, length-limited string comparison
  * @s1: One string
  * @s2: The other string
  * @len: the maximum number of characters to compare
  */
-int strncasecmp(const char *s1, const char *s2, size_t len)
+int strnicmp(const char *s1, const char *s2, size_t len)
 {
 	/* Yes, Virginia, it had better be unsigned */
 	unsigned char c1, c2;
@@ -51,16 +52,7 @@ int strncasecmp(const char *s1, const char *s2, size_t len)
 	}
 	return (int)c1 - (int)c2;
 }
-
-/**
- * strcasecmp - Case insensitive string comparison
- * @s1: One string
- * @s2: The other string
- */
-int strcasecmp(const char *s1, const char *s2)
-{
-	return strncasecmp(s1, s2, -1U);
-}
+#endif
 
 char * ___strtok;
 
@@ -475,9 +467,6 @@ void * memcpy(void *dest, const void *src, size_t count)
 	unsigned long *dl = (unsigned long *)dest, *sl = (unsigned long *)src;
 	char *d8, *s8;
 
-	if (src == dest)
-		return dest;
-
 	/* while all data is aligned (common case), copy a word at a time */
 	if ( (((ulong)dest | (ulong)src) & (sizeof(*dl) - 1)) == 0) {
 		while (count >= sizeof(*dl)) {
@@ -507,9 +496,6 @@ void * memcpy(void *dest, const void *src, size_t count)
 void * memmove(void * dest,const void *src,size_t count)
 {
 	char *tmp, *s;
-
-	if (src == dest)
-		return dest;
 
 	if (dest <= src) {
 		tmp = (char *) dest;
@@ -616,62 +602,4 @@ void *memchr(const void *s, int c, size_t n)
 	return NULL;
 }
 
-#endif
-#ifndef __HAVE_ARCH_MEMCHR_INV
-static void *check_bytes8(const u8 *start, u8 value, unsigned int bytes)
-{
-	while (bytes) {
-		if (*start != value)
-			return (void *)start;
-		start++;
-		bytes--;
-	}
-	return NULL;
-}
-/**
- * memchr_inv - Find an unmatching character in an area of memory.
- * @start: The memory area
- * @c: Find a character other than c
- * @bytes: The size of the area.
- *
- * returns the address of the first character other than @c, or %NULL
- * if the whole buffer contains just @c.
- */
-void *memchr_inv(const void *start, int c, size_t bytes)
-{
-	u8 value = c;
-	u64 value64;
-	unsigned int words, prefix;
-
-	if (bytes <= 16)
-		return check_bytes8(start, value, bytes);
-
-	value64 = value;
-	value64 |= value64 << 8;
-	value64 |= value64 << 16;
-	value64 |= value64 << 32;
-
-	prefix = (unsigned long)start % 8;
-	if (prefix) {
-		u8 *r;
-
-		prefix = 8 - prefix;
-		r = check_bytes8(start, value, prefix);
-		if (r)
-			return r;
-		start += prefix;
-		bytes -= prefix;
-	}
-
-	words = bytes / 8;
-
-	while (words) {
-		if (*(u64 *)start != value64)
-			return check_bytes8(start, value, 8);
-		start += 8;
-		words--;
-	}
-
-	return check_bytes8(start, value, bytes % 8);
-}
 #endif

@@ -8,7 +8,23 @@
  * (C) Copyright 2003 Motorola Inc.
  * Xianghua Xiao (X.Xiao@motorola.com)
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -30,19 +46,10 @@ void board_add_ram_info(int use_default)
 	printf(" (DDR%d", ((ddr->sdram_cfg & SDRAM_CFG_SDRAM_TYPE_MASK)
 			   >> SDRAM_CFG_SDRAM_TYPE_SHIFT) - 1);
 
-#if defined(CONFIG_MPC8308) || defined(CONFIG_MPC831x)
-	if ((ddr->sdram_cfg & SDRAM_CFG_DBW_MASK) == SDRAM_CFG_DBW_16)
-		puts(", 16-bit");
-	else if ((ddr->sdram_cfg & SDRAM_CFG_DBW_MASK) == SDRAM_CFG_DBW_32)
-		puts(", 32-bit");
-	else
-		puts(", unknown width");
-#else
 	if (ddr->sdram_cfg & SDRAM_CFG_32_BE)
 		puts(", 32-bit");
 	else
 		puts(", 64-bit");
-#endif
 
 	if (ddr->sdram_cfg & SDRAM_CFG_ECC_EN)
 		puts(", ECC on");
@@ -60,12 +67,6 @@ void board_add_ram_info(int use_default)
 #ifdef CONFIG_SPD_EEPROM
 #ifndef	CONFIG_SYS_READ_SPD
 #define CONFIG_SYS_READ_SPD	i2c_read
-#endif
-#ifndef SPD_EEPROM_OFFSET
-#define SPD_EEPROM_OFFSET	0
-#endif
-#ifndef SPD_EEPROM_ADDR_LEN
-#define SPD_EEPROM_ADDR_LEN     1
 #endif
 
 /*
@@ -133,7 +134,7 @@ long int spd_sdram()
 	unsigned int memsize;
 	unsigned int law_size;
 	unsigned char caslat, caslat_ctrl;
-	unsigned int trfc, trfc_clk, trfc_low;
+	unsigned int trfc, trfc_clk, trfc_low, trfc_high;
 	unsigned int trcd_clk, trtp_clk;
 	unsigned char cke_min_clk;
 	unsigned char add_lat, wr_lat;
@@ -159,8 +160,7 @@ long int spd_sdram()
 	isync();
 
 	/* Read SPD parameters with I2C */
-	CONFIG_SYS_READ_SPD(SPD_EEPROM_ADDRESS, SPD_EEPROM_OFFSET,
-		SPD_EEPROM_ADDR_LEN, (uchar *) &spd, sizeof(spd));
+	CONFIG_SYS_READ_SPD(SPD_EEPROM_ADDRESS, 0, 1, (uchar *) & spd, sizeof (spd));
 #ifdef SPD_DEBUG
 	spd_debug(&spd);
 #endif
@@ -526,6 +526,7 @@ long int spd_sdram()
 	 * so preadjust it down 8 first before splitting it up.
 	 */
 	trfc_low = (trfc_clk - 8) & 0xf;
+	trfc_high = ((trfc_clk - 8) >> 4) & 0x3;
 
 	ddr->timing_cfg_1 =
 	    (((picos_to_clk(spd.trp * 250) & 0x07) << 28 ) |	/* PRETOACT */
@@ -561,9 +562,6 @@ long int spd_sdram()
 	 * Empirically, 0x3 == 6/8 clock delay is suggested for DDR I 266.
 	 */
 	wr_data_delay = 2;
-#ifdef CONFIG_SYS_DDR_WRITE_DATA_DELAY
-	wr_data_delay = CONFIG_SYS_DDR_WRITE_DATA_DELAY;
-#endif
 
 	/*
 	 * Write Latency
@@ -603,9 +601,6 @@ long int spd_sdram()
 	 */
 	cpo = 0;
 	if (spd.mem_type == SPD_MEMTYPE_DDR2) {
-#ifdef CONFIG_SYS_DDR_CPO
-		cpo = CONFIG_SYS_DDR_CPO;
-#else
 		if (effective_data_rate == 266) {
 			cpo = 0x4;		/* READ_LAT + 1/2 */
 		} else if (effective_data_rate == 333) {
@@ -616,7 +611,6 @@ long int spd_sdram()
 			/* Automatic calibration */
 			cpo = 0x1f;
 		}
-#endif
 	}
 
 	ddr->timing_cfg_2 = (0
@@ -685,9 +679,6 @@ long int spd_sdram()
 		ddr->sdram_mode =
 			(0
 			 | (1 << (16 + 10))             /* DQS Differential disable */
-#ifdef CONFIG_SYS_DDR_MODE_WEAK
-			 | (1 << (16 + 1))		/* weak driver (~60%) */
-#endif
 			 | (add_lat << (16 + 3))        /* Additive Latency in EMRS1 */
 			 | (mode_odt_enable << 16)      /* ODT Enable in EMRS1 */
 			 | ((twr_clk - 1) << 9)         /* Write Recovery Autopre */

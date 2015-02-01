@@ -2,7 +2,23 @@
  * (C) Copyright 2000-2010
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 OUTPUT_ARCH(powerpc)
@@ -18,11 +34,11 @@ SECTIONS
 
     arch/powerpc/cpu/mpc8xx/start.o	(.text*)
     arch/powerpc/cpu/mpc8xx/traps.o	(.text*)
-    lib/built-in.o			(.text*)
-    net/built-in.o			(.text*)
-    arch/powerpc/cpu/mpc8xx/built-in.o	(.text*)
-    board/genietv/built-in.o		(.text*)
-    arch/powerpc/lib/built-in.o		(.text*)
+    lib/libgeneric.o			(.text*)
+    net/libnet.o			(.text*)
+    arch/powerpc/cpu/mpc8xx/libmpc8xx.o	(.text*)
+    board/genietv/libgenietv.o		(.text*)
+    arch/powerpc/lib/libpowerpc.o	(.text*)
     *(.text.do_load_serial*)
     *(.text.do_mem_*)
     *(.text.do_bootm*)
@@ -45,14 +61,13 @@ SECTIONS
   PROVIDE (erotext = .);
   .reloc   :
   {
+    KEEP(*(.got))
     _GOT2_TABLE_ = .;
     KEEP(*(.got2))
-    KEEP(*(.got))
-    PROVIDE(_GLOBAL_OFFSET_TABLE_ = . + 4);
     _FIXUP_TABLE_ = .;
     KEEP(*(.fixup))
   }
-  __got2_entries = ((_GLOBAL_OFFSET_TABLE_ - _GOT2_TABLE_) >> 2) - 1;
+  __got2_entries = (_FIXUP_TABLE_ - _GOT2_TABLE_) >>2;
   __fixup_entries = (. - _FIXUP_TABLE_)>>2;
 
   .data    :
@@ -64,11 +79,9 @@ SECTIONS
   PROVIDE (edata = .);
 
   . = .;
-
-  . = ALIGN(4);
-  .u_boot_list : {
-	KEEP(*(SORT(.u_boot_list*)));
-  }
+  __u_boot_cmd_start = .;
+  .u_boot_cmd : { *(.u_boot_cmd) }
+  __u_boot_cmd_end = .;
 
 
   . = .;
@@ -96,6 +109,6 @@ SECTIONS
     common/env_embedded.o (.ppcenv)
   }
   . = ALIGN(4);
-  __bss_end = . ;
+  __bss_end__ = . ;
   PROVIDE (end = .);
 }

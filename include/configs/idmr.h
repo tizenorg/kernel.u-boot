@@ -6,7 +6,23 @@
  * (C) Copyright 2006 Lab X Technologies <zachary.landau@labxtechnologies.com>
  * (C) Copyright 2003 Josef Baumgartner <josef.baumgartner@telex.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef _IDMR_H
@@ -31,15 +47,16 @@
 #define CONFIG_MCFUART
 #define CONFIG_SYS_UART_PORT		(0)
 #define CONFIG_BAUDRATE		19200
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600 , 19200 , 38400 , 57600, 115200 }
 #define CONFIG_ETHADDR		00:06:3b:01:41:55
 #define CONFIG_ETHPRIME
 #define CONFIG_IPADDR		192.168.30.1
 #define CONFIG_SERVERIP		192.168.1.1
-#define CONFIG_ROOTPATH		""
+#define CONFIG_ROOTPATH
 #define CONFIG_GATEWAYIP	192.168.1.1
 #define CONFIG_NETMASK		255.255.0.0
 #define CONFIG_HOSTNAME		idmr
-#define CONFIG_BOOTFILE		"/tftpboot/idmr/uImage"
+#define CONFIG_BOOTFILE		/tftpboot/idmr/uImage
 #define CONFIG_PREBOOT		"echo;echo Type \\\"run flash_nfs\\\" to mount root " \
 				"filesystem over NFS; echo"
 
@@ -110,6 +127,7 @@
 
 #define	CONFIG_SYS_USE_PPCENV			/* Environment embedded in sect .ppcenv */
 
+#define CONFIG_SYS_PROMPT		"=> "
 #define CONFIG_SYS_LONGHELP				/* undef to save memory */
 
 #if defined(CONFIG_CMD_KGDB)
@@ -137,6 +155,7 @@
  */
 #define CONFIG_MCFFEC
 #ifdef CONFIG_MCFFEC
+#	define CONFIG_NET_MULTI		1
 #	define CONFIG_MII		1
 #	define CONFIG_MII_INIT		1
 #	define CONFIG_SYS_DISCOVER_PHY

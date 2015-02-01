@@ -3,18 +3,43 @@
  * (C) Copyright 2008
  * Daniel Hellstrom, Gaisler Research, daniel@gaisler.com.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #include <common.h>
 #include <asm/processor.h>
 #include <asm/leon.h>
-#include <serial.h>
-#include <linux/compiler.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static int leon2_serial_init(void)
+/* Force cache miss each time a serial controller reg is read */
+#define CACHE_BYPASS 1
+
+#ifdef CACHE_BYPASS
+#define READ_BYTE(var)  SPARC_NOCACHE_READ_BYTE((unsigned int)&(var))
+#define READ_HWORD(var) SPARC_NOCACHE_READ_HWORD((unsigned int)&(var))
+#define READ_WORD(var)  SPARC_NOCACHE_READ((unsigned int)&(var))
+#define READ_DWORD(var) SPARC_NOCACHE_READ_DWORD((unsigned int)&(var))
+#endif
+
+int serial_init(void)
 {
 	LEON2_regs *leon2 = (LEON2_regs *) LEON2_PREGS;
 	LEON2_Uart_regs *regs;
@@ -47,7 +72,15 @@ static int leon2_serial_init(void)
 	return 0;
 }
 
-static void leon2_serial_putc_raw(const char c)
+void serial_putc(const char c)
+{
+	if (c == '\n')
+		serial_putc_raw('\r');
+
+	serial_putc_raw(c);
+}
+
+void serial_putc_raw(const char c)
 {
 	LEON2_regs *leon2 = (LEON2_regs *) LEON2_PREGS;
 	LEON2_Uart_regs *regs;
@@ -70,15 +103,14 @@ static void leon2_serial_putc_raw(const char c)
 #endif
 }
 
-static void leon2_serial_putc(const char c)
+void serial_puts(const char *s)
 {
-	if (c == '\n')
-		leon2_serial_putc_raw('\r');
-
-	leon2_serial_putc_raw(c);
+	while (*s) {
+		serial_putc(*s++);
+	}
 }
 
-static int leon2_serial_getc(void)
+int serial_getc(void)
 {
 	LEON2_regs *leon2 = (LEON2_regs *) LEON2_PREGS;
 	LEON2_Uart_regs *regs;
@@ -96,7 +128,7 @@ static int leon2_serial_getc(void)
 	return READ_WORD(regs->UART_Channel);
 }
 
-static int leon2_serial_tstc(void)
+int serial_tstc(void)
 {
 	LEON2_regs *leon2 = (LEON2_regs *) LEON2_PREGS;
 	LEON2_Uart_regs *regs;
@@ -111,7 +143,7 @@ static int leon2_serial_tstc(void)
 }
 
 /* set baud rate for uart */
-static void leon2_serial_setbrg(void)
+void serial_setbrg(void)
 {
 	/* update baud rate settings, read it from gd->baudrate */
 	unsigned int scaler;
@@ -130,25 +162,4 @@ static void leon2_serial_setbrg(void)
 		     5) / 10;
 		regs->UART_Scaler = scaler;
 	}
-}
-
-static struct serial_device leon2_serial_drv = {
-	.name	= "leon2_serial",
-	.start	= leon2_serial_init,
-	.stop	= NULL,
-	.setbrg	= leon2_serial_setbrg,
-	.putc	= leon2_serial_putc,
-	.puts	= default_serial_puts,
-	.getc	= leon2_serial_getc,
-	.tstc	= leon2_serial_tstc,
-};
-
-void leon2_serial_initialize(void)
-{
-	serial_register(&leon2_serial_drv);
-}
-
-__weak struct serial_device *default_serial_console(void)
-{
-	return &leon2_serial_drv;
 }

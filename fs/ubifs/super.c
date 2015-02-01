@@ -771,7 +771,7 @@ static int mount_ubifs(struct ubifs_info *c)
 	dbg_msg("node sizes:          ref %zu, cmt. start %zu, orph %zu",
 		UBIFS_REF_NODE_SZ, UBIFS_CS_NODE_SZ, UBIFS_ORPH_NODE_SZ);
 	dbg_msg("max. node sizes:     data %zu, inode %zu dentry %zu",
-		UBIFS_MAX_DATA_NODE_SZ, UBIFS_MAX_INO_NODE_SZ,
+	        UBIFS_MAX_DATA_NODE_SZ, UBIFS_MAX_INO_NODE_SZ,
 		UBIFS_MAX_DENT_NODE_SZ);
 	dbg_msg("dead watermark:      %d", c->dead_wm);
 	dbg_msg("dark watermark:      %d", c->dark_wm);
@@ -848,10 +848,8 @@ void ubifs_umount(struct ubifs_info *c)
 	ubifs_debugging_exit(c);
 
 	/* Finally free U-Boot's global copy of superblock */
-	if (ubifs_sb != NULL) {
-		free(ubifs_sb->s_fs_info);
-		free(ubifs_sb);
-	}
+	free(ubifs_sb->s_fs_info);
+	free(ubifs_sb);
 }
 
 /**
@@ -1164,9 +1162,10 @@ static struct file_system_type ubifs_fs_type = {
 	.get_sb  = ubifs_get_sb,
 };
 
-int ubifs_mount(char *name)
+int ubifs_mount(char *vol_name)
 {
 	int flags;
+	char name[80] = "ubi:";
 	void *data;
 	struct vfsmount *mnt;
 	int ret;
@@ -1185,11 +1184,12 @@ int ubifs_mount(char *name)
 	 * Mount in read-only mode
 	 */
 	flags = MS_RDONLY;
+	strcat(name, vol_name);
 	data = NULL;
 	mnt = NULL;
 	ret = ubifs_get_sb(&ubifs_fs_type, flags, name, data, mnt);
 	if (ret) {
-		ubifs_err("Error reading superblock on volume '%s' errno=%d!\n", name, ret);
+		printf("Error reading superblock on volume '%s'!\n", name);
 		return -1;
 	}
 

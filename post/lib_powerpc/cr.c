@@ -2,7 +2,23 @@
  * (C) Copyright 2002
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -43,7 +59,8 @@ static ulong cpu_post_cr_table1[] =
     0xaaaaaaaa,
     0x55555555,
 };
-static unsigned int cpu_post_cr_size1 = ARRAY_SIZE(cpu_post_cr_table1);
+static unsigned int cpu_post_cr_size1 =
+    sizeof (cpu_post_cr_table1) / sizeof (ulong);
 
 static struct cpu_post_cr_s2 {
     ulong xer;
@@ -59,7 +76,8 @@ static struct cpu_post_cr_s2 {
 	5
     },
 };
-static unsigned int cpu_post_cr_size2 = ARRAY_SIZE(cpu_post_cr_table2);
+static unsigned int cpu_post_cr_size2 =
+    sizeof (cpu_post_cr_table2) / sizeof (struct cpu_post_cr_s2);
 
 static struct cpu_post_cr_s3 {
     ulong cr;
@@ -81,7 +99,8 @@ static struct cpu_post_cr_s3 {
 	0x71234567
     },
 };
-static unsigned int cpu_post_cr_size3 = ARRAY_SIZE(cpu_post_cr_table3);
+static unsigned int cpu_post_cr_size3 =
+    sizeof (cpu_post_cr_table3) / sizeof (struct cpu_post_cr_s3);
 
 static struct cpu_post_cr_s4 {
     ulong cmd;
@@ -221,7 +240,8 @@ static struct cpu_post_cr_s4 {
 	0x0000ffff
     },
 };
-static unsigned int cpu_post_cr_size4 = ARRAY_SIZE(cpu_post_cr_table4);
+static unsigned int cpu_post_cr_size4 =
+    sizeof (cpu_post_cr_table4) / sizeof (struct cpu_post_cr_s4);
 
 int cpu_post_test_cr (void)
 {

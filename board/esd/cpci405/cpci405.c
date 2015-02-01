@@ -2,7 +2,23 @@
  * (C) Copyright 2001-2003
  * Stefan Roese, esd gmbh germany, stefan.roese@esd-electronics.com
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 #include <common.h>
 #include <libfdt.h>
@@ -640,6 +656,7 @@ int do_onewire(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	int i;
 	unsigned char ow_id[6];
 	char str[32];
+	unsigned char ow_crc;
 
 	/*
 	 * Clear 1-wire bit (open drain with pull-up)
@@ -658,10 +675,11 @@ int do_onewire(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	OWReadByte(); /* skip family code ( == 0x01) */
 	for (i = 0; i < 6; i++)
 		ow_id[i] = OWReadByte();
-	OWReadByte(); /* read crc */
+	ow_crc = OWReadByte(); /* read crc */
 
-	sprintf(str, "%02X%02X%02X%02X%02X%02X",
-		ow_id[0], ow_id[1], ow_id[2], ow_id[3], ow_id[4], ow_id[5]);
+	sprintf(str, "%08X%04X",
+		*(unsigned int *)&ow_id[0],
+		*(unsigned short *)&ow_id[4]);
 	printf("Setting environment variable 'ow_id' to %s\n", str);
 	setenv("ow_id", str);
 
@@ -681,6 +699,7 @@ U_BOOT_CMD(
  */
 int do_get_bpip(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+	bd_t *bd = gd->bd;
 	char *buf;
 	ulong crc;
 	char str[32];
@@ -713,7 +732,12 @@ int do_get_bpip(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		/*
 		 * Update whole ip-addr
 		 */
-		sprintf(str, "%pI4", &ipaddr);
+		bd->bi_ip_addr = ipaddr;
+		sprintf(str, "%ld.%ld.%ld.%ld",
+			(bd->bi_ip_addr & 0xff000000) >> 24,
+			(bd->bi_ip_addr & 0x00ff0000) >> 16,
+			(bd->bi_ip_addr & 0x0000ff00) >> 8,
+			(bd->bi_ip_addr & 0x000000ff));
 		setenv("ipaddr", str);
 		printf("Updated ip_addr from bp_eeprom to %s!\n", str);
 	}

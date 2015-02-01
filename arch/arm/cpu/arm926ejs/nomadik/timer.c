@@ -1,7 +1,23 @@
 /*
  * (C) Copyright 2009 Alessandro Rubini
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -24,12 +40,16 @@
 /* Configure a free-running, auto-wrap counter with no prescaler */
 int timer_init(void)
 {
-	ulong val;
-
 	writel(MTU_CRn_ENA | MTU_CRn_PRESCALE_1 | MTU_CRn_32BITS,
 	       CONFIG_SYS_TIMERBASE + MTU_CR(0));
+	reset_timer();
+	return 0;
+}
 
-	/* Reset the timer */
+/* Restart counting from 0 */
+void reset_timer(void)
+{
+	ulong val;
 	writel(0, CONFIG_SYS_TIMERBASE + MTU_LR(0));
 	/*
 	 * The load-register isn't really immediate: it changes on clock
@@ -39,8 +59,6 @@ int timer_init(void)
 	val = READ_TIMER();
 	while (READ_TIMER() == val)
 		;
-
-	return 0;
 }
 
 /* Return how many HZ passed since "base" */
@@ -58,14 +76,4 @@ void __udelay(unsigned long usec)
 	end = ini + USEC_TO_COUNT(usec);
 	while ((signed)(end - READ_TIMER()) > 0)
 		;
-}
-
-unsigned long long get_ticks(void)
-{
-	return get_timer(0);
-}
-
-ulong get_tbclk(void)
-{
-	return CONFIG_SYS_HZ;
 }

@@ -10,7 +10,20 @@
  * Jacqueline Pira-Ferriol, AMCC/IBM, jpira-ferriol@fr.ibm.com
  * Alain Saurel,	    AMCC/IBM, alain.saurel@fr.ibm.com
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -27,7 +40,6 @@
 #endif
 #include <serial.h>
 #include <asm/4xx_pci.h>
-#include <usb.h>
 
 #include "fpga.h"
 #include "pmc440.h"
@@ -562,6 +574,8 @@ void pci_target_init(struct pci_controller *hose)
 	/* No error reporting */
 	pci_hose_write_config_word(hose, 0, PCI_ERREN, 0);
 
+	pci_write_config_dword(0, PCI_BRDGOPT2, 0x00000101);
+
 	if (!is_monarch()) {
 		/* Program the board's subsystem id/classcode */
 		pci_hose_write_config_word(hose, 0, PCI_SUBSYSTEM_ID,
@@ -603,6 +617,21 @@ void pci_master_init(struct pci_controller *hose)
 
 static void wait_for_pci_ready(void)
 {
+	int i;
+	char *s = getenv("pcidelay");
+	/*
+	 * We have our own handling of the pcidelay variable.
+	 * Using CONFIG_PCI_BOOTDELAY enables pausing for host
+	 * and adapter devices. For adapter devices we do not
+	 * want this.
+	 */
+	if (s) {
+		int ms = simple_strtoul(s, NULL, 10);
+		printf("PCI:   Waiting for %d ms\n", ms);
+		for (i=0; i<ms; i++)
+			udelay(1000);
+	}
+
 	if (!(in_be32((void*)GPIO1_IR) & GPIO1_PPC_EREADY)) {
 		printf("PCI:   Waiting for EREADY (CTRL-C to skip) ... ");
 		while (1) {
@@ -822,7 +851,7 @@ int bootstrap_eeprom_read (unsigned dev_addr, unsigned offset,
 }
 
 #if defined(CONFIG_USB_OHCI_NEW) && defined(CONFIG_SYS_USB_OHCI_BOARD_INIT)
-int board_usb_init(int index, enum usb_init_type init)
+int usb_board_init(void)
 {
 	char *act = getenv("usbact");
 	int i;
@@ -846,9 +875,10 @@ int usb_board_stop(void)
 	return 0;
 }
 
-int board_usb_cleanup(int index, enum usb_init_type init)
+int usb_board_init_fail(void)
 {
-	return usb_board_stop();
+	usb_board_stop();
+	return 0;
 }
 #endif /* defined(CONFIG_USB_OHCI) && defined(CONFIG_SYS_USB_OHCI_BOARD_INIT) */
 

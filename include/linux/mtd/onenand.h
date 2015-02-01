@@ -17,7 +17,7 @@
 /* Note: The header order is impoertant */
 #include <onenand_uboot.h>
 
-#include <linux/compat.h>
+#include <linux/mtd/compat.h>
 #include <linux/mtd/bbm.h>
 
 #define MAX_DIES		2
@@ -60,6 +60,8 @@ struct onenand_bufferram {
  * @param writew	[REPLACEABLE] hardware specific function for write short
  * @param command	[REPLACEABLE] hardware specific function for writing commands to the chip
  * @param wait		[REPLACEABLE] hardware specific function for wait on ready
+ * @bbt_wait:          [REPLACEABLE] hardware specific function for bbt wait on ready
+ * @unlock_all:                [REPLACEABLE] hardware specific function for unlock all
  * @param read_bufferram	[REPLACEABLE] hardware specific function for BufferRAM Area
  * @param write_bufferram	[REPLACEABLE] hardware specific function for BufferRAM Area
  * @param chip_lock	[INTERN] spinlock used to protect access to this structure and the chip
@@ -94,6 +96,8 @@ struct onenand_chip {
 	int (*wait) (struct mtd_info *mtd, int state);
 	int (*bbt_wait) (struct mtd_info *mtd, int state);
 	void (*unlock_all)(struct mtd_info *mtd);
+	int (*lock_tight) (struct mtd_info *mtd, loff_t ofs, size_t len);
+	int (*block_islock) (struct mtd_info *mtd, loff_t ofs);
 	int (*read_bufferram) (struct mtd_info *mtd, loff_t addr, int area,
 			       unsigned char *buffer, int offset, size_t count);
 	int (*write_bufferram) (struct mtd_info *mtd, loff_t addr, int area,
@@ -106,8 +110,6 @@ struct onenand_chip {
 	int (*block_markbad)(struct mtd_info *mtd, loff_t ofs);
 	int (*scan_bbt)(struct mtd_info *mtd);
 
-	unsigned char		*main_buf;
-	unsigned char		*spare_buf;
 #ifdef DONT_USE_UBOOT
 	spinlock_t chip_lock;
 	wait_queue_head_t wq;
@@ -115,6 +117,9 @@ struct onenand_chip {
 	int state;
 	unsigned char		*page_buf;
 	unsigned char		*oob_buf;
+#ifdef CONFIG_MTD_ONENAND_VERIFY_WRITE
+	unsigned char		*verify_buf;
+#endif
 
 	struct nand_oobinfo *autooob;
 	int			subpagesize;
@@ -135,13 +140,14 @@ struct onenand_chip {
 #define ONENAND_SET_BUFFERRAM0(this)		(this->bufferram_index = 0)
 #define ONENAND_SET_BUFFERRAM1(this)		(this->bufferram_index = 1)
 
+#ifdef CONFIG_USE_FLEXONENAND
 #define FLEXONENAND(this)	(this->device_id & DEVICE_IS_FLEXONENAND)
+#else
+#define FLEXONENAND(this)			(0)
+#endif
 #define ONENAND_IS_MLC(this)	(this->technology & ONENAND_TECHNOLOGY_IS_MLC)
 #define ONENAND_IS_DDP(this)						\
 	(this->device_id & ONENAND_DEVICE_IS_DDP)
-
-#define ONENAND_IS_4KB_PAGE(this)					\
-	(this->options & ONENAND_HAS_4KB_PAGE)
 
 #define ONENAND_IS_2PLANE(this)			(0)
 
@@ -151,10 +157,17 @@ struct onenand_chip {
 #define ONENAND_HAS_CONT_LOCK		(0x0001)
 #define ONENAND_HAS_UNLOCK_ALL		(0x0002)
 #define ONENAND_HAS_2PLANE		(0x0004)
-#define ONENAND_HAS_4KB_PAGE            (0x0008)
+#define ONENAND_HAS_4KB_PAGE		(0x0008)
 #define ONENAND_RUNTIME_BADBLOCK_CHECK	(0x0200)
 #define ONENAND_PAGEBUF_ALLOC		(0x1000)
 #define ONENAND_OOBBUF_ALLOC		(0x2000)
+#define ONENAND_SYNC_MODE		(0x4000)
+
+#define ONENAND_IS_4KB_PAGE(this)					\
+	(this->options & ONENAND_HAS_4KB_PAGE)
+
+#define ONENAND_IS_SYNC_MODE(this)					\
+	(this->options & ONENAND_SYNC_MODE)
 
 /*
  * OneNAND Flash Manufacturer ID Codes

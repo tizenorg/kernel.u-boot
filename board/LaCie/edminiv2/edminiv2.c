@@ -1,17 +1,33 @@
 /*
- * Copyright (C) 2010 Albert ARIBAUD <albert.u.boot@aribaud.net>
+ * Copyright (C) 2010 Albert ARIBAUD <albert.aribaud@free.fr>
  *
  * (C) Copyright 2009
  * Marvell Semiconductor <www.marvell.com>
  * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
 #include <miiphy.h>
 #include <asm/arch/orion5x.h>
-#include "../common/common.h"
+#include "edminiv2.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -80,6 +96,33 @@ int board_init(void)
 /* Configure and enable MV88E1116 PHY */
 void reset_phy(void)
 {
-	mv_phy_88e1116_init("egiga0", 8);
+	u16 reg;
+	u16 devadr;
+	char *name = "egiga0";
+
+	if (miiphy_set_current_dev(name))
+		return;
+
+	/* command to read PHY dev address */
+	if (miiphy_read(name, 0xEE, 0xEE, (u16 *) &devadr)) {
+		printf("Err..%s could not read PHY dev address\n",
+			__func__);
+		return;
+	}
+
+	/*
+	 * Enable RGMII delay on Tx and Rx for CPU port
+	 * Ref: sec 4.7.2 of chip datasheet
+	 */
+	miiphy_write(name, devadr, MV88E1116_PGADR_REG, 2);
+	miiphy_read(name, devadr, MV88E1116_MAC_CTRL_REG, &reg);
+	reg |= (MV88E1116_RGMII_RXTM_CTRL | MV88E1116_RGMII_TXTM_CTRL);
+	miiphy_write(name, devadr, MV88E1116_MAC_CTRL_REG, reg);
+	miiphy_write(name, devadr, MV88E1116_PGADR_REG, 0);
+
+	/* reset the phy */
+	miiphy_reset(name, devadr);
+
+	printf("88E1116 Initialized on %s\n", name);
 }
 #endif /* CONFIG_RESET_PHY_R */

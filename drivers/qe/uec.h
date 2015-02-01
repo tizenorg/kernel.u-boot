@@ -4,7 +4,20 @@
  * Dave Liu <daveliu@freescale.com>
  * based on source code of Shlomi Gridish
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __UEC_H__
@@ -12,7 +25,6 @@
 
 #include "qe.h"
 #include "uccf.h"
-#include <phy.h>
 #include <asm/fsl_enet.h>
 
 #define MAX_TX_THREADS				8
@@ -679,7 +691,7 @@ typedef struct uec_info {
 	u16				rx_bd_ring_len;
 	u16				tx_bd_ring_len;
 	u8				phy_address;
-	phy_interface_t			enet_interface_type;
+	enum fsl_phy_enet_if		enet_interface_type;
 	int				speed;
 } uec_info_t;
 

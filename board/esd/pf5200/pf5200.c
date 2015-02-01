@@ -5,7 +5,23 @@
  * (C) Copyright 2004
  * Mark Jonas, Freescale Semiconductor, mark.jonas@motorola.com.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -311,11 +327,13 @@ int phypower(int flag)
 
 int do_phypower(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-	if (argv[1][0] == '0')
-		(void)phypower(0);
-	else
-		(void)phypower(1);
+	int status;
 
+	if (argv[1][0] == '0') {
+		status = phypower(0);
+	} else {
+		status = phypower(1);
+	}
 	return (0);
 }
 

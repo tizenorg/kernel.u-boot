@@ -1,7 +1,23 @@
 /*
  * Copyright (C) 2009 Jens Scharsig (js_at_ng@scharsoft.de)
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef AT91_MATRIX_H
@@ -10,18 +26,18 @@
 #ifdef __ASSEMBLY__
 
 #if defined(CONFIG_AT91SAM9260) || defined(CONFIG_AT91SAM9G20)
-#define AT91_ASM_MATRIX_CSA0	(ATMEL_BASE_MATRIX + 0x11C)
+#define AT91_ASM_MATRIX_CSA0	(AT91_MATRIX_BASE + 0x11C)
 #elif defined(CONFIG_AT91SAM9261)
-#define AT91_ASM_MATRIX_CSA0	(ATMEL_BASE_MATRIX + 0x30)
+#define AT91_ASM_MATRIX_CSA0	(AT91_MATRIX_BASE + 0x30)
 #elif defined(CONFIG_AT91SAM9263)
-#define AT91_ASM_MATRIX_CSA0	(ATMEL_BASE_MATRIX + 0x120)
+#define AT91_ASM_MATRIX_CSA0	(AT91_MATRIX_BASE + 0x120)
 #elif defined(CONFIG_AT91SAM9G45)
-#define AT91_ASM_MATRIX_CSA0	(ATMEL_BASE_MATRIX + 0x128)
+#define AT91_ASM_MATRIX_CSA0	(AT91_MATRIX_BASE + 0x128)
 #else
 #error AT91_ASM_MATRIX_CSA0 is not definied for current CPU
 #endif
 
-#define AT91_ASM_MATRIX_MCFG	ATMEL_BASE_MATRIX
+#define AT91_ASM_MATRIX_MCFG	AT91_MATRIX_BASE
 
 #else
 #if defined(CONFIG_AT91SAM9260) || defined(CONFIG_AT91SAM9G20)

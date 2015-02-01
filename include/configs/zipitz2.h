@@ -3,7 +3,20 @@
  *
  * Copyright (C) 2009-2010 Marek Vasut <marek.vasut@gmail.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -12,13 +25,13 @@
 /*
  * High Level Board Configuration Options
  */
-#define	CONFIG_CPU_PXA27X		1	/* Marvell PXA270 CPU */
+#define	CONFIG_PXA27X		1	/* Marvell PXA270 CPU */
 #define	CONFIG_ZIPITZ2		1	/* Zipit Z2 board */
 #define	CONFIG_SYS_TEXT_BASE	0x0
 
-#undef	CONFIG_BOARD_LATE_INIT
+#undef	BOARD_LATE_INIT
+#undef	CONFIG_USE_IRQ
 #undef	CONFIG_SKIP_LOWLEVEL_INIT
-#define	CONFIG_PREBOOT
 
 /*
  * Environment settings
@@ -28,15 +41,11 @@
 #define CONFIG_ENV_ADDR			0x40000
 #define CONFIG_ENV_SIZE			0x20000
 
-/* we will never enable dcache, because we have to setup MMU first */
-#define CONFIG_SYS_DCACHE_OFF
-
 #define	CONFIG_SYS_MALLOC_LEN		(128*1024)
 #define	CONFIG_ARCH_CPU_INIT
 
 #define	CONFIG_BOOTCOMMAND						\
-	"if mmc rescan && ext2load mmc 0 0xa0000000 boot/uboot.script ;"\
-	"then "								\
+	"if mmc init && fatload mmc 0 0xa0000000 uboot.script ; then "	\
 		"source 0xa0000000; "					\
 	"else "								\
 		"bootm 0x60000; "					\
@@ -56,8 +65,8 @@
  */
 #define	CONFIG_PXA_SERIAL
 #define	CONFIG_STUART			1
-#define CONFIG_CONS_INDEX		2
 #define	CONFIG_BAUDRATE			115200
+#define	CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /*
  * Bootloader Components Configuration
@@ -76,8 +85,7 @@
  */
 #ifdef	CONFIG_CMD_MMC
 #define	CONFIG_MMC
-#define	CONFIG_GENERIC_MMC
-#define	CONFIG_PXA_MMC_GENERIC
+#define	CONFIG_PXA_MMC
 #define	CONFIG_SYS_MMC_BASE		0xF0000000
 #define	CONFIG_CMD_FAT
 #define CONFIG_CMD_EXT2
@@ -90,7 +98,6 @@
 #ifdef	CONFIG_CMD_SPI
 #define	CONFIG_SOFT_SPI
 #define	CONFIG_LCD
-#define	CONFIG_PXA_LCD
 #define	CONFIG_LMS283GF05
 #define	CONFIG_VIDEO_LOGO
 #define	CONFIG_CMD_BMP
@@ -117,16 +124,20 @@ unsigned char zipitz2_spi_read(void);
  */
 #ifdef	CONFIG_CMD_KGDB
 #define	CONFIG_KGDB_BAUDRATE		230400		/* speed to run kgdb serial port */
+#define	CONFIG_KGDB_SER_INDEX		2		/* which serial port to use */
 #endif
 
 /*
  * HUSH Shell Configuration
  */
 #define	CONFIG_SYS_HUSH_PARSER		1
+#define	CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 #define	CONFIG_SYS_LONGHELP				/* undef to save memory	*/
 #ifdef	CONFIG_SYS_HUSH_PARSER
 #define	CONFIG_SYS_PROMPT		"$ "		/* Monitor Command Prompt */
+#else
+#define	CONFIG_SYS_PROMPT		"=> "		/* Monitor Command Prompt */
 #endif
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size */
 #define	CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)	/* Print Buffer Size */
@@ -138,13 +149,17 @@ unsigned char zipitz2_spi_read(void);
  * Clock Configuration
  */
 #undef	CONFIG_SYS_CLKS_IN_HZ
+#define	CONFIG_SYS_HZ			3250000		/* Timer @ 3250000 Hz */
 #define CONFIG_SYS_CPUSPEED		0x190		/* standard setting for 312MHz; L=16, N=1.5, A=0, SDCLK!=SystemBus */
 
 /*
- * SRAM Map
+ * Stack sizes
  */
-#define	PHYS_SRAM			0x5c000000	/* SRAM Bank #1 */
-#define	PHYS_SRAM_SIZE			0x00040000	/* 256k */
+#define	CONFIG_STACKSIZE		(128*1024)	/* regular stack */
+#ifdef	CONFIG_USE_IRQ
+#define	CONFIG_STACKSIZE_IRQ		(4*1024)	/* IRQ stack */
+#define	CONFIG_STACKSIZE_FIQ		(4*1024)	/* FIQ stack */
+#endif
 
 /*
  * DRAM Map
@@ -162,7 +177,7 @@ unsigned char zipitz2_spi_read(void);
 #define	CONFIG_SYS_LOAD_ADDR		CONFIG_SYS_DRAM_BASE
 
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1
-#define	CONFIG_SYS_INIT_SP_ADDR		(GENERATED_GBL_DATA_SIZE + PHYS_SRAM + 2048)
+#define	CONFIG_SYS_INIT_SP_ADDR		(GENERATED_GBL_DATA_SIZE + PHYS_SDRAM_1 + 2048)
 
 /*
  * NOR FLASH
@@ -184,10 +199,10 @@ unsigned char zipitz2_spi_read(void);
 
 #define CONFIG_SYS_FLASH_USE_BUFFER_WRITE	1
 
-#define CONFIG_SYS_FLASH_ERASE_TOUT	240000
-#define CONFIG_SYS_FLASH_WRITE_TOUT	240000
-#define CONFIG_SYS_FLASH_LOCK_TOUT	240000
-#define CONFIG_SYS_FLASH_UNLOCK_TOUT	240000
+#define CONFIG_SYS_FLASH_ERASE_TOUT	(2*CONFIG_SYS_HZ)
+#define CONFIG_SYS_FLASH_WRITE_TOUT	(2*CONFIG_SYS_HZ)
+#define CONFIG_SYS_FLASH_LOCK_TOUT	(2*CONFIG_SYS_HZ)
+#define CONFIG_SYS_FLASH_UNLOCK_TOUT	(2*CONFIG_SYS_HZ)
 #define CONFIG_SYS_FLASH_PROTECTION
 
 /*

@@ -4,7 +4,19 @@
  *
  * Configuation settings for the Faraday A320 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #ifndef __CONFIG_H
@@ -12,38 +24,29 @@
 
 #include <asm/arch/a320.h>
 
-/*
- * mach-type definition
- */
-#define MACH_TYPE_FARADAY	758
-#define CONFIG_MACH_TYPE	MACH_TYPE_FARADAY
-
-/*
- * Linux kernel tagged list
- */
-#define CONFIG_CMDLINE_TAG
-#define CONFIG_SETUP_MEMORY_TAGS
-
-/*
+/*-----------------------------------------------------------------------
  * CPU and Board Configuration Options
  */
+#undef CONFIG_USE_IRQ		/* we don't need IRQ/FIQ stuff */
+
 #undef CONFIG_SKIP_LOWLEVEL_INIT
 
-/*
+/*-----------------------------------------------------------------------
  * Power Management Unit
  */
 #define CONFIG_FTPMU010_POWER
 
-/*
+/*-----------------------------------------------------------------------
  * Timer
  */
+#define CONFIG_SYS_HZ		1000	/* timer ticks per second */
 
-/*
+/*-----------------------------------------------------------------------
  * Real Time Clock
  */
 #define CONFIG_RTC_FTRTC010
 
-/*
+/*-----------------------------------------------------------------------
  * Serial console configuration
  */
 
@@ -56,14 +59,18 @@
 #define CONFIG_SYS_NS16550_REG_SIZE	-4
 #define CONFIG_SYS_NS16550_CLK		18432000
 
-/*
+/* valid baudrates */
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
+
+/*-----------------------------------------------------------------------
  * Ethernet
  */
+#define CONFIG_NET_MULTI
 #define CONFIG_FTMAC100
 
 #define CONFIG_BOOTDELAY	3
 
-/*
+/*-----------------------------------------------------------------------
  * Command line configuration.
  */
 #include <config_cmd_default.h>
@@ -72,7 +79,7 @@
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_PING
 
-/*
+/*-----------------------------------------------------------------------
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP			/* undef to save memory */
@@ -89,12 +96,27 @@
 /* Boot Argument Buffer Size */
 #define CONFIG_SYS_BARGSIZE	CONFIG_SYS_CBSIZE
 
-/*
+/*-----------------------------------------------------------------------
+ * Stack sizes
+ *
+ * The stack sizes are set up in start.S using the settings below
+ */
+#define CONFIG_STACKSIZE	(128 * 1024)	/* regular stack */
+#ifdef CONFIG_USE_IRQ
+#define CONFIG_STACKSIZE_IRQ	(4 * 1024)	/* IRQ stack */
+#define CONFIG_STACKSIZE_FIQ	(4 * 1024)	/* FIQ stack */
+#endif
+
+/*-----------------------------------------------------------------------
  * Size of malloc() pool
  */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 128 * 1024)
 
-/*
+/*-----------------------------------------------------------------------
+ * size in bytes reserved for initial data
+*/
+
+/*-----------------------------------------------------------------------
  * SDRAM controller configuration
  */
 #define CONFIG_SYS_FTSDMC020_TP0	(FTSDMC020_TP0_TRAS(2) |	\
@@ -114,7 +136,7 @@
 					 FTSDMC020_BANK_MBW_32   |	\
 					 FTSDMC020_BANK_SIZE_64M)
 
-/*
+/*-----------------------------------------------------------------------
  * Physical Memory Map
  */
 #define CONFIG_NR_DRAM_BANKS	1		/* we have 1 bank of DRAM */
@@ -137,12 +159,11 @@
 
 #define CONFIG_SYS_TEXT_BASE		0
 
-/*
+/*-----------------------------------------------------------------------
  * Static memory controller configuration
  */
 
-#define CONFIG_FTSMC020
-#include <faraday/ftsmc020.h>
+#include <asm/arch/ftsmc020.h>
 
 #define FTSMC020_BANK0_CONFIG	(FTSMC020_BANK_ENABLE             |	\
 				 FTSMC020_BANK_BASE(PHYS_FLASH_1) |	\
@@ -176,7 +197,7 @@
 	{ FTSMC020_BANK1_CONFIG, FTSMC020_BANK1_TIMING, },	\
 }
 
-/*
+/*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
 

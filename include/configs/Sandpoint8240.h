@@ -2,7 +2,23 @@
  * (C) Copyright 2001-2005
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /* ------------------------------------------------------------------------- */
@@ -19,6 +35,7 @@
  * (easy to change)
  */
 
+#define CONFIG_MPC824X		1
 #define CONFIG_MPC8240		1
 #define CONFIG_SANDPOINT	1
 
@@ -97,20 +114,22 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		1		/* undef to save memory		*/
+#define CONFIG_SYS_PROMPT		"=> "		/* Monitor Command Prompt	*/
 #define CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size	*/
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)	/* Print Buffer Size	*/
 #define CONFIG_SYS_MAXARGS		16		/* max number of command args	*/
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE	/* Boot Argument Buffer Size	*/
 #define CONFIG_SYS_LOAD_ADDR		0x00100000	/* default load address		*/
+#define CONFIG_SYS_HZ			1000		/* decrementer freq: 1 ms ticks */
 
 /*-----------------------------------------------------------------------
  * PCI stuff
  *-----------------------------------------------------------------------
  */
 #define CONFIG_PCI				/* include pci support		*/
-#define CONFIG_PCI_INDIRECT_BRIDGE	/* indirect PCI bridge support */
 #undef CONFIG_PCI_PNP
 
+#define CONFIG_NET_MULTI			/* Multi ethernet cards support */
 
 #define CONFIG_EEPRO100
 #define CONFIG_SYS_RX_ETH_BUFFER	8               /* use 8 rx buffer on eepro100  */
@@ -183,16 +202,13 @@
  * If the software driver is chosen, there are some additional
  * configuration items that the driver uses to drive the port pins.
  */
-#define CONFIG_HARD_I2C		1		/* To enable I2C support */
-#undef  CONFIG_SYS_I2C_SOFT
-#define CONFIG_SYS_I2C_SLAVE	0x7F
-#define CONFIG_SYS_I2C_SPEED	400000
+#define CONFIG_HARD_I2C		1		/* To enable I2C support	*/
+#undef  CONFIG_SOFT_I2C				/* I2C bit-banged		*/
+#define CONFIG_SYS_I2C_SPEED		400000		/* I2C speed and slave address	*/
+#define CONFIG_SYS_I2C_SLAVE		0x7F
 
-#ifdef CONFIG_SYS_I2C_SOFT
+#ifdef CONFIG_SOFT_I2C
 #error "Soft I2C is not configured properly.  Please review!"
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_SOFT_SPEED	50000
-#define CONFIG_SYS_I2C_SOFT_SLAVE	0xFE
 #define I2C_PORT		3               /* Port A=0, B=1, C=2, D=3 */
 #define I2C_ACTIVE		(iop->pdir |=  0x00010000)
 #define I2C_TRISTATE		(iop->pdir &= ~0x00010000)
@@ -202,7 +218,7 @@
 #define I2C_SCL(bit)		if(bit) iop->pdat |=  0x00020000; \
 				else    iop->pdat &= ~0x00020000
 #define I2C_DELAY		udelay(5)	/* 1/4 I2C clock duration */
-#endif /* CONFIG_SYS_I2C_SOFT */
+#endif /* CONFIG_SOFT_I2C */
 
 
 #define CONFIG_SYS_I2C_EEPROM_ADDR	0x57		/* EEPROM IS24C02		*/
@@ -211,6 +227,7 @@
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS	10	/* takes up to 10 msec		*/
 
 
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 #define CONFIG_SYS_FLASH_BANKS		{ FLASH_BASE0_PRELIM , FLASH_BASE1_PRELIM }
 
 /*-----------------------------------------------------------------------

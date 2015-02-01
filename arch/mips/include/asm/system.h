@@ -16,6 +16,7 @@
 #ifndef _ASM_SYSTEM_H
 #define _ASM_SYSTEM_H
 
+#include <linux/config.h>
 #include <asm/sgidefs.h>
 #include <asm/ptrace.h>
 #if 0

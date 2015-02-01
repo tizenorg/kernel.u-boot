@@ -2,13 +2,30 @@
  * (C) Copyright 2010
  * Stefano Babic, DENX Software Engineering, sbabic@denx.de
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #include <common.h>
-#include <asm/arch/clock.h>
-#include <asm/arch/imx-regs.h>
-#include <asm/gpio.h>
+#include <asm/arch/mx31.h>
+#include <asm/arch/mx31-regs.h>
+#include <mxc_gpio.h>
 #include <fpga.h>
 #include <lattice.h>
 #include "qong_fpga.h"
@@ -24,22 +41,22 @@ static void qong_jtag_init(void)
 
 static void qong_fpga_jtag_set_tdi(int value)
 {
-	gpio_set_value(QONG_FPGA_TDI_PIN, value);
+	mxc_gpio_set(QONG_FPGA_TDI_PIN, value);
 }
 
 static void qong_fpga_jtag_set_tms(int value)
 {
-	gpio_set_value(QONG_FPGA_TMS_PIN, value);
+	mxc_gpio_set(QONG_FPGA_TMS_PIN, value);
 }
 
 static void qong_fpga_jtag_set_tck(int value)
 {
-	gpio_set_value(QONG_FPGA_TCK_PIN, value);
+	mxc_gpio_set(QONG_FPGA_TCK_PIN, value);
 }
 
 static int qong_fpga_jtag_get_tdo(void)
 {
-	return gpio_get_value(QONG_FPGA_TDO_PIN);
+	return mxc_gpio_get(QONG_FPGA_TDO_PIN);
 }
 
 lattice_board_specific_func qong_fpga_fns = {

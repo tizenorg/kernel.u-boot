@@ -1,7 +1,23 @@
 /*
  * Copyright 2009-2011 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -13,10 +29,6 @@
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
-
-#ifdef CONFIG_36BIT
-#define CONFIG_PHYS_64BIT
-#endif
 
 #ifdef CONFIG_P1011RDB
 #define CONFIG_P1011
@@ -38,25 +50,24 @@
 #define CONFIG_SYS_TEXT_BASE_SPL 0xfff00000
 #define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_TEXT_BASE_SPL /* start of monitor */
 #else
-#define CONFIG_SYS_LDSCRIPT $(CPUDIR)/u-boot-nand.lds
 #define CONFIG_SYS_TEXT_BASE		0xf8f82000
 #endif /* CONFIG_NAND_SPL */
 #endif
 
 #ifdef CONFIG_SDCARD
 #define CONFIG_RAMBOOT_SDCARD		1
-#define CONFIG_SYS_TEXT_BASE		0x11000000
-#define CONFIG_RESET_VECTOR_ADDRESS	0x110bfffc
+#define CONFIG_SYS_TEXT_BASE		0xf8f80000
+#define CONFIG_RESET_VECTOR_ADDRESS	0xf8fffffc
 #endif
 
 #ifdef CONFIG_SPIFLASH
 #define CONFIG_RAMBOOT_SPIFLASH		1
-#define CONFIG_SYS_TEXT_BASE		0x11000000
-#define CONFIG_RESET_VECTOR_ADDRESS	0x110bfffc
+#define CONFIG_SYS_TEXT_BASE		0xf8f80000
+#define CONFIG_RESET_VECTOR_ADDRESS	0xf8fffffc
 #endif
 
 #ifndef CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_TEXT_BASE		0xeff40000
+#define CONFIG_SYS_TEXT_BASE		0xeff80000
 #endif
 
 #ifndef CONFIG_RESET_VECTOR_ADDRESS
@@ -70,6 +81,7 @@
 /* High Level Configuration Options */
 #define CONFIG_BOOKE		1	/* BOOKE */
 #define CONFIG_E500		1	/* BOOKE e500 family */
+#define CONFIG_MPC85xx		1	/* MPC8540/60/55/41/48/P1020/P2020,etc*/
 #define CONFIG_FSL_ELBC		1	/* Enable eLBC Support */
 
 #define CONFIG_PCI		1	/* Enable PCI/PCIE */
@@ -77,7 +89,6 @@
 #define CONFIG_PCIE1		1	/* PCIE controler 1 (slot 1) */
 #define CONFIG_PCIE2		1	/* PCIE controler 2 (slot 2) */
 #define CONFIG_FSL_PCI_INIT	1	/* Use common FSL init code */
-#define CONFIG_PCI_INDIRECT_BRIDGE 1	/* indirect PCI bridge support */
 #define CONFIG_FSL_PCIE_RESET	1	/* need PCIe reset errata */
 #define CONFIG_SYS_PCI_64BIT	1	/* enable 64-bit PCI resources */
 #endif /* #if defined(CONFIG_PCI) */
@@ -111,11 +122,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 
 #define CONFIG_ENABLE_36BIT_PHYS	1
 
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_ADDR_MAP			1
-#define CONFIG_SYS_NUM_ADDR_MAP		16	/* number of TLB1 entries */
-#endif
-
 #define CONFIG_SYS_MEMTEST_START	0x00000000	/* memtest works on */
 #define CONFIG_SYS_MEMTEST_END		0x1fffffff
 #define CONFIG_PANIC_HANG	/* do not reset board on panic */
@@ -132,15 +138,24 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_L2_SIZE		(512 << 10)
 #define CONFIG_SYS_INIT_L2_END		(CONFIG_SYS_INIT_L2_ADDR + CONFIG_SYS_L2_SIZE)
 
-#define CONFIG_SYS_CCSRBAR		0xffe00000
-#define CONFIG_SYS_CCSRBAR_PHYS_LOW	CONFIG_SYS_CCSRBAR
+/*
+ * Base addresses -- Note these are effective addresses where the
+ * actual resources get mapped (not physical addresses)
+ */
+#define CONFIG_SYS_CCSRBAR		0xffe00000	/* relocated CCSRBAR */
+#define CONFIG_SYS_CCSRBAR_PHYS	CONFIG_SYS_CCSRBAR	/* physical addr of */
+							/* CCSRBAR */
+#define CONFIG_SYS_IMMR		CONFIG_SYS_CCSRBAR	/* PQII uses */
+							/* CONFIG_SYS_IMMR */
 
-#if defined(CONFIG_NAND_SPL)
-#define CONFIG_SYS_CCSR_DO_NOT_RELOCATE
+#if defined(CONFIG_RAMBOOT_NAND) && !defined(CONFIG_NAND_SPL)
+#define CONFIG_SYS_CCSRBAR_DEFAULT	CONFIG_SYS_CCSRBAR
+#else
+#define CONFIG_SYS_CCSRBAR_DEFAULT	0xff700000      /* CCSRBAR Default */
 #endif
 
 /* DDR Setup */
-#define CONFIG_SYS_FSL_DDR2
+#define CONFIG_FSL_DDR2
 #undef CONFIG_FSL_DDR_INTERACTIVE
 #undef CONFIG_SPD_EEPROM		/* Use SPD EEPROM for DDR setup */
 
@@ -181,17 +196,13 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
  */
 #define CONFIG_SYS_FLASH_BASE		0xef000000	/* start of FLASH 16M */
 
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_FLASH_BASE_PHYS	0xfef000000ull
-#else
 #define CONFIG_SYS_FLASH_BASE_PHYS	CONFIG_SYS_FLASH_BASE
-#endif
 
 #define CONFIG_FLASH_BR_PRELIM	(BR_PHYS_ADDR(CONFIG_SYS_FLASH_BASE_PHYS) | \
 					BR_PS_16 | BR_V)
 #define CONFIG_FLASH_OR_PRELIM		0xff000ff7
 
-#define CONFIG_SYS_FLASH_BANKS_LIST	{CONFIG_SYS_FLASH_BASE_PHYS}
+#define CONFIG_SYS_FLASH_BANKS_LIST	{CONFIG_SYS_FLASH_BASE}
 #define CONFIG_SYS_FLASH_QUIET_TEST
 #define CONFIG_FLASH_SHOW_PROGRESS 45 /* count down from 45/5: 9..1 */
 
@@ -215,23 +226,10 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_FLASH_AMD_CHECK_DQ7
 
 #define CONFIG_BOARD_EARLY_INIT_R	/* call board_early_init_r function */
-#define CONFIG_MISC_INIT_R
 #define CONFIG_HWCONFIG
 
 #define CONFIG_SYS_INIT_RAM_LOCK	1
 #define CONFIG_SYS_INIT_RAM_ADDR      0xffd00000	/* stack in RAM */
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_INIT_RAM_ADDR_PHYS_HIGH 0xf
-#define CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW CONFIG_SYS_INIT_RAM_ADDR
-/* The assembler doesn't like typecast */
-#define CONFIG_SYS_INIT_RAM_ADDR_PHYS \
-	((CONFIG_SYS_INIT_RAM_ADDR_PHYS_HIGH * 1ull << 32) | \
-	  CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW)
-#else
-#define CONFIG_SYS_INIT_RAM_ADDR_PHYS	CONFIG_SYS_INIT_RAM_ADDR /* Initial L1 address */
-#define CONFIG_SYS_INIT_RAM_ADDR_PHYS_HIGH 0
-#define CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW CONFIG_SYS_INIT_RAM_ADDR_PHYS
-#endif
 #define CONFIG_SYS_INIT_RAM_SIZE	0x00004000	/* Size of used area in RAM */
 
 #define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE \
@@ -243,30 +241,21 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 
 #ifndef CONFIG_NAND_SPL
 #define CONFIG_SYS_NAND_BASE		0xffa00000
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_NAND_BASE_PHYS	0xfffa00000ull
-#else
-#define CONFIG_SYS_NAND_BASE_PHYS	CONFIG_SYS_NAND_BASE
-#endif
 #else
 #define CONFIG_SYS_NAND_BASE		0xfff00000
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_NAND_BASE_PHYS	0xffff00000ull
-#else
+#endif
 #define CONFIG_SYS_NAND_BASE_PHYS	CONFIG_SYS_NAND_BASE
-#endif
-#endif
-
-#define CONFIG_CMD_NAND
 #define CONFIG_SYS_NAND_BASE_LIST	{CONFIG_SYS_NAND_BASE}
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
+#define NAND_MAX_CHIPS			1
 #define CONFIG_MTD_NAND_VERIFY_WRITE
+#define CONFIG_CMD_NAND			1
 #define CONFIG_NAND_FSL_ELBC		1
 #define CONFIG_SYS_NAND_BLOCK_SIZE	(16 * 1024)
 
 /* NAND boot: 4K NAND loader config */
 #define CONFIG_SYS_NAND_SPL_SIZE	0x1000
-#define CONFIG_SYS_NAND_U_BOOT_SIZE	((768 << 10) - 0x2000)
+#define CONFIG_SYS_NAND_U_BOOT_SIZE	((512 << 10) - 0x2000)
 #define CONFIG_SYS_NAND_U_BOOT_DST	(CONFIG_SYS_INIT_L2_ADDR)
 #define CONFIG_SYS_NAND_U_BOOT_START	(CONFIG_SYS_INIT_L2_ADDR + CONFIG_SYS_NAND_SPL_SIZE)
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	(0)
@@ -274,13 +263,13 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_NAND_U_BOOT_RELOC_SP		((CONFIG_SYS_INIT_L2_END - 1) & ~0xF)
 
 /* NAND flash config */
-#define CONFIG_SYS_NAND_BR_PRELIM (BR_PHYS_ADDR(CONFIG_SYS_NAND_BASE_PHYS) \
+#define CONFIG_NAND_BR_PRELIM	(CONFIG_SYS_NAND_BASE_PHYS \
 				| (2<<BR_DECC_SHIFT)	/* Use HW ECC */ \
 				| BR_PS_8	/* Port Size = 8 bit */ \
 				| BR_MS_FCM		/* MSEL = FCM */ \
 				| BR_V)			/* valid */
 
-#define CONFIG_SYS_NAND_OR_PRELIM	(0xFFF80000	/* length 32K */ \
+#define CONFIG_NAND_OR_PRELIM	(0xFFF80000		/* length 32K */ \
 				| OR_FCM_CSCT \
 				| OR_FCM_CST \
 				| OR_FCM_CHT \
@@ -289,27 +278,22 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 				| OR_FCM_EHTR)
 
 #ifdef CONFIG_RAMBOOT_NAND
-#define CONFIG_SYS_BR0_PRELIM  CONFIG_SYS_NAND_BR_PRELIM /* NAND Base Address */
-#define CONFIG_SYS_OR0_PRELIM  CONFIG_SYS_NAND_OR_PRELIM /* NAND Options */
+#define CONFIG_SYS_BR0_PRELIM  CONFIG_NAND_BR_PRELIM  /* NAND Base Address */
+#define CONFIG_SYS_OR0_PRELIM  CONFIG_NAND_OR_PRELIM  /* NAND Options */
 #define CONFIG_SYS_BR1_PRELIM  CONFIG_FLASH_BR_PRELIM  /* NOR Base Address */
 #define CONFIG_SYS_OR1_PRELIM  CONFIG_FLASH_OR_PRELIM  /* NOR Options */
 #else
 #define CONFIG_SYS_BR0_PRELIM  CONFIG_FLASH_BR_PRELIM  /* NOR Base Address */
 #define CONFIG_SYS_OR0_PRELIM  CONFIG_FLASH_OR_PRELIM  /* NOR Options */
-#define CONFIG_SYS_BR1_PRELIM  CONFIG_SYS_NAND_BR_PRELIM /* NAND Base Address */
-#define CONFIG_SYS_OR1_PRELIM  CONFIG_SYS_NAND_OR_PRELIM /* NAND Options */
+#define CONFIG_SYS_BR1_PRELIM  CONFIG_NAND_BR_PRELIM  /* NAND Base Address */
+#define CONFIG_SYS_OR1_PRELIM  CONFIG_NAND_OR_PRELIM  /* NAND Options */
 #endif
 
 #define CONFIG_SYS_VSC7385_BASE	0xffb00000
 
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_VSC7385_BASE_PHYS	0xfffb00000ull
-#else
 #define CONFIG_SYS_VSC7385_BASE_PHYS	CONFIG_SYS_VSC7385_BASE
-#endif
 
-#define CONFIG_SYS_BR2_PRELIM	(BR_PHYS_ADDR(CONFIG_SYS_VSC7385_BASE) \
-							| BR_PS_8 | BR_V)
+#define CONFIG_SYS_BR2_PRELIM	(CONFIG_SYS_VSC7385_BASE | BR_PS_8 | BR_V)
 #define CONFIG_SYS_OR2_PRELIM	(OR_AM_128KB | OR_GPCM_CSNT | OR_GPCM_XACS | \
 				OR_GPCM_SCY_15 | OR_GPCM_SETA | OR_GPCM_TRLX | \
 				OR_GPCM_EHTR | OR_GPCM_EAD)
@@ -327,6 +311,7 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_NS16550_MIN_FUNCTIONS
 #endif
 
+#define CONFIG_SERIAL_MULTI	1 /* Enable both serial ports */
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV	/* determine from environment */
 
 #define CONFIG_SYS_BAUDRATE_TABLE	\
@@ -337,6 +322,9 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 
 /* Use the HUSH parser */
 #define CONFIG_SYS_HUSH_PARSER
+#ifdef	CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
+#endif
 
 /*
  * Pass open firmware flat tree
@@ -350,15 +338,16 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_FIT_VERBOSE	1 /* enable fit_format_{error,warning}() */
 
 /* I2C */
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_FSL
-#define CONFIG_SYS_FSL_I2C_OFFSET	0x3000
-#define CONFIG_SYS_FSL_I2C_SPEED	400000
-#define CONFIG_SYS_FSL_I2C_SLAVE	0x7F
-#define CONFIG_SYS_FSL_I2C2_OFFSET	0x3100
-#define CONFIG_SYS_FSL_I2C2_SPEED	400000
-#define CONFIG_SYS_FSL_I2C2_SLAVE	0x7F
-#define CONFIG_SYS_I2C_NOPROBES		{ {0, 0x29} }
+#define CONFIG_FSL_I2C		/* Use FSL common I2C driver */
+#define CONFIG_HARD_I2C		/* I2C with hardware support */
+#undef	CONFIG_SOFT_I2C		/* I2C bit-banged */
+#define CONFIG_I2C_MULTI_BUS
+#define CONFIG_I2C_CMD_TREE
+#define CONFIG_SYS_I2C_SPEED		400000	/* I2C speed and slave address*/
+#define CONFIG_SYS_I2C_SLAVE		0x7F
+#define CONFIG_SYS_I2C_NOPROBES	{{0,0x29}}	/* Don't probe these addrs */
+#define CONFIG_SYS_I2C_OFFSET		0x3000
+#define CONFIG_SYS_I2C2_OFFSET		0x3100
 
 /*
  * I2C2 EEPROM
@@ -371,20 +360,9 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 1
 #define CONFIG_SYS_EEPROM_BUS_NUM	1
 
-#define CONFIG_SYS_I2C_PCA9557_ADDR	0x18
-
 #define CONFIG_RTC_DS1337
 #define CONFIG_SYS_RTC_DS1337_NOOSC
 #define CONFIG_SYS_I2C_RTC_ADDR                0x68
-
-/* eSPI - Enhanced SPI */
-#define CONFIG_FSL_ESPI
-#define CONFIG_SPI_FLASH
-#define CONFIG_SPI_FLASH_SPANSION
-#define CONFIG_CMD_SF
-#define CONFIG_SF_DEFAULT_SPEED		10000000
-#define CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
-
 /*
  * General PCI
  * Memory space is mapped 1-1, but I/O space must start from 0.
@@ -394,41 +372,23 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 /* controller 2, Slot 2, tgtid 2, Base address 9000 */
 #define CONFIG_SYS_PCIE2_NAME		"Slot 1"
 #define CONFIG_SYS_PCIE2_MEM_VIRT	0xa0000000
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_PCIE2_MEM_BUS	0xc0000000
-#define CONFIG_SYS_PCIE2_MEM_PHYS	0xc20000000ull
-#else
 #define CONFIG_SYS_PCIE2_MEM_BUS	0xa0000000
 #define CONFIG_SYS_PCIE2_MEM_PHYS	0xa0000000
-#endif
 #define CONFIG_SYS_PCIE2_MEM_SIZE	0x20000000	/* 512M */
 #define CONFIG_SYS_PCIE2_IO_VIRT	0xffc10000
 #define CONFIG_SYS_PCIE2_IO_BUS		0x00000000
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_PCIE2_IO_PHYS	0xfffc10000ull
-#else
 #define CONFIG_SYS_PCIE2_IO_PHYS	0xffc10000
-#endif
 #define CONFIG_SYS_PCIE2_IO_SIZE	0x00010000	/* 64k */
 
 /* controller 1, Slot 1, tgtid 1, Base address a000 */
 #define CONFIG_SYS_PCIE1_NAME		"Slot 2"
 #define CONFIG_SYS_PCIE1_MEM_VIRT	0x80000000
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_PCIE1_MEM_BUS	0x80000000
-#define CONFIG_SYS_PCIE1_MEM_PHYS	0xc00000000ull
-#else
 #define CONFIG_SYS_PCIE1_MEM_BUS	0x80000000
 #define CONFIG_SYS_PCIE1_MEM_PHYS	0x80000000
-#endif
 #define CONFIG_SYS_PCIE1_MEM_SIZE	0x20000000	/* 512M */
 #define CONFIG_SYS_PCIE1_IO_VIRT	0xffc00000
 #define CONFIG_SYS_PCIE1_IO_BUS		0x00000000
-#ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_PCIE1_IO_PHYS	0xfffc00000ull
-#else
 #define CONFIG_SYS_PCIE1_IO_PHYS	0xffc00000
-#endif
 #define CONFIG_SYS_PCIE1_IO_SIZE	0x00010000	/* 64k */
 
 #define CONFIG_PCI_PNP			/* do pci plug-and-play */
@@ -449,6 +409,7 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 
 #endif	/* CONFIG_PCI */
 
+#define CONFIG_NET_MULTI	1
 
 #if defined(CONFIG_TSEC_ENET)
 #define CONFIG_MII		1	/* MII PHY management */
@@ -494,25 +455,19 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #if defined(CONFIG_RAMBOOT_NAND)
 	#define CONFIG_ENV_IS_IN_NAND	1
 	#define CONFIG_ENV_SIZE		CONFIG_SYS_NAND_BLOCK_SIZE
-	#define CONFIG_ENV_OFFSET	((768*1024)+CONFIG_SYS_NAND_BLOCK_SIZE)
-#elif defined(CONFIG_RAMBOOT_SDCARD)
-#define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_FSL_FIXED_MMC_LOCATION
-#define CONFIG_ENV_SIZE			0x2000
-#define CONFIG_SYS_MMC_ENV_DEV		0
-#elif defined(CONFIG_RAMBOOT_SPIFLASH)
-	#define CONFIG_ENV_IS_IN_SPI_FLASH
-	#define CONFIG_ENV_SPI_BUS	0
-	#define CONFIG_ENV_SPI_CS	0
-	#define CONFIG_ENV_SPI_MAX_HZ	10000000
-	#define CONFIG_ENV_SPI_MODE	0
-	#define CONFIG_ENV_OFFSET	0x100000	/* 1MB */
-	#define CONFIG_ENV_SECT_SIZE	0x10000
+	#define CONFIG_ENV_OFFSET	((512 * 1024) + CONFIG_SYS_NAND_BLOCK_SIZE)
+#elif defined(CONFIG_RAMBOOT_SDCARD) || defined(CONFIG_RAMBOOT_SPIFLASH)
+	#define CONFIG_ENV_IS_NOWHERE	1	/* Store ENV in memory only */
+	#define CONFIG_ENV_ADDR		(CONFIG_SYS_MONITOR_BASE - 0x1000)
 	#define CONFIG_ENV_SIZE		0x2000
 #endif
 #else
 	#define CONFIG_ENV_IS_IN_FLASH	1
+	#if CONFIG_SYS_MONITOR_BASE > 0xfff80000
+	#define CONFIG_ENV_ADDR		0xfff80000
+	#else
 	#define CONFIG_ENV_ADDR		(CONFIG_SYS_MONITOR_BASE - CONFIG_ENV_SECT_SIZE)
+	#endif
 	#define CONFIG_ENV_SIZE		0x2000
 	#define CONFIG_ENV_SECT_SIZE	0x20000 /* 128K (one sector) */
 #endif
@@ -555,9 +510,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #endif
 #endif
 
-#define CONFIG_HAS_FSL_DR_USB
-
-#if defined(CONFIG_HAS_FSL_DR_USB)
 #define CONFIG_USB_EHCI
 
 #ifdef CONFIG_USB_EHCI
@@ -565,7 +517,6 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_EHCI_FSL
 #define CONFIG_USB_STORAGE
-#endif
 #endif
 
 #if defined(CONFIG_MMC) || defined(CONFIG_USB_EHCI)
@@ -581,6 +532,7 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_CMDLINE_EDITING			/* Command-line editing */
 #define CONFIG_AUTO_COMPLETE			/* add autocompletion support */
 #define CONFIG_SYS_LOAD_ADDR	0x2000000	/* default load address */
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt */
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size */
 #else
@@ -590,17 +542,19 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 						/* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS	16		/* max number of command args */
 #define CONFIG_SYS_BARGSIZE	CONFIG_SYS_CBSIZE/* Boot Argument Buffer Size */
+#define CONFIG_SYS_HZ		1000		/* decrementer freq: 1ms ticks */
 
 /*
  * For booting Linux, the board info and command line data
- * have to be in the first 64 MB of memory, since this is
+ * have to be in the first 16 MB of memory, since this is
  * the maximum mapped by the Linux kernel during initialization.
  */
-#define CONFIG_SYS_BOOTMAPSZ	(64 << 20)/* Initial Memory map for Linux*/
-#define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* Increase max gunzip size */
+#define CONFIG_SYS_BOOTMAPSZ	(16 << 20)/* Initial Memory map for Linux*/
+#define CONFIG_SYS_BOOTM_LEN	(16 << 20)	/* Increase max gunzip size */
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	230400	/* speed to run kgdb serial port */
+#define CONFIG_KGDB_SER_INDEX	2	/* which serial port to use */
 #endif
 
 /*
@@ -614,8 +568,8 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 #endif
 
 #define CONFIG_HOSTNAME		P2020RDB
-#define CONFIG_ROOTPATH		"/opt/nfsroot"
-#define CONFIG_BOOTFILE		"uImage"
+#define CONFIG_ROOTPATH		/opt/nfsroot
+#define CONFIG_BOOTFILE		uImage
 #define CONFIG_UBOOTPATH	u-boot.bin/* U-Boot image on TFTP server */
 
 /* default location for tftp and bootm */
@@ -628,19 +582,14 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 
 #define	CONFIG_EXTRA_ENV_SETTINGS				\
 	"netdev=eth0\0"						\
-	"uboot=" __stringify(CONFIG_UBOOTPATH) "\0"		\
-	"loadaddr=1000000\0"					\
+	"uboot=" MK_STR(CONFIG_UBOOTPATH) "\0"				\
+	"loadaddr=1000000\0"			\
 	"tftpflash=tftpboot $loadaddr $uboot; "			\
-		"protect off " __stringify(CONFIG_SYS_TEXT_BASE)	\
-			" +$filesize; "	\
-		"erase " __stringify(CONFIG_SYS_TEXT_BASE)		\
-			" +$filesize; "	\
-		"cp.b $loadaddr " __stringify(CONFIG_SYS_TEXT_BASE)	\
-			" $filesize; "	\
-		"protect on " __stringify(CONFIG_SYS_TEXT_BASE)		\
-			" +$filesize; "	\
-		"cmp.b $loadaddr " __stringify(CONFIG_SYS_TEXT_BASE)	\
-			" $filesize\0"	\
+		"protect off " MK_STR(CONFIG_SYS_TEXT_BASE) " +$filesize; "	\
+		"erase " MK_STR(CONFIG_SYS_TEXT_BASE) " +$filesize; "		\
+		"cp.b $loadaddr " MK_STR(CONFIG_SYS_TEXT_BASE) " $filesize; "	\
+		"protect on " MK_STR(CONFIG_SYS_TEXT_BASE) " +$filesize; "		\
+		"cmp.b $loadaddr " MK_STR(CONFIG_SYS_TEXT_BASE) " $filesize\0"	\
 	"consoledev=ttyS0\0"				\
 	"ramdiskaddr=2000000\0"			\
 	"ramdiskfile=rootfs.ext2.gz.uboot\0"		\
@@ -655,7 +604,7 @@ extern unsigned long get_board_sys_clk(unsigned long dummy);
 	"nandfdtaddr=80000\0"		\
 	"nandimgsize=400000\0"		\
 	"nandfdtsize=80000\0"		\
-	"hwconfig=usb1:dr_mode=host,phy_type=ulpi\0"	\
+	"usb_phy_type=ulpi\0"		\
 	"vscfw_addr=ef000000\0"	\
 	"othbootargs=ramdisk_size=600000\0" \
 	"usbfatboot=setenv bootargs root=/dev/ram rw "	\

@@ -16,7 +16,19 @@
  * Copyright (C) 2004 Texas Instruments.
  *
  * ----------------------------------------------------------------------------
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  * ----------------------------------------------------------------------------
  */
 
@@ -27,43 +39,84 @@
 #include <asm/arch/hardware.h>
 #include <asm/arch/emif_defs.h>
 #include <asm/arch/emac_defs.h>
-#include <asm/arch/pinmux_defs.h>
 #include <asm/io.h>
-#include <nand.h>
-#include <asm/arch/nand_defs.h>
 #include <asm/arch/davinci_misc.h>
-
-#ifdef CONFIG_DAVINCI_MMC
-#include <mmc.h>
-#include <asm/arch/sdmmc_defs.h>
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define pinmux(x)	(&davinci_syscfg_regs->pinmux[x])
+
+/* SPI0 pin muxer settings */
+static const struct pinmux_config spi0_pins[] = {
+	{ pinmux(7), 1, 3 },
+	{ pinmux(7), 1, 4 },
+	{ pinmux(7), 1, 5 },
+	{ pinmux(7), 1, 6 },
+	{ pinmux(7), 1, 7 }
+};
+
+/* EMIF-A bus pins for 8-bit NAND support on CS3 */
+static const struct pinmux_config emifa_nand_pins[] = {
+	{ pinmux(13), 1, 6 },
+	{ pinmux(13), 1, 7 },
+	{ pinmux(14), 1, 0 },
+	{ pinmux(14), 1, 1 },
+	{ pinmux(14), 1, 2 },
+	{ pinmux(14), 1, 3 },
+	{ pinmux(14), 1, 4 },
+	{ pinmux(14), 1, 5 },
+	{ pinmux(15), 1, 7 },
+	{ pinmux(16), 1, 0 },
+	{ pinmux(18), 1, 1 },
+	{ pinmux(18), 1, 4 },
+	{ pinmux(18), 1, 5 },
+};
+
+/* EMAC PHY interface pins */
+static const struct pinmux_config emac_pins[] = {
+	{ pinmux(9), 0, 5 },
+	{ pinmux(10), 2, 1 },
+	{ pinmux(10), 2, 2 },
+	{ pinmux(10), 2, 3 },
+	{ pinmux(10), 2, 4 },
+	{ pinmux(10), 2, 5 },
+	{ pinmux(10), 2, 6 },
+	{ pinmux(10), 2, 7 },
+	{ pinmux(11), 2, 0 },
+	{ pinmux(11), 2, 1 },
+};
+
+/* UART pin muxer settings */
+static const struct pinmux_config uart_pins[] = {
+	{ pinmux(8), 2, 7 },
+	{ pinmux(9), 2, 0 }
+};
+
+/* I2C pin muxer settings */
+static const struct pinmux_config i2c_pins[] = {
+	{ pinmux(8), 2, 3 },
+	{ pinmux(8), 2, 4 }
+};
+
+/* USB0_DRVVBUS pin muxer settings */
+static const struct pinmux_config usb_pins[] = {
+	{ pinmux(9), 1, 1 }
+};
+
 static const struct pinmux_resource pinmuxes[] = {
 #ifdef CONFIG_SPI_FLASH
-	PINMUX_ITEM(spi0_pins_base),
-	PINMUX_ITEM(spi0_pins_scs0),
-	PINMUX_ITEM(spi0_pins_ena),
+	PINMUX_ITEM(spi0_pins),
 #endif
-	PINMUX_ITEM(uart2_pins_txrx),
-	PINMUX_ITEM(i2c0_pins),
+	PINMUX_ITEM(uart_pins),
+	PINMUX_ITEM(i2c_pins),
 #ifdef CONFIG_USB_DA8XX
 	PINMUX_ITEM(usb_pins),
 #endif
 #ifdef CONFIG_USE_NAND
-	PINMUX_ITEM(emifa_pins),
-	PINMUX_ITEM(emifa_pins_cs0),
-	PINMUX_ITEM(emifa_pins_cs2),
-	PINMUX_ITEM(emifa_pins_cs3),
+	PINMUX_ITEM(emifa_nand_pins),
 #endif
 #if defined(CONFIG_DRIVER_TI_EMAC)
-	PINMUX_ITEM(emac_pins_rmii),
-	PINMUX_ITEM(emac_pins_mdio),
-	PINMUX_ITEM(emac_pins_rmii_clk_source),
-#endif
-#ifdef CONFIG_DAVINCI_MMC
-	PINMUX_ITEM(mmc0_pins_8bit)
+	PINMUX_ITEM(emac_pins),
 #endif
 };
 
@@ -73,30 +126,7 @@ static const struct lpsc_resource lpsc[] = {
 	{ DAVINCI_LPSC_EMAC },	/* image download */
 	{ DAVINCI_LPSC_UART2 },	/* console */
 	{ DAVINCI_LPSC_GPIO },
-#ifdef CONFIG_DAVINCI_MMC
-	{ DAVINCI_LPSC_MMC_SD },
-#endif
-
 };
-
-#ifdef CONFIG_DAVINCI_MMC
-static struct davinci_mmc mmc_sd0 = {
-	.reg_base = (struct davinci_mmc_regs *)DAVINCI_MMC_SD0_BASE,
-	.host_caps = MMC_MODE_8BIT,
-	.voltages = MMC_VDD_32_33 | MMC_VDD_33_34,
-	.version = MMC_CTLR_VERSION_2,
-};
-
-int board_mmc_init(bd_t *bis)
-{
-	mmc_sd0.input_clk = clk_get(DAVINCI_MMCSD_CLKID);
-
-	printf("%x\n", mmc_sd0.input_clk);
-
-	/* Add slot-0 to mmc subsystem */
-	return davinci_mmc_init(bis, &mmc_sd0);
-}
-#endif
 
 int board_init(void)
 {
@@ -153,16 +183,6 @@ int board_init(void)
 
 	return(0);
 }
-
-
-#ifdef CONFIG_NAND_DAVINCI
-int board_nand_init(struct nand_chip *nand)
-{
-	davinci_nand_init(nand);
-
-	return 0;
-}
-#endif
 
 #if defined(CONFIG_DRIVER_TI_EMAC)
 

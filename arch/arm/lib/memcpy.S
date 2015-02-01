@@ -60,9 +60,6 @@
 .globl memcpy
 memcpy:
 
-		cmp	r0, r1
-		moveq	pc, lr
-
 		enter	r4, lr
 
 		subs	r2, r2, #4
@@ -241,3 +238,4 @@ memcpy:
 17:		forward_copy_shift	pull=16	push=16
 
 18:		forward_copy_shift	pull=24	push=8
+

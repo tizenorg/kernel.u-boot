@@ -119,6 +119,7 @@
  * Command Register F220h (R/W)
  */
 #define ONENAND_CMD_READ		(0x00)
+#define ONENAND_CMD_SUPERLOAD		(0x03)
 #define ONENAND_CMD_READOOB		(0x13)
 #define ONENAND_CMD_PROG		(0x80)
 #define ONENAND_CMD_PROGOOB		(0x1A)
@@ -166,6 +167,10 @@
 #define ONENAND_SYS_CFG1_INT		(1 << 6)
 #define ONENAND_SYS_CFG1_IOBE		(1 << 5)
 #define ONENAND_SYS_CFG1_RDY_CONF	(1 << 4)
+#define ONENAND_SYS_CFG1_VHF		(1 << 3)
+#define ONENAND_SYS_CFG1_HF		(1 << 2)
+#define ONENAND_SYS_CFG1_WM		(1 << 1)
+#define ONENAND_SYS_CFG1_BWPS		(1 << 0)
 
 /*
  * Controller Status Register F240h (R)

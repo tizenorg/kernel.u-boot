@@ -5,13 +5,19 @@
  * Copyeight (C) 2009 Samsung Electronics
  * Author: Michal Nazarewicz (m.nazarewicz@samsung.com)
  *
- * Ported to u-boot:
- * Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Code refactoring & cleanup:
- * Łukasz Majewski <l.majewski@samsung.com>
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 
@@ -48,7 +54,7 @@
  */
 
 
-/* #include <asm/unaligned.h> */
+//#include <asm/unaligned.h>
 
 
 /*
@@ -60,7 +66,9 @@
 #define FSG_VENDOR_ID	0x0525	/* NetChip */
 #define FSG_PRODUCT_ID	0xa4a5	/* Linux-USB File-backed Storage Gadget */
 
+
 /*-------------------------------------------------------------------------*/
+
 
 #ifndef DEBUG
 #undef VERBOSE_DEBUG
@@ -84,7 +92,6 @@
 #define LERROR(lun, fmt, args...) do { } while (0)
 #define LWARN(lun, fmt, args...) do { } while (0)
 #define LINFO(lun, fmt, args...) do { } while (0)
-
 /*
  * Keep those macros in sync with those in
  * include/linux/usb/composite.h or else GCC will complain.  If they
@@ -107,22 +114,25 @@
  * a warning in this file when building MSF.
  */
 
-#define DBG(d, fmt, args...)     debug(fmt , ## args)
-#define VDBG(d, fmt, args...)    debug(fmt , ## args)
+
+/* #define DBG(d, fmt, args...)     printf(fmt , ## args) */
+/* #define VDBG(d, fmt, args...)    printf(fmt , ## args) */
 /* #define ERROR(d, fmt, args...)   printf(fmt , ## args) */
 /* #define WARNING(d, fmt, args...) printf(fmt , ## args) */
 /* #define INFO(d, fmt, args...)    printf(fmt , ## args) */
 
-/* #define DBG(d, fmt, args...)     do { } while (0) */
-/* #define VDBG(d, fmt, args...)    do { } while (0) */
+
+#define DBG(d, fmt, args...)     do { } while (0)
+#define VDBG(d, fmt, args...)    do { } while (0)
 #define ERROR(d, fmt, args...)   do { } while (0)
 #define WARNING(d, fmt, args...) do { } while (0)
 #define INFO(d, fmt, args...)    do { } while (0)
 
+
 #ifdef DUMP_MSGS
 
-/* dump_msg(fsg, const char * label, const u8 * buf, unsigned length); */
-# define dump_msg(fsg, label, buf, length) do {                         \
+#  define dump_msg(fsg, /* const char * */ label,			\
+		   /* const u8 * */ buf, /* unsigned */ length) do {	\
 	if (length < 512) {						\
 		DBG(fsg, "%s, length %u:\n", label, length);		\
 		print_hex_dump(KERN_DEBUG, "", DUMP_PREFIX_OFFSET,	\
@@ -150,6 +160,10 @@
 #  endif /* VERBOSE_DEBUG */
 
 #endif /* DUMP_MSGS */
+
+
+
+
 
 /*-------------------------------------------------------------------------*/
 
@@ -205,6 +219,7 @@ struct bulk_cs_wrap {
 #define USB_BULK_RESET_REQUEST		0xff
 #define USB_BULK_GET_MAX_LUN_REQUEST	0xfe
 
+
 /* CBI Interrupt data structure */
 struct interrupt_data {
 	u8	bType;
@@ -215,6 +230,7 @@ struct interrupt_data {
 
 /* CBI Accept Device-Specific Command request */
 #define USB_CBI_ADSC_REQUEST		0x00
+
 
 /* Length of a SCSI Command Data Block */
 #define MAX_COMMAND_SIZE	16
@@ -266,6 +282,7 @@ struct interrupt_data {
 #define ASC(x)		((u8) ((x) >> 8))
 #define ASCQ(x)		((u8) (x))
 
+
 struct device_attribute { int i; };
 struct rw_semaphore { int i; };
 #define down_write(...)			do { } while (0)
@@ -275,8 +292,10 @@ struct rw_semaphore { int i; };
 #define ETOOSMALL	525
 
 #include <usb_mass_storage.h>
+extern struct ums_board_info		*ums_info;
 
 /*-------------------------------------------------------------------------*/
+
 
 struct fsg_lun {
 	loff_t		file_length;
@@ -370,14 +389,18 @@ enum data_direction {
 	DATA_DIR_NONE
 };
 
+
 /*-------------------------------------------------------------------------*/
+
 
 static inline u32 get_unaligned_be24(u8 *buf)
 {
 	return 0xffffff & (u32) get_unaligned_be32(buf - 1);
 }
 
+
 /*-------------------------------------------------------------------------*/
+
 
 enum {
 #ifndef FSG_NO_DEVICE_STRINGS
@@ -388,6 +411,7 @@ enum {
 #endif
 	FSG_STRING_INTERFACE
 };
+
 
 #ifndef FSG_NO_OTG
 static struct usb_otg_descriptor
@@ -472,6 +496,7 @@ static struct usb_descriptor_header *fsg_fs_function[] = {
 	NULL,
 };
 
+
 /*
  * USB 2.0 devices need to expose both high speed and full speed
  * descriptors, unless they only run at full speed.
@@ -545,6 +570,7 @@ fsg_ep_desc(struct usb_gadget *g, struct usb_endpoint_descriptor *fs,
 	return fs;
 }
 
+
 /* Static strings, in UTF-8 (for simplicity we use only ASCII characters) */
 static struct usb_string		fsg_strings[] = {
 #ifndef FSG_NO_DEVICE_STRINGS
@@ -562,7 +588,8 @@ static struct usb_gadget_strings	fsg_stringtab = {
 	.strings	= fsg_strings,
 };
 
-/*-------------------------------------------------------------------------*/
+
+ /*-------------------------------------------------------------------------*/
 
 /*
  * If the next two routines are called while the gadget is registered,
@@ -572,21 +599,43 @@ static struct usb_gadget_strings	fsg_stringtab = {
 static int fsg_lun_open(struct fsg_lun *curlun, const char *filename)
 {
 	int				ro;
+	int				rc = -EINVAL;
+	loff_t				size;
+	loff_t				num_sectors;
+	loff_t				min_sectors;
 
 	/* R/W if we can, R/O if we must */
 	ro = curlun->initially_ro;
 
-	curlun->ro = ro;
-	curlun->file_length = ums->num_sectors << 9;
-	curlun->num_sectors = ums->num_sectors;
-	debug("open backing file: %s\n", filename);
+	ums_info->get_capacity(&(ums_info->ums_dev), &size);
+	if (size < 0) {
+		LINFO(curlun, "unable to find file size: %s\n", filename);
+		rc = (int) size;
+		goto out;
+	}
+	num_sectors = size >> 9;	/* File size in 512-byte blocks */
+	min_sectors = 1;
+	if (num_sectors < min_sectors) {
+		LINFO(curlun, "file too small: %s\n", filename);
+		rc = -ETOOSMALL;
+		goto out;
+	}
 
-	return 0;
+	curlun->ro = ro;
+	curlun->file_length = size;
+	curlun->num_sectors = num_sectors;
+	LDBG(curlun, "open backing file: %s\n", filename);
+	rc = 0;
+
+out:
+	return rc;
 }
+
 
 static void fsg_lun_close(struct fsg_lun *curlun)
 {
 }
+
 
 /*-------------------------------------------------------------------------*/
 
@@ -617,4 +666,97 @@ static void store_cdrom_address(u8 *dest, int msf, u32 addr)
 	}
 }
 
+
 /*-------------------------------------------------------------------------*/
+
+#if 0 /* Remove warining ================ OBS */
+static ssize_t fsg_show_ro(struct device *dev, struct device_attribute *attr,
+			   char *buf)
+{
+	struct fsg_lun	*curlun = fsg_lun_from_dev(dev);
+
+	return sprintf(buf, "%d\n", 1
+				  ? curlun->ro
+				  : curlun->initially_ro);
+}
+
+static ssize_t fsg_show_nofua(struct device *dev, struct device_attribute *attr,
+			      char *buf)
+{
+	struct fsg_lun	*curlun = fsg_lun_from_dev(dev);
+
+	return sprintf(buf, "%u\n", curlun->nofua);
+}
+
+static ssize_t fsg_show_file(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	*buf = 0;
+	return 0;
+}
+
+
+static ssize_t fsg_store_ro(struct device *dev, struct device_attribute *attr,
+			    const char *buf, size_t count)
+{
+	ssize_t		rc = count;
+	struct fsg_lun	*curlun = fsg_lun_from_dev(dev);
+	unsigned long	ro;
+
+	ro = simple_strtoul(buf, NULL, 2);
+
+	/*
+	 * Allow the write-enable status to change only while the
+	 * backing file is closed.
+	 */
+	curlun->ro = ro;
+	curlun->initially_ro = ro;
+	LDBG(curlun, "read-only status set to %d\n", curlun->ro);
+	return rc;
+}
+
+static ssize_t fsg_store_nofua(struct device *dev,
+			       struct device_attribute *attr,
+			       const char *buf, size_t count)
+{
+	struct fsg_lun	*curlun = fsg_lun_from_dev(dev);
+	unsigned long	nofua;
+
+	nofua = simple_strtoul(buf, NULL, 2);
+
+	/* Sync data when switching from async mode to sync */
+	if (!nofua && curlun->nofua)
+		fsg_lun_fsync_sub(curlun);
+
+	curlun->nofua = nofua;
+
+	return count;
+}
+
+static ssize_t fsg_store_file(struct device *dev, struct device_attribute *attr,
+			      const char *buf, size_t count)
+{
+	struct fsg_lun	*curlun = fsg_lun_from_dev(dev);
+	struct rw_semaphore	*filesem = NULL; //dev_get_drvdata(dev);
+	int		rc = 0;
+
+	/* Remove a trailing newline */
+	if (count > 0 && buf[count-1] == '\n')
+		((char *) buf)[count-1] = 0;		/* Ugh! */
+
+	/* Eject current medium */
+	down_write(filesem);
+	fsg_lun_close(curlun);
+	curlun->unit_attention_data = SS_MEDIUM_NOT_PRESENT;
+
+	/* Load new medium */
+	if (count > 0 && buf[0]) {
+		rc = fsg_lun_open(curlun, buf);
+		if (rc == 0)
+			curlun->unit_attention_data =
+					SS_NOT_READY_TO_READY_TRANSITION;
+	}
+	up_write(filesem);
+	return (rc < 0 ? rc : count);
+}
+#endif

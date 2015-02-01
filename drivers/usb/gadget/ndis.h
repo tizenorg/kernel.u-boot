@@ -1,11 +1,11 @@
 /*
- * ndis.h
- *
+ * ndis.h 
+ * 
  * ntddndis.h modified by Benedikt Spranger <b.spranger@pengutronix.de>
- *
- * Thanks to the cygwin development team,
+ * 
+ * Thanks to the cygwin development team, 
  * espacially to Casper S. Hornstrup <chorns@users.sourceforge.net>
- *
+ * 
  * THIS SOFTWARE IS NOT COPYRIGHTED
  *
  * This source code is offered for use in the public domain. You may
@@ -18,11 +18,11 @@
  *
  */
 
-#ifndef _USBGADGET_NDIS_H
-#define _USBGADGET_NDIS_H
+#ifndef _LINUX_NDIS_H
+#define _LINUX_NDIS_H
 
 
-#define NDIS_STATUS_MULTICAST_FULL        0xC0010009
+#define NDIS_STATUS_MULTICAST_FULL	  0xC0010009
 #define NDIS_STATUS_MULTICAST_EXISTS      0xC001000A
 #define NDIS_STATUS_MULTICAST_NOT_FOUND   0xC001000B
 
@@ -214,4 +214,4 @@ struct NDIS_PM_PACKET_PATTERN {
 #define NDIS_MAC_OPTION_8021P_PRIORITY          0x00000040
 #define NDIS_MAC_OPTION_RESERVED                0x80000000
 
-#endif /* _USBGADGET_NDIS_H */
+#endif /* _LINUX_NDIS_H */

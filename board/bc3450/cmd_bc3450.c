@@ -5,7 +5,23 @@
  * (C) Copyright 2005
  * Martin Krause, TQ-Systems GmbH, martin.krause@tqs.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -15,6 +31,13 @@
  * BC3450 specific commands
  */
 #if defined(CONFIG_CMD_BSP)
+
+#undef DEBUG
+#ifdef DEBUG
+# define dprintf(fmt,args...)	printf(fmt, ##args)
+#else
+# define dprintf(fmt,args...)
+#endif
 
 /*
  * Definitions for DS1620 chip
@@ -29,6 +52,7 @@
 #define THERM_WRITE_TL		0x02
 #define THERM_WRITE_TH		0x01
 
+#define CONFIG_SYS_CPU			2
 #define CONFIG_SYS_1SHOT		1
 #define CONFIG_SYS_STANDALONE		0
 
@@ -105,7 +129,7 @@ int sm501_gpio_init (void)
 	static int init_done = 0;
 
 	if (init_done) {
-		debug("sm501_gpio_init: nothing to be done.\n");
+/*	dprintf("sm501_gpio_init: nothing to be done.\n"); */
 		return 1;
 	}
 
@@ -138,8 +162,7 @@ int sm501_gpio_init (void)
 		(PWR_OFF | BUZZER | FP_DATA_TRI);
 
 	init_done = 1;
-	debug("sm501_gpio_init: done.\n");
-
+/*  dprintf("sm501_gpio_init: done.\n"); */
 	return 0;
 }
 

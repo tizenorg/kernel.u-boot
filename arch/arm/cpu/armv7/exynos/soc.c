@@ -1,58 +1,73 @@
 /*
- * Copyright (c) 2010 Samsung Electronics.
+ * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd. All rights reserved.
  * Minkyu Kang <mk7.kang@samsung.com>
+ * Sanghee Kim <sh0130.kim@samsung.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/system.h>
-
-enum l2_cache_params {
-	CACHE_TAG_RAM_SETUP = (1 << 9),
-	CACHE_DATA_RAM_SETUP = (1 << 5),
-	CACHE_TAG_RAM_LATENCY = (2 << 6),
-	CACHE_DATA_RAM_LATENCY = (2 << 0)
-};
 
 void reset_cpu(ulong addr)
 {
 	writel(0x1, samsung_get_base_swreset());
 }
 
-#ifndef CONFIG_SYS_DCACHE_OFF
-void enable_caches(void)
-{
-	/* Enable D-cache. I-cache is already enabled in start.S */
-	dcache_enable();
-}
-#endif
-
-#ifndef CONFIG_SYS_L2CACHE_OFF
 /*
- * Set L2 cache parameters
+ * return: xxxx MB
  */
-static void exynos5_set_l2cache_params(void)
+int exynos_get_dram_size(void)
 {
-	unsigned int val = 0;
+	u32 dmc_base = samsung_get_base_dmc();
+	u32 memcontrol;
+	u32 memconfig0, memconfig1;
+	u32 chip_num;
+	u32 size;
 
-	asm volatile("mrc p15, 1, %0, c9, c0, 2\n" : "=r"(val));
+	memcontrol = readl(dmc_base + 0x4);
+	memconfig0 = readl(dmc_base + 0x8);
 
-	val |= CACHE_TAG_RAM_SETUP |
-		CACHE_DATA_RAM_SETUP |
-		CACHE_TAG_RAM_LATENCY |
-		CACHE_DATA_RAM_LATENCY;
+	/* chip_num = MEMCONTROL[19:16] */
+	chip_num = (memcontrol >> 16) & 0xf;
+	switch (chip_num) {
+	case 1:
+		memconfig1 = readl(dmc_base + 0xc);
+		/* chip_mask = MEMCONFIGx[23:16] */
+		size = ((memconfig0 + memconfig1) >> 16) & 0xff;
+		size = ((~size + 1) & 0xff) << 4;
+		break;
+	case 0:
+	default:
+		size = (memconfig0 >> 16) & 0xff;
+		size = ((~size + 1) & 0xff) << 4;
+		break;
+	}
 
-	asm volatile("mcr p15, 1, %0, c9, c0, 2\n" : : "r"(val));
+	return size;
 }
 
-/*
- * Sets L2 cache related parameters before enabling data cache
- */
-void v7_outer_cache_enable(void)
+static void exynos_chip_info(void)
 {
-	if (cpu_is_exynos5())
-		exynos5_set_l2cache_params();
+	printf("Pro ID:\t0x%08X\n", readl(S5P_PRO_ID));
+	printf("Pkg ID:\t0x%08X\n", readl(S5P_PRO_ID + 4));
 }
-#endif
+
+U_BOOT_CMD(
+	chipinfo, 1, 1, exynos_chip_info,
+	"print chip info (product id, package id, lot id, ...)",
+	"chipinfo\n"
+);

@@ -3,7 +3,23 @@
  *  Copyright (C) 1999	Magnus Damm <kieraypc01.p.y.kie.era.ericsson.se>
  *  Copyright (C) 2000 - 2003 Wolfgang Denk <wd@denx.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -12,7 +28,11 @@
 #include <asm-offsets.h>
 #include <config.h>
 #include <mpc5xxx.h>
+#include <timestamp.h>
 #include <version.h>
+
+#define CONFIG_MPC5xxx 1	/* needed for Linux kernel header files */
+#define _LINUX_CONFIG_H 1	/* avoid reading Linux autoconf.h file	*/
 
 #include <ppc_asm.tmpl>
 #include <ppc_defs.h>
@@ -20,6 +40,10 @@
 #include <asm/cache.h>
 #include <asm/mmu.h>
 #include <asm/u-boot.h>
+
+#ifndef  CONFIG_IDENT_STRING
+#define  CONFIG_IDENT_STRING ""
+#endif
 
 /* We don't want the  MMU yet.
 */
@@ -31,7 +55,6 @@
 #define MSR_KERNEL (MSR_FP|MSR_ME|MSR_RI)
 #endif
 
-#ifndef CONFIG_SPL_BUILD
 /*
  * Set up GOT: Global Offset Table
  *
@@ -47,10 +70,9 @@
 	GOT_ENTRY(transfer_to_handler)
 
 	GOT_ENTRY(__init_end)
-	GOT_ENTRY(__bss_end)
+	GOT_ENTRY(__bss_end__)
 	GOT_ENTRY(__bss_start)
 	END_GOT
-#endif
 
 /*
  * Version string
@@ -58,7 +80,9 @@
 	.data
 	.globl	version_string
 version_string:
-	.ascii U_BOOT_VERSION_STRING, "\0"
+	.ascii U_BOOT_VERSION
+	.ascii " (", U_BOOT_DATE, " - ", U_BOOT_TIME, ")"
+	.ascii CONFIG_IDENT_STRING, "\0"
 
 /*
  * Exception vectors
@@ -67,18 +91,6 @@ version_string:
 	. = EXC_OFF_SYS_RESET
 	.globl	_start
 _start:
-
-#if defined(CONFIG_SPL) && !defined(CONFIG_SPL_BUILD)
-	/*
-	 * This is the entry of the real U-Boot from a board port
-	 * that supports SPL booting on the MPC5200. We only need
-	 * to call board_init_f() here. Everything else has already
-	 * been done in the SPL u-boot version.
-	 */
-	GET_GOT			/* initialize GOT access		*/
-	bl	board_init_f	/* run 1st part of board init code (in Flash)*/
-	/* NOTREACHED - board_init_f() does not return */
-#else
 	mfmsr	r5			/* save msr contents		*/
 
 	/* Move CSBoot and adjust instruction pointer                   */
@@ -147,9 +159,7 @@ lowboot_reentry:
 	/* Be careful to keep code relocatable !			*/
 	/*--------------------------------------------------------------*/
 
-#ifndef CONFIG_SPL_BUILD
 	GET_GOT			/* initialize GOT access		*/
-#endif
 
 	/* r3: IMMR */
 	bl	cpu_init_f	/* run low-level CPU init code (in Flash)*/
@@ -157,9 +167,7 @@ lowboot_reentry:
 	bl	board_init_f	/* run 1st part of board init code (in Flash)*/
 
 	/* NOTREACHED - board_init_f() does not return */
-#endif
 
-#ifndef CONFIG_SPL_BUILD
 /*
  * Vector Table
  */
@@ -332,7 +340,6 @@ int_return:
 	lwz	r1,GPR1(r1)
 	SYNC
 	rfi
-#endif /* CONFIG_SPL_BUILD */
 
 /*
  * This code initialises the MPC5xxx processor core
@@ -522,7 +529,6 @@ get_pvr:
 	mfspr	r3, PVR
 	blr
 
-#ifndef CONFIG_SPL_BUILD
 /*------------------------------------------------------------------------------*/
 
 /*
@@ -675,7 +681,7 @@ clear_bss:
 	 * Now clear BSS segment
 	 */
 	lwz	r3,GOT(__bss_start)
-	lwz	r4,GOT(__bss_end)
+	lwz	r4,GOT(__bss_end__)
 
 	cmplw	0, r3, r4
 	beq	6f
@@ -760,5 +766,3 @@ trap_init:
 
 	mtlr	r4			/* restore link register    */
 	blr
-
-#endif /* CONFIG_SPL_BUILD */

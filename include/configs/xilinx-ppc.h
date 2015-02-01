@@ -6,7 +6,17 @@
  *  (C) Copyright 2008
  *  Georg Schardt <schardt@team-ctech.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __CONFIG_XLX_H
@@ -64,6 +74,7 @@
 					/* default load address       */
 #define CONFIG_SYS_EXTBDINFO		1
 					/* Extended board_into (bd_t) */
+#define CONFIG_SYS_HZ			1000
 					/* decrementer freq: 1 ms ticks */
 #define CONFIG_CMDLINE_EDITING		/* add command line history     */
 #define CONFIG_AUTO_COMPLETE		/* add autocompletion support   */
@@ -73,6 +84,7 @@
 #define CONFIG_VERSION_VARIABLE		/* include version env variable */
 #define CONFIG_SYS_CONSOLE_INFO_QUIET	/* don't print console @ startup */
 #define CONFIG_SYS_HUSH_PARSER		/* Use the HUSH parser          */
+#define	CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_LOADS_ECHO		/* echo on for serial download  */
 #define CONFIG_SYS_LOADS_BAUD_CHANGE	/* allow baudrate change        */
 #define CONFIG_SYS_BOOTMAPSZ		(8 << 20)
@@ -107,7 +119,7 @@
 /* serial communication */
 #ifdef XPAR_UARTLITE_0_BASEADDR
 #define CONFIG_XILINX_UARTLITE
-#define XILINX_UARTLITE_BASEADDR	XPAR_UARTLITE_0_BASEADDR
+#define CONFIG_SERIAL_BASE		XPAR_UARTLITE_0_BASEADDR
 #define CONFIG_BAUDRATE			XPAR_UARTLITE_0_BAUDRATE
 #define CONFIG_SYS_BAUDRATE_TABLE	{ CONFIG_BAUDRATE }
 #else

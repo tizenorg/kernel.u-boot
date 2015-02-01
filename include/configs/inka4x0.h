@@ -5,7 +5,23 @@
  * (C) Copyright 2003-2005
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -16,8 +32,9 @@
  * (easy to change)
  */
 
-#define CONFIG_MPC5200		1	/* This is an MPC5200 CPU	*/
-#define CONFIG_INKA4X0		1	/* INKA4x0 board		*/
+#define CONFIG_MPC5xxx		1	/* This is an MPC5xxx CPU		*/
+#define CONFIG_MPC5200		1	/* (more precisely an MPC5200 CPU)	*/
+#define CONFIG_INKA4X0		1	/* INKA4x0 board			*/
 
 /*
  * Valid values for CONFIG_SYS_TEXT_BASE are:
@@ -117,8 +134,8 @@
 #define	CONFIG_SERVERIP		192.168.100.1
 #define	CONFIG_NETMASK		255.255.255.0
 #define HOSTNAME		inka4x0
-#define CONFIG_BOOTFILE		"/tftpboot/inka4x0/uImage"
-#define	CONFIG_ROOTPATH		"/opt/eldk/ppc_6xx"
+#define CONFIG_BOOTFILE		/tftpboot/inka4x0/uImage
+#define	CONFIG_ROOTPATH		/opt/eldk/ppc_6xx
 
 #define CONFIG_EXTRA_ENV_SETTINGS					\
 	"netdev=eth0\0"							\
@@ -324,6 +341,7 @@ static inline void tws_data_config_output(unsigned output)
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP			/* undef to save memory	    */
+#define CONFIG_SYS_PROMPT		"=> "	/* Monitor Command Prompt   */
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size  */
 #else
@@ -345,6 +363,8 @@ static inline void tws_data_config_output(unsigned output)
 #define CONFIG_SYS_MEMTEST_END		0x00f00000	/* 1 ... 15 MB in DRAM	*/
 
 #define CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address */
+
+#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 
 /*
  * Enable loopw command.

@@ -4,7 +4,23 @@
  *
  * FSL DIU Framebuffer driver
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -35,10 +51,20 @@ void diu_set_pixel_clock(unsigned int pixclock)
 	debug("DIU: Modified value of CLKDVDR = 0x%08x\n", in_be32(clkdvdr));
 }
 
-int platform_diu_init(unsigned int xres, unsigned int yres, const char *port)
+int platform_diu_init(unsigned int *xres, unsigned int *yres)
 {
-	unsigned int pixel_format = 0x88883316;
+	unsigned int pixel_format;
+
+#if defined(CONFIG_VIDEO_XRES) & defined(CONFIG_VIDEO_YRES)
+	*xres = CONFIG_VIDEO_XRES;
+	*yres = CONFIG_VIDEO_YRES;
+#else
+	*xres = 1024;
+	*yres = 768;
+#endif
+	pixel_format = 0x88883316;
 
 	debug("mpc5121_diu_init\n");
-	return fsl_diu_init(xres, yres, pixel_format, 0);
+
+	return fsl_diu_init(*xres, pixel_format, 0);
 }

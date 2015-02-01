@@ -6,7 +6,23 @@
  * (C) Copyright 2000 Sysgo Real-Time Solutions, GmbH <www.elinos.com>
  * Marius Groeger <mgroeger@sysgo.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -37,7 +53,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#if defined(CONFIG_ETHER_ON_FCC) && defined(CONFIG_CMD_NET)
+#if defined(CONFIG_ETHER_ON_FCC) && defined(CONFIG_CMD_NET) && \
+	defined(CONFIG_NET_MULTI)
 
 static struct ether_fcc_info_s
 {
@@ -126,7 +143,7 @@ static RTXBD rtx __attribute__ ((aligned(8)));
 #error "rtx must be 64-bit aligned"
 #endif
 
-static int fec_send(struct eth_device *dev, void *packet, int length)
+static int fec_send(struct eth_device* dev, volatile void *packet, int length)
 {
     int i;
     int result = 0;
@@ -670,7 +687,7 @@ eth_loopback_test (void)
 	immr->im_cpmux.cmx_fcr = CMXFCR_RF1CS_CLK10|CMXFCR_TF1CS_CLK11|\
 	    CMXFCR_RF2CS_CLK13|CMXFCR_TF2CS_CLK14|\
 	    CMXFCR_RF3CS_CLK15|CMXFCR_TF3CS_CLK16;
-#elif defined(CONFIG_SACSng)
+#elif defined(CONFIG_SBC8260) || defined(CONFIG_SACSng)
 	/*
 	 * Attention: this is board-specific
 	 * 1, FCC2
@@ -1033,11 +1050,11 @@ eth_loopback_test (void)
 					}
 					else {
 						ushort datlen = bdp->cbd_datlen;
-						struct ethernet_hdr *ehp;
+						Ethernet_t *ehp;
 						ushort prot;
 						int ours, tb, n, nbytes;
 
-						ehp = (struct ethernet_hdr *) \
+						ehp = (Ethernet_t *) \
 							&ecp->rxbufs[i][0];
 
 						ours = memcmp (ehp->et_src, \
@@ -1047,8 +1064,9 @@ eth_loopback_test (void)
 						tb = prot & 0x8000;
 						n = prot & 0x7fff;
 
-						nbytes = ELBT_BUFSZ -
-							ETHER_HDR_SIZE -
+						nbytes = ELBT_BUFSZ - \
+							offsetof (Ethernet_t, \
+								et_dsap) - \
 							ELBT_CRCSZ;
 
 						/* check the frame is correct */
@@ -1063,10 +1081,10 @@ eth_loopback_test (void)
 								patwords[n];
 							uint nbb;
 
-							nbb = badbits(
-							    ((uchar *)&ehp) +
-							    ETHER_HDR_SIZE,
-							    nbytes, patword);
+							nbb = badbits ( \
+								&ehp->et_dsap, \
+								nbytes, \
+								patword);
 
 							ecp->rxeacc.badbit += \
 								nbb;

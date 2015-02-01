@@ -5,13 +5,35 @@
  *
  * Header file for the Marvell's Feroceon CPU core.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef _ASM_ARCH_KIRKWOOD_H
 #define _ASM_ARCH_KIRKWOOD_H
 
+#ifndef __ASSEMBLY__
+#include <asm/types.h>
+#include <asm/io.h>
+#endif /* __ASSEMBLY__ */
+
 #if defined (CONFIG_FEROCEON_88FR131) || defined (CONFIG_SHEEVA_88SV131)
+#include <asm/arch/cpu.h>
 
 /* SOC specific definations */
 #define INTREG_BASE			0xd0000000
@@ -28,7 +50,6 @@
 #define KW_MPP_BASE			(KW_REGISTER(0x10000))
 #define KW_GPIO0_BASE			(KW_REGISTER(0x10100))
 #define KW_GPIO1_BASE			(KW_REGISTER(0x10140))
-#define KW_RTC_BASE			(KW_REGISTER(0x10300))
 #define KW_NANDF_BASE			(KW_REGISTER(0x10418))
 #define KW_SPI_BASE			(KW_REGISTER(0x10600))
 #define KW_CPU_WIN_BASE			(KW_REGISTER(0x20000))
@@ -48,18 +69,6 @@
 #define MAX_MVGBE_DEVS	2
 #define MVGBE0_BASE	KW_EGIGA0_BASE
 #define MVGBE1_BASE	KW_EGIGA1_BASE
-
-/* Kirkwood USB Host controller */
-#define MVUSB0_BASE			KW_USB20_BASE
-#define MVUSB0_CPU_ATTR_DRAM_CS0	KWCPU_ATTR_DRAM_CS0
-#define MVUSB0_CPU_ATTR_DRAM_CS1	KWCPU_ATTR_DRAM_CS1
-#define MVUSB0_CPU_ATTR_DRAM_CS2	KWCPU_ATTR_DRAM_CS2
-#define MVUSB0_CPU_ATTR_DRAM_CS3	KWCPU_ATTR_DRAM_CS3
-
-/* Kirkwood CPU memory windows */
-#define MVCPU_WIN_CTRL_DATA	KWCPU_WIN_CTRL_DATA
-#define MVCPU_WIN_ENABLE	KWCPU_WIN_ENABLE
-#define MVCPU_WIN_DISABLE	KWCPU_WIN_DISABLE
 
 #if defined (CONFIG_KW88F6281)
 #include <asm/arch/kw88f6281.h>

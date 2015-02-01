@@ -5,55 +5,60 @@
 #
 # Normal rules
 #
-.*
-*.o
-*.o.*
-*.a
-*.s
-*.su
-*.mod.c
-*.i
-*.lst
-*.order
-*.elf
-*.swp
-*.bin
-*.patch
-*.cfgtmp
-*.dts.tmp
 
-# Build tree
-/build-*
+*.rej
+*.orig
+*.a
+*.o
+*~
+*.swp
+*.patch
+*.tar
 
 #
 # Top-level generic files
 #
-/MLO*
-/SPL
-/System.map
-/u-boot*
 
-#
-# git files that we don't want to ignore even it they are dot-files
-#
-!.gitignore
-!.mailmap
+/System.map
+/u-boot
+/u-boot.hex
+/u-boot.imx
+/u-boot.map
+/u-boot.bin
+/u-boot.srec
+/u-boot.ldr
+/u-boot.ldr.hex
+/u-boot.ldr.srec
+/u-boot.lds
+/u-boot-onenand.bin
+/u-boot-onenand-evt0.bin
+/u-boot-onenand-evt1.bin
+/u-boot-onenand-evt1-fused.bin
+/u-boot-mmc.bin
+/u-boot-mmc-evt0.bin
+/u-boot-mmc-evt1.bin
+/u-boot-mmc-evt1-fused.bin
+/u-boot-recovery.bin
+/u-boot-recovery-evt0.bin
+/u-boot-recovery-evt1.bin
+/u-boot-recovery-evt1-fused.bin
+/u-boot-flexonenand.bin
+/s-boot-onenand.bin
+/s-boot-mmc.bin
+/ipl-recovery*.bin
+/u-boot-*.bin
 
 #
 # Generated files
 #
 
+*.depend
 /LOG
 /errlog
 /reloc_off
 
-!/spl/Makefile
-/spl/*
-/tpl/
-
 /include/generated/
-/include/spl-autoconf.mk
-/include/tpl-autoconf.mk
+/lib/asm-offsets.s
 
 # stgit generated dirs
 patches-*
@@ -74,12 +79,36 @@ cscope.*
 /ctags
 /etags
 
-# gnu global files
-GPATH
-GRTAGS
-GSYMS
-GTAGS
+# OneNAND IPL files
+/onenand_ipl/onenand-ipl*
+/onenand_ipl/board/*/*.S
+/onenand_ipl/board/*/onenand*
+/onenand_ipl/board/*/*/*.S
+/onenand_ipl/board/*/*/onenand*
+/onenand_ipl/board/*/*/samsung_read*
 
-*.orig
-*~
-\#*#
+# MMC IPL files
+/mmc_ipl/mmc-ipl*
+/mmc_ipl/board/*/*.S
+/mmc_ipl/board/*/mmc*
+/mmc_ipl/board/*/*/*.S
+/mmc_ipl/board/*/*/mmc*
+
+# Recovery Block files
+/recovery/recovery.bin
+/recovery/recovery.map
+/recovery/recovery
+/recovery/recovery-*
+/recovery/board/*/*/*.S
+/recovery/board/*/*/onenand.*
+/recovery/board/*/*/recovery.*
+/recovery/board/*/*/usbd.*
+
+# Tools files
+tools/mkheader
+tools/env/fw_printenv_static
+
+# debian packaging
+build
+debian/files
+debian/u-boot/

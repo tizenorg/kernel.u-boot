@@ -1,187 +1,40 @@
 #
-# (C) Copyright 2000-2013
+# (C) Copyright 2000-2010
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
-# SPDX-License-Identifier:	GPL-2.0+
+# See file CREDITS for list of people who contributed to this
+# project.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundatio; either version 2 of
+# the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+# MA 02111-1307 USA
 #
 
-VERSION = 2014
-PATCHLEVEL = 04
+VERSION = 2011
+PATCHLEVEL = 03
 SUBLEVEL =
-EXTRAVERSION = -rc1
-NAME =
-
-# *DOCUMENTATION*
-# To see a list of typical targets execute "make help"
-# More info can be located in ./README
-# Comments in this file are targeted only to the developer, do not
-# expect to learn how to build the kernel reading this file.
-
-# Do not:
-# o  use make's built-in rules and variables
-#    (this increases performance and avoids hard-to-debug behaviour);
-# o  print "Entering directory ...";
-MAKEFLAGS += -rR --no-print-directory
-
-# Avoid funny character set dependencies
-unexport LC_ALL
-LC_COLLATE=C
-LC_NUMERIC=C
-export LC_COLLATE LC_NUMERIC
-
-# We are using a recursive build, so we need to do a little thinking
-# to get the ordering right.
-#
-# Most importantly: sub-Makefiles should only ever modify files in
-# their own directory. If in some directory we have a dependency on
-# a file in another dir (which doesn't happen often, but it's often
-# unavoidable when linking the built-in.o targets which finally
-# turn into vmlinux), we will call a sub make in that other dir, and
-# after that we are sure that everything which is in that other dir
-# is now up to date.
-#
-# The only cases where we need to modify files which have global
-# effects are thus separated out and done before the recursive
-# descending is started. They are now explicitly listed as the
-# prepare rule.
-
-# To put more focus on warnings, be less verbose as default
-# Use 'make V=1' to see the full commands
-
-ifeq ("$(origin V)", "command line")
-  KBUILD_VERBOSE = $(V)
-endif
-ifndef KBUILD_VERBOSE
-  KBUILD_VERBOSE = 0
-endif
-
-# Call a source code checker (by default, "sparse") as part of the
-# C compilation.
-#
-# Use 'make C=1' to enable checking of only re-compiled files.
-# Use 'make C=2' to enable checking of *all* source files, regardless
-# of whether they are re-compiled or not.
-#
-# See the file "Documentation/sparse.txt" for more details, including
-# where to get the "sparse" utility.
-
-ifeq ("$(origin C)", "command line")
-  KBUILD_CHECKSRC = $(C)
-endif
-ifndef KBUILD_CHECKSRC
-  KBUILD_CHECKSRC = 0
-endif
-
-# Use make M=dir to specify directory of external module to build
-# Old syntax make ... SUBDIRS=$PWD is still supported
-# Setting the environment variable KBUILD_EXTMOD take precedence
-ifdef SUBDIRS
-  KBUILD_EXTMOD ?= $(SUBDIRS)
-endif
-
-ifeq ("$(origin M)", "command line")
-  KBUILD_EXTMOD := $(M)
-endif
-
-# kbuild supports saving output files in a separate directory.
-# To locate output files in a separate directory two syntaxes are supported.
-# In both cases the working directory must be the root of the kernel src.
-# 1) O=
-# Use "make O=dir/to/store/output/files/"
-#
-# 2) Set KBUILD_OUTPUT
-# Set the environment variable KBUILD_OUTPUT to point to the directory
-# where the output files shall be placed.
-# export KBUILD_OUTPUT=dir/to/store/output/files/
-# make
-#
-# The O= assignment takes precedence over the KBUILD_OUTPUT environment
-# variable.
-
-
-# KBUILD_SRC is set on invocation of make in OBJ directory
-# KBUILD_SRC is not intended to be used by the regular user (for now)
-ifeq ($(KBUILD_SRC),)
-
-# OK, Make called in directory where kernel src resides
-# Do we want to locate output files in a separate directory?
-ifeq ("$(origin O)", "command line")
-  KBUILD_OUTPUT := $(O)
-endif
-
-ifeq ("$(origin W)", "command line")
-  export KBUILD_ENABLE_EXTRA_GCC_CHECKS := $(W)
-endif
-
-# That's our default target when none is given on the command line
-PHONY := _all
-_all:
-
-# Cancel implicit rules on top Makefile
-$(CURDIR)/Makefile Makefile: ;
-
-ifneq ($(KBUILD_OUTPUT),)
-# Invoke a second make in the output directory, passing relevant variables
-# check that the output directory actually exists
-saved-output := $(KBUILD_OUTPUT)
-KBUILD_OUTPUT := $(shell cd $(KBUILD_OUTPUT) && /bin/pwd)
-$(if $(KBUILD_OUTPUT),, \
-     $(error output directory "$(saved-output)" does not exist))
-
-PHONY += $(MAKECMDGOALS) sub-make
-
-$(filter-out _all sub-make $(CURDIR)/Makefile, $(MAKECMDGOALS)) _all: sub-make
-	@:
-
-sub-make: FORCE
-	$(if $(KBUILD_VERBOSE:1=),@)$(MAKE) -C $(KBUILD_OUTPUT) \
-	KBUILD_SRC=$(CURDIR) \
-	KBUILD_EXTMOD="$(KBUILD_EXTMOD)" -f $(CURDIR)/Makefile \
-	$(filter-out _all sub-make,$(MAKECMDGOALS))
-
-# Leave processing to above invocation of make
-skip-makefile := 1
-endif # ifneq ($(KBUILD_OUTPUT),)
-endif # ifeq ($(KBUILD_SRC),)
-
-# We process the rest of the Makefile if this is the final invocation of make
-ifeq ($(skip-makefile),)
-
-# If building an external module we do not care about the all: rule
-# but instead _all depend on modules
-PHONY += all
-ifeq ($(KBUILD_EXTMOD),)
-_all: all
+EXTRAVERSION =
+ifneq "$(SUBLEVEL)" ""
+U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 else
-_all: modules
+U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL)$(EXTRAVERSION)
 endif
-
-srctree		:= $(if $(KBUILD_SRC),$(KBUILD_SRC),$(CURDIR))
-objtree		:= $(CURDIR)
-src		:= $(srctree)
-obj		:= $(objtree)
-
-VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
-
-export srctree objtree VPATH
-
-OBJTREE		:= $(objtree)
-SPLTREE		:= $(OBJTREE)/spl
-TPLTREE		:= $(OBJTREE)/tpl
-SRCTREE		:= $(srctree)
-TOPDIR		:= $(SRCTREE)
-export	TOPDIR SRCTREE OBJTREE SPLTREE TPLTREE
-
-MKCONFIG	:= $(SRCTREE)/mkconfig
-export MKCONFIG
-
-# Make sure CDPATH settings don't interfere
-unexport CDPATH
-
-#########################################################################
+TIMESTAMP_FILE = $(obj)include/timestamp_autogenerated.h
+VERSION_FILE = $(obj)include/version_autogenerated.h
 
 HOSTARCH := $(shell uname -m | \
-	sed -e s/i.86/x86/ \
+	sed -e s/i.86/i386/ \
 	    -e s/sun4u/sparc64/ \
 	    -e s/arm.*/arm/ \
 	    -e s/sa110/arm/ \
@@ -193,473 +46,241 @@ HOSTARCH := $(shell uname -m | \
 HOSTOS := $(shell uname -s | tr '[:upper:]' '[:lower:]' | \
 	    sed -e 's/\(cygwin\).*/cygwin/')
 
-export	HOSTARCH HOSTOS
+# Set shell to bash if possible, otherwise fall back to sh
+SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
+	else if [ -x /bin/bash ]; then echo /bin/bash; \
+	else echo sh; fi; fi)
+
+export	HOSTARCH HOSTOS SHELL
 
 # Deal with colliding definitions from tcsh etc.
 VENDOR=
 
 #########################################################################
+# Allow for silent builds
+ifeq (,$(findstring s,$(MAKEFLAGS)))
+XECHO = echo
+else
+XECHO = :
+endif
+
+#########################################################################
+#
+# U-boot build supports producing a object files to the separate external
+# directory. Two use cases are supported:
+#
+# 1) Add O= to the make command line
+# 'make O=/tmp/build all'
+#
+# 2) Set environement variable BUILD_DIR to point to the desired location
+# 'export BUILD_DIR=/tmp/build'
+# 'make'
+#
+# The second approach can also be used with a MAKEALL script
+# 'export BUILD_DIR=/tmp/build'
+# './MAKEALL'
+#
+# Command line 'O=' setting overrides BUILD_DIR environent variable.
+#
+# When none of the above methods is used the local build is performed and
+# the object files are placed in the source directory.
+#
+
+ifdef O
+ifeq ("$(origin O)", "command line")
+BUILD_DIR := $(O)
+endif
+endif
+
+ifneq ($(BUILD_DIR),)
+saved-output := $(BUILD_DIR)
+
+# Attempt to create a output directory.
+$(shell [ -d ${BUILD_DIR} ] || mkdir -p ${BUILD_DIR})
+
+# Verify if it was successful.
+BUILD_DIR := $(shell cd $(BUILD_DIR) && /bin/pwd)
+$(if $(BUILD_DIR),,$(error output directory "$(saved-output)" does not exist))
+endif # ifneq ($(BUILD_DIR),)
+
+OBJTREE		:= $(if $(BUILD_DIR),$(BUILD_DIR),$(CURDIR))
+SRCTREE		:= $(CURDIR)
+TOPDIR		:= $(SRCTREE)
+LNDIR		:= $(OBJTREE)
+export	TOPDIR SRCTREE OBJTREE
+
+MKCONFIG	:= $(SRCTREE)/mkconfig
+export MKCONFIG
+
+ifneq ($(OBJTREE),$(SRCTREE))
+REMOTE_BUILD	:= 1
+export REMOTE_BUILD
+endif
+
+# $(obj) and (src) are defined in config.mk but here in main Makefile
+# we also need them before config.mk is included which is the case for
+# some targets like unconfig, clean, clobber, distclean, etc.
+ifneq ($(OBJTREE),$(SRCTREE))
+obj := $(OBJTREE)/
+src := $(SRCTREE)/
+else
+obj :=
+src :=
+endif
+export obj src
+
+# Make sure CDPATH settings don't interfere
+unexport CDPATH
+
+#########################################################################
+
+# The "tools" are needed early, so put this first
+# Don't include stuff already done in $(LIBS)
+SUBDIRS	= tools \
+	  examples/standalone \
+	  examples/api
+
+.PHONY : $(SUBDIRS)
+
+ifeq ($(obj)include/config.mk,$(wildcard $(obj)include/config.mk))
+
+# Include autoconf.mk before config.mk so that the config options are available
+# to all top level build files.  We need the dummy all: target to prevent the
+# dependency target in autoconf.mk.dep from being the default.
+all:
+sinclude $(obj)include/autoconf.mk.dep
+sinclude $(obj)include/autoconf.mk
+
+# load ARCH, BOARD, and CPU configuration
+include $(obj)include/config.mk
+export	ARCH CPU BOARD VENDOR SOC
 
 # set default to nothing for native builds
 ifeq ($(HOSTARCH),$(ARCH))
 CROSS_COMPILE ?=
 endif
 
-# SHELL used by kbuild
-CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
-	  else if [ -x /bin/bash ]; then echo /bin/bash; \
-	  else echo sh; fi ; fi)
-
-HOSTCC       = gcc
-HOSTCFLAGS   = -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
-
-ifeq ($(HOSTOS),cygwin)
-HOSTCFLAGS	+= -ansi
-endif
-
-# Mac OS X / Darwin's C preprocessor is Apple specific.  It
-# generates numerous errors and warnings.  We want to bypass it
-# and use GNU C's cpp.	To do this we pass the -traditional-cpp
-# option to the compiler.  Note that the -traditional-cpp flag
-# DOES NOT have the same semantics as GNU C's flag, all it does
-# is invoke the GNU preprocessor in stock ANSI/ISO C fashion.
-#
-# Apple's linker is similar, thanks to the new 2 stage linking
-# multiple symbol definitions are treated as errors, hence the
-# -multiply_defined suppress option to turn off this error.
-#
-ifeq ($(HOSTOS),darwin)
-# get major and minor product version (e.g. '10' and '6' for Snow Leopard)
-DARWIN_MAJOR_VERSION	= $(shell sw_vers -productVersion | cut -f 1 -d '.')
-DARWIN_MINOR_VERSION	= $(shell sw_vers -productVersion | cut -f 2 -d '.')
-
-os_x_before	= $(shell if [ $(DARWIN_MAJOR_VERSION) -le $(1) -a \
-	$(DARWIN_MINOR_VERSION) -le $(2) ] ; then echo "$(3)"; else echo "$(4)"; fi ;)
-
-# Snow Leopards build environment has no longer restrictions as described above
-HOSTCC       = $(call os_x_before, 10, 5, "cc", "gcc")
-HOSTCFLAGS  += $(call os_x_before, 10, 4, "-traditional-cpp")
-HOSTLDFLAGS += $(call os_x_before, 10, 5, "-multiply_defined suppress")
-endif
-
-# Decide whether to build built-in, modular, or both.
-# Normally, just do built-in.
-
-KBUILD_MODULES :=
-KBUILD_BUILTIN := 1
-
-#	If we have only "make modules", don't compile built-in objects.
-#	When we're building modules with modversions, we need to consider
-#	the built-in objects during the descend as well, in order to
-#	make sure the checksums are up to date before we record them.
-
-ifeq ($(MAKECMDGOALS),modules)
-  KBUILD_BUILTIN := $(if $(CONFIG_MODVERSIONS),1)
-endif
-
-#	If we have "make <whatever> modules", compile modules
-#	in addition to whatever we do anyway.
-#	Just "make" or "make all" shall build modules as well
-
-# U-Boot does not need modules
-#ifneq ($(filter all _all modules,$(MAKECMDGOALS)),)
-#  KBUILD_MODULES := 1
-#endif
-
-#ifeq ($(MAKECMDGOALS),)
-#  KBUILD_MODULES := 1
-#endif
-
-export KBUILD_MODULES KBUILD_BUILTIN
-export KBUILD_CHECKSRC KBUILD_SRC KBUILD_EXTMOD
-
-# Beautify output
-# ---------------------------------------------------------------------------
-#
-# Normally, we echo the whole command before executing it. By making
-# that echo $($(quiet)$(cmd)), we now have the possibility to set
-# $(quiet) to choose other forms of output instead, e.g.
-#
-#         quiet_cmd_cc_o_c = Compiling $(RELDIR)/$@
-#         cmd_cc_o_c       = $(CC) $(c_flags) -c -o $@ $<
-#
-# If $(quiet) is empty, the whole command will be printed.
-# If it is set to "quiet_", only the short version will be printed. 
-# If it is set to "silent_", nothing will be printed at all, since
-# the variable $(silent_cmd_cc_o_c) doesn't exist.
-#
-# A simple variant is to prefix commands with $(Q) - that's useful
-# for commands that shall be hidden in non-verbose mode.
-#
-#	$(Q)ln $@ :<
-#
-# If KBUILD_VERBOSE equals 0 then the above command will be hidden.
-# If KBUILD_VERBOSE equals 1 then the above command is displayed.
-
-ifeq ($(KBUILD_VERBOSE),1)
-  quiet =
-  Q =
-else
-  quiet=quiet_
-  Q = @
-endif
-
-# If the user is running make -s (silent mode), suppress echoing of
-# commands
-
-ifneq ($(filter s% -s%,$(MAKEFLAGS)),)
-  quiet=silent_
-endif
-
-export quiet Q KBUILD_VERBOSE
-
-
-# Look for make include files relative to root of kernel src
-MAKEFLAGS += --include-dir=$(srctree)
-
-# We need some generic definitions (do not try to remake the file).
-$(srctree)/scripts/Kbuild.include: ;
-include $(srctree)/scripts/Kbuild.include
-
-# Make variables (CC, etc...)
-
-AS		= $(CROSS_COMPILE)as
-# Always use GNU ld
-ifneq ($(shell $(CROSS_COMPILE)ld.bfd -v 2> /dev/null),)
-LD		= $(CROSS_COMPILE)ld.bfd
-else
-LD		= $(CROSS_COMPILE)ld
-endif
-CC		= $(CROSS_COMPILE)gcc
-CPP		= $(CC) -E
-AR		= $(CROSS_COMPILE)ar
-NM		= $(CROSS_COMPILE)nm
-LDR		= $(CROSS_COMPILE)ldr
-STRIP		= $(CROSS_COMPILE)strip
-OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
-AWK		= awk
-RANLIB		= $(CROSS_COMPILE)RANLIB
-DTC		= dtc
-CHECK		= sparse
-
-CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
-		  -Wbitwise -Wno-return-void -D__CHECK_ENDIAN__ $(CF)
-
-KBUILD_CPPFLAGS := -D__KERNEL__
-
-KBUILD_CFLAGS   := -Wall -Wstrict-prototypes \
-		   -Wno-format-security \
-		   -fno-builtin -ffreestanding
-KBUILD_AFLAGS   := -D__ASSEMBLY__
-
-# Read UBOOTRELEASE from include/config/uboot.release (if it exists)
-UBOOTRELEASE = $(shell cat include/config/uboot.release 2> /dev/null)
-UBOOTVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
-
-export VERSION PATCHLEVEL SUBLEVEL UBOOTRELEASE UBOOTVERSION
-export ARCH CPU BOARD VENDOR SOC
-export CONFIG_SHELL HOSTCC HOSTCFLAGS HOSTLDFLAGS CROSS_COMPILE AS LD CC
-export CPP AR NM LDR STRIP OBJCOPY OBJDUMP
-export MAKE AWK
-export DTC CHECK CHECKFLAGS
-
-export KBUILD_CPPFLAGS NOSTDINC_FLAGS UBOOTINCLUDE
-export KBUILD_CFLAGS KBUILD_AFLAGS
-
-# When compiling out-of-tree modules, put MODVERDIR in the module
-# tree rather than in the kernel tree. The kernel tree might
-# even be read-only.
-export MODVERDIR := $(if $(KBUILD_EXTMOD),$(firstword $(KBUILD_EXTMOD))/).tmp_versions
-
-# Files to ignore in find ... statements
-
-RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o -name CVS \
-		   -o -name .pc -o -name .hg -o -name .git \) -prune -o
-export RCS_TAR_IGNORE := --exclude SCCS --exclude BitKeeper --exclude .svn \
-			 --exclude CVS --exclude .pc --exclude .hg --exclude .git
-
-# ===========================================================================
-# Rules shared between *config targets and build targets
-
-# Basic helpers built in scripts/
-PHONY += scripts_basic
-scripts_basic:
-	$(Q)$(MAKE) $(build)=scripts/basic
-	$(Q)rm -f .tmp_quiet_recordmcount
-
-# To avoid any implicit rule to kick in, define an empty command.
-scripts/basic/%: scripts_basic ;
-
-PHONY += outputmakefile
-# outputmakefile generates a Makefile in the output directory, if using a
-# separate output directory. This allows convenient use of make in the
-# output directory.
-outputmakefile:
-ifneq ($(KBUILD_SRC),)
-	$(Q)ln -fsn $(srctree) source
-	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkmakefile \
-	    $(srctree) $(objtree) $(VERSION) $(PATCHLEVEL)
-endif
-
-# To make sure we do not include .config for any of the *config targets
-# catch them early, and hand them over to scripts/kconfig/Makefile
-# It is allowed to specify more targets when calling make, including
-# mixing *config targets and build targets.
-# For example 'make oldconfig all'.
-# Detect when mixed targets is specified, and make a second invocation
-# of make so .config is not included in this case either (for *config).
-
-version_h := include/generated/version_autogenerated.h
-timestamp_h := include/generated/timestamp_autogenerated.h
-
-no-dot-config-targets := clean clobber mrproper distclean \
-			 help %docs check% coccicheck \
-			 ubootversion backup
-
-config-targets := 0
-mixed-targets  := 0
-dot-config     := 1
-
-ifneq ($(filter $(no-dot-config-targets), $(MAKECMDGOALS)),)
-	ifeq ($(filter-out $(no-dot-config-targets), $(MAKECMDGOALS)),)
-		dot-config := 0
-	endif
-endif
-
-ifeq ($(KBUILD_EXTMOD),)
-        ifneq ($(filter config %config,$(MAKECMDGOALS)),)
-                config-targets := 1
-                ifneq ($(filter-out config %config,$(MAKECMDGOALS)),)
-                        mixed-targets := 1
-                endif
-        endif
-endif
-
-ifeq ($(mixed-targets),1)
-# ===========================================================================
-# We're called with mixed targets (*config and build targets).
-# Handle them one by one.
-
-PHONY += $(MAKECMDGOALS) build-one-by-one
-
-$(MAKECMDGOALS): build-one-by-one
-	@:
-
-build-one-by-one:
-	$(Q)set -e; \
-	for i in $(MAKECMDGOALS); do \
-		$(MAKE) -f $(srctree)/Makefile $$i; \
-	done
-
-else
-ifeq ($(config-targets),1)
-# ===========================================================================
-# *config targets only - make sure prerequisites are updated, and descend
-# in scripts/kconfig to make the *config target
-
-# Read arch specific Makefile to set KBUILD_DEFCONFIG as needed.
-# KBUILD_DEFCONFIG may point out an alternative default configuration
-# used for 'make defconfig'
-
-%_config:: outputmakefile
-	@$(MKCONFIG) -A $(@:_config=)
-
-else
-# ===========================================================================
-# Build targets only - this includes vmlinux, arch specific targets, clean
-# targets and others. In general all targets except *config targets.
-
-# load ARCH, BOARD, and CPU configuration
--include include/config.mk
-
-ifeq ($(dot-config),1)
-# Read in config
--include include/autoconf.mk
--include include/autoconf.mk.dep
-
 # load other configuration
-include $(srctree)/config.mk
-
-ifeq ($(wildcard include/config.mk),)
-$(error "System not configured - see README")
-endif
-
-# If board code explicitly specified LDSCRIPT or CONFIG_SYS_LDSCRIPT, use
-# that (or fail if absent).  Otherwise, search for a linker script in a
-# standard location.
-
-LDSCRIPT_MAKEFILE_DIR = $(dir $(LDSCRIPT))
-
-ifndef LDSCRIPT
-	#LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds.debug
-	ifdef CONFIG_SYS_LDSCRIPT
-		# need to strip off double quotes
-		LDSCRIPT := $(srctree)/$(CONFIG_SYS_LDSCRIPT:"%"=%)
-	endif
-endif
-
-# If there is no specified link script, we look in a number of places for it
-ifndef LDSCRIPT
-	ifeq ($(CONFIG_NAND_U_BOOT),y)
-		LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot-nand.lds
-		ifeq ($(wildcard $(LDSCRIPT)),)
-			LDSCRIPT := $(TOPDIR)/$(CPUDIR)/u-boot-nand.lds
-		endif
-	endif
-	ifeq ($(wildcard $(LDSCRIPT)),)
-		LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds
-	endif
-	ifeq ($(wildcard $(LDSCRIPT)),)
-		LDSCRIPT := $(TOPDIR)/$(CPUDIR)/u-boot.lds
-	endif
-	ifeq ($(wildcard $(LDSCRIPT)),)
-		LDSCRIPT := $(TOPDIR)/arch/$(ARCH)/cpu/u-boot.lds
-		# We don't expect a Makefile here
-		LDSCRIPT_MAKEFILE_DIR =
-	endif
-endif
-
-else
-
-
-endif # $(dot-config)
-
-KBUILD_CFLAGS += -Os #-fomit-frame-pointer
-
-ifdef BUILD_TAG
-KBUILD_CFLAGS += -DBUILD_TAG='"$(BUILD_TAG)"'
-endif
-
-KBUILD_CFLAGS += $(call cc-option,-fno-stack-protector)
-
-KBUILD_CFLAGS	+= -g
-# $(KBUILD_AFLAGS) sets -g, which causes gcc to pass a suitable -g<format>
-# option to the assembler.
-KBUILD_AFLAGS	+= -g
-
-# Report stack usage if supported
-ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-stack-usage.sh $(CC)),y)
-	KBUILD_CFLAGS += -fstack-usage
-endif
-
-KBUILD_CFLAGS += $(call cc-option,-Wno-format-nonliteral)
-
-# turn jbsr into jsr for m68k
-ifeq ($(ARCH),m68k)
-ifeq ($(findstring 3.4,$(shell $(CC) --version)),3.4)
-KBUILD_AFLAGS += -Wa,-gstabs,-S
-endif
-endif
-
-ifneq ($(CONFIG_SYS_TEXT_BASE),)
-KBUILD_CPPFLAGS += -DCONFIG_SYS_TEXT_BASE=$(CONFIG_SYS_TEXT_BASE)
-endif
-
-export CONFIG_SYS_TEXT_BASE
-
-# Use UBOOTINCLUDE when you must reference the include/ directory.
-# Needed to be compatible with the O= option
-UBOOTINCLUDE    :=
-ifneq ($(OBJTREE),$(SRCTREE))
-UBOOTINCLUDE	+= -I$(OBJTREE)/include
-endif
-UBOOTINCLUDE	+= -I$(srctree)/include \
-		-I$(srctree)/arch/$(ARCH)/include
-
-NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
-CHECKFLAGS     += $(NOSTDINC_FLAGS)
-
-# FIX ME
-cpp_flags := $(KBUILD_CPPFLAGS) $(CPPFLAGS) $(UBOOTINCLUDE) $(NOSTDINC_FLAGS)
-c_flags := $(KBUILD_CFLAGS) $(cpp_flags)
+include $(TOPDIR)/config.mk
 
 #########################################################################
 # U-Boot objects....order is important (i.e. start must be first)
 
-head-y := $(CPUDIR)/start.o
-head-$(CONFIG_4xx) += arch/powerpc/cpu/ppc4xx/resetvec.o
-head-$(CONFIG_MPC85xx) += arch/powerpc/cpu/mpc85xx/resetvec.o
+OBJS  = $(CPUDIR)/start.o
+ifeq ($(CPU),i386)
+OBJS += $(CPUDIR)/start16.o
+OBJS += $(CPUDIR)/resetvec.o
+endif
+ifeq ($(CPU),ppc4xx)
+OBJS += $(CPUDIR)/resetvec.o
+endif
+ifeq ($(CPU),mpc85xx)
+OBJS += $(CPUDIR)/resetvec.o
+endif
 
-HAVE_VENDOR_COMMON_LIB = $(if $(wildcard $(srctree)/board/$(VENDOR)/common/Makefile),y,n)
+OBJS := $(addprefix $(obj),$(OBJS))
 
-libs-y += lib/
-libs-$(HAVE_VENDOR_COMMON_LIB) += board/$(VENDOR)/common/
-libs-y += $(CPUDIR)/
+LIBS  = lib/libgeneric.o
+LIBS += lib/lzma/liblzma.o
+LIBS += lib/lzo/liblzo.o
+LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
+	"board/$(VENDOR)/common/lib$(VENDOR).o"; fi)
+LIBS += $(CPUDIR)/lib$(CPU).o
 ifdef SOC
-libs-y += $(CPUDIR)/$(SOC)/
+LIBS += $(CPUDIR)/$(SOC)/lib$(SOC).o
 endif
-libs-$(CONFIG_OF_EMBED) += dts/
-libs-y += arch/$(ARCH)/lib/
-libs-y += fs/
-libs-y += net/
-libs-y += disk/
-libs-y += drivers/
-libs-y += drivers/dma/
-libs-y += drivers/gpio/
-libs-y += drivers/i2c/
-libs-y += drivers/input/
-libs-y += drivers/mmc/
-libs-y += drivers/mtd/
-libs-$(CONFIG_CMD_NAND) += drivers/mtd/nand/
-libs-y += drivers/mtd/onenand/
-libs-$(CONFIG_CMD_UBI) += drivers/mtd/ubi/
-libs-y += drivers/mtd/spi/
-libs-y += drivers/net/
-libs-y += drivers/net/phy/
-libs-y += drivers/pci/
-libs-y += drivers/power/ \
-	drivers/power/fuel_gauge/ \
-	drivers/power/mfd/ \
-	drivers/power/pmic/ \
-	drivers/power/battery/
-libs-y += drivers/spi/
-libs-$(CONFIG_FMAN_ENET) += drivers/net/fm/
-libs-$(CONFIG_SYS_FSL_DDR) += drivers/ddr/fsl/
-libs-y += drivers/serial/
-libs-y += drivers/usb/eth/
-libs-y += drivers/usb/gadget/
-libs-y += drivers/usb/host/
-libs-y += drivers/usb/musb/
-libs-y += drivers/usb/musb-new/
-libs-y += drivers/usb/phy/
-libs-y += drivers/usb/ulpi/
-libs-y += common/
-libs-y += lib/libfdt/
-libs-$(CONFIG_API) += api/
-libs-$(CONFIG_HAS_POST) += post/
-libs-y += test/
+ifeq ($(CPU),ixp)
+LIBS += arch/arm/cpu/ixp/npe/libnpe.o
+endif
+LIBS += arch/$(ARCH)/lib/lib$(ARCH).o
+LIBS += fs/cramfs/libcramfs.o fs/fat/libfat.o fs/fdos/libfdos.o fs/jffs2/libjffs2.o \
+	fs/reiserfs/libreiserfs.o fs/ext4/libext4fs.o fs/ext2/libext2fs.o fs/yaffs2/libyaffs2.o \
+	fs/ubifs/libubifs.o
+LIBS += net/libnet.o
+LIBS += disk/libdisk.o
+LIBS += drivers/bios_emulator/libatibiosemu.o
+LIBS += drivers/block/libblock.o
+LIBS += drivers/dma/libdma.o
+LIBS += drivers/fpga/libfpga.o
+LIBS += drivers/gpio/libgpio.o
+LIBS += drivers/hwmon/libhwmon.o
+LIBS += drivers/i2c/libi2c.o
+LIBS += drivers/input/libinput.o
+LIBS += drivers/misc/libmisc.o
+LIBS += drivers/mobile/libmobile.o
+LIBS += drivers/mmc/libmmc.o
+LIBS += drivers/mtd/libmtd.o
+LIBS += drivers/mtd/nand/libnand.o
+LIBS += drivers/mtd/onenand/libonenand.o
+LIBS += drivers/mtd/ubi/libubi.o
+LIBS += drivers/mtd/spi/libspi_flash.o
+LIBS += drivers/net/libnet.o
+LIBS += drivers/net/phy/libphy.o
+LIBS += drivers/pci/libpci.o
+LIBS += drivers/pcmcia/libpcmcia.o
+LIBS += drivers/power/libpower.o
+LIBS += drivers/spi/libspi.o
+ifeq ($(CPU),mpc83xx)
+LIBS += drivers/qe/libqe.o
+LIBS += arch/powerpc/cpu/mpc8xxx/lib8xxx.o
+endif
+ifeq ($(CPU),mpc85xx)
+LIBS += drivers/qe/libqe.o
+LIBS += arch/powerpc/cpu/mpc8xxx/ddr/libddr.o
+LIBS += arch/powerpc/cpu/mpc8xxx/lib8xxx.o
+endif
+ifeq ($(CPU),mpc86xx)
+LIBS += arch/powerpc/cpu/mpc8xxx/ddr/libddr.o
+LIBS += arch/powerpc/cpu/mpc8xxx/lib8xxx.o
+endif
+LIBS += drivers/rtc/librtc.o
+LIBS += drivers/serial/libserial.o
+LIBS += drivers/twserial/libtws.o
+LIBS += drivers/usb/eth/libusb_eth.a
+LIBS += drivers/usb/gadget/libusb_gadget.o
+LIBS += drivers/usb/host/libusb_host.o
+LIBS += drivers/usb/musb/libusb_musb.o
+LIBS += drivers/usb/phy/libusb_phy.o
+LIBS += drivers/video/libvideo.o
+LIBS += drivers/watchdog/libwatchdog.o
+LIBS += drivers/mobile/libmobile.o
+LIBS += common/libcommon.o
+LIBS += lib/libfdt/libfdt.o
+LIBS += api/libapi.o
+LIBS += post/libpost.o
 
-ifneq (,$(filter $(SOC), mx25 mx27 mx5 mx6 mx31 mx35 mxs vf610))
-libs-y += arch/$(ARCH)/imx-common/
+ifeq ($(SOC),omap3)
+LIBS += $(CPUDIR)/omap-common/libomap-common.o
+endif
+ifeq ($(SOC),omap4)
+LIBS += $(CPUDIR)/omap-common/libomap-common.o
 endif
 
-libs-$(CONFIG_ARM) += arch/arm/cpu/
-libs-$(CONFIG_PPC) += arch/powerpc/cpu/
+ifeq ($(SOC),s5pc1xx)
+LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
+ifeq ($(SOC),exynos)
+LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
+ifeq ($(SOC),exynos4)
+LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
 
-libs-y += board/$(BOARDDIR)/
+LIBS := $(addprefix $(obj),$(sort $(LIBS)))
+.PHONY : $(LIBS) $(TIMESTAMP_FILE) $(VERSION_FILE)
 
-libs-y := $(sort $(libs-y))
-
-u-boot-dirs	:= $(patsubst %/,%,$(filter %/, $(libs-y))) tools examples
-
-u-boot-alldirs	:= $(sort $(u-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))))
-
-libs-y		:= $(patsubst %/, %/built-in.o, $(libs-y))
-
-u-boot-init := $(head-y)
-u-boot-main := $(libs-y)
-
+LIBBOARD = board/$(BOARDDIR)/lib$(BOARD).o
+LIBBOARD := $(addprefix $(obj),$(LIBBOARD))
 
 # Add GCC lib
 ifdef USE_PRIVATE_LIBGCC
 ifeq ("$(USE_PRIVATE_LIBGCC)", "yes")
-PLATFORM_LIBGCC = $(OBJTREE)/arch/$(ARCH)/lib/lib.a
+PLATFORM_LIBGCC = $(OBJTREE)/arch/$(ARCH)/lib/libgcc.o
 else
 PLATFORM_LIBGCC = -L $(USE_PRIVATE_LIBGCC) -lgcc
 endif
 else
-PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
+PLATFORM_LIBGCC = -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
 endif
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
 export PLATFORM_LIBS
@@ -669,9 +290,11 @@ export PLATFORM_LIBS
 # on the fly.
 LDPPFLAGS += \
 	-include $(TOPDIR)/include/u-boot/u-boot.lds.h \
-	-DCPUDIR=$(CPUDIR) \
 	$(shell $(LD) --version | \
 	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
+
+__OBJS := $(subst $(obj),,$(OBJS))
+__LIBS := $(subst $(obj),,$(LIBS)) $(subst $(obj),,$(LIBBOARD))
 
 #########################################################################
 #########################################################################
@@ -679,353 +302,204 @@ LDPPFLAGS += \
 ifneq ($(CONFIG_BOARD_SIZE_LIMIT),)
 BOARD_SIZE_CHECK = \
 	@actual=`wc -c $@ | awk '{print $$1}'`; \
-	limit=`printf "%d" $(CONFIG_BOARD_SIZE_LIMIT)`; \
+	limit=$(CONFIG_BOARD_SIZE_LIMIT); \
 	if test $$actual -gt $$limit; then \
-		echo "$@ exceeds file size limit:" >&2 ; \
-		echo "  limit:  $$limit bytes" >&2 ; \
-		echo "  actual: $$actual bytes" >&2 ; \
-		echo "  excess: $$((actual - limit)) bytes" >&2; \
+		echo "$@ exceeds file size limit:"; \
+		echo "  limit:  $$limit bytes"; \
+		echo "  actual: $$actual bytes"; \
+		echo "  excess: $$((actual - limit)) bytes"; \
 		exit 1; \
 	fi
 else
 BOARD_SIZE_CHECK =
 endif
 
-# Statically apply RELA-style relocations (currently arm64 only)
-ifneq ($(CONFIG_STATIC_RELA),)
-# $(1) is u-boot ELF, $(2) is u-boot bin, $(3) is text base
-DO_STATIC_RELA = \
-	start=$$($(NM) $(1) | grep __rel_dyn_start | cut -f 1 -d ' '); \
-	end=$$($(NM) $(1) | grep __rel_dyn_end | cut -f 1 -d ' '); \
-	tools/relocate-rela $(2) $(3) $$start $$end
-else
-DO_STATIC_RELA =
-endif
-
 # Always append ALL so that arch config.mk's can add custom ones
-ALL-y += u-boot.srec u-boot.bin System.map
+ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map
 
-ALL-$(CONFIG_NAND_U_BOOT) += u-boot-nand.bin
-ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
-ALL-$(CONFIG_RAMBOOT_PBL) += u-boot.pbl
-ALL-$(CONFIG_SPL) += spl/u-boot-spl.bin
-ALL-$(CONFIG_SPL_FRAMEWORK) += u-boot.img
-ALL-$(CONFIG_TPL) += tpl/u-boot-tpl.bin
-ALL-$(CONFIG_OF_SEPARATE) += u-boot.dtb u-boot-dtb.bin
-ifneq ($(CONFIG_SPL_TARGET),)
-ALL-$(CONFIG_SPL) += $(CONFIG_SPL_TARGET:"%"=%)
-endif
-ALL-$(CONFIG_REMAKE_ELF) += u-boot.elf
-
-# enable combined SPL/u-boot/dtb rules for tegra
-ifneq ($(CONFIG_TEGRA),)
-ifeq ($(CONFIG_SPL),y)
-ifeq ($(CONFIG_OF_SEPARATE),y)
-ALL-y += u-boot-dtb-tegra.bin
-else
-ALL-y += u-boot-nodtb-tegra.bin
-endif
-endif
+ifeq ($(CONFIG_NAND_U_BOOT),y)
+ALL += $(obj)u-boot-nand.bin
 endif
 
-LDFLAGS_u-boot += $(LDFLAGS_FINAL)
-ifneq ($(CONFIG_SYS_TEXT_BASE),)
-LDFLAGS_u-boot += -Ttext $(CONFIG_SYS_TEXT_BASE)
+ifeq ($(CONFIG_ONENAND_U_BOOT),y)
+ALL += $(obj)u-boot-onenand.bin
+ONENAND_BIN ?= $(obj)onenand_ipl/onenand-ipl-2k.bin
 endif
 
-quiet_cmd_objcopy = OBJCOPY $@
-cmd_objcopy = $(OBJCOPY) $(OBJCOPYFLAGS) $(OBJCOPYFLAGS_$(@F)) $< $@
+ifeq ($(CONFIG_SECURE_BOOTING),y)
+ALL += $(obj)u-boot-sec.bin
+endif
 
-quiet_cmd_mkimage = UIMAGE  $@
-cmd_mkimage = $(objtree)/tools/mkimage $(MKIMAGEFLAGS_$(@F)) -d $< $@ \
-	$(if $(KBUILD_VERBOSE:1=), >/dev/null)
+ifeq ($(CONFIG_SLP_SIG),y)
+ALL += $(obj)u-boot-sig.bin
+endif
 
-quiet_cmd_cat = CAT     $@
-cmd_cat = cat $(filter-out $(PHONY), $^) > $@
+all:		$(ALL)
 
-append = cat $(filter-out $< $(PHONY), $^) >> $@
+$(obj)u-boot.hex:	$(obj)u-boot
+		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@
 
-quiet_cmd_pad_cat = CAT     $@
-cmd_pad_cat = $(cmd_objcopy) && $(append) || rm -f $@
+$(obj)u-boot.srec:	$(obj)u-boot
+		$(OBJCOPY) -O srec $< $@
 
-all:		$(ALL-y)
+$(obj)u-boot.bin:	$(obj)u-boot
+		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
+		$(BOARD_SIZE_CHECK)
 
-PHONY += dtbs
-dtbs dts/dt.dtb: checkdtc u-boot
-	$(Q)$(MAKE) $(build)=dts dtbs
-
-u-boot-dtb.bin: u-boot.bin dts/dt.dtb FORCE
-	$(call if_changed,cat)
-
-quiet_cmd_copy = COPY    $@
-      cmd_copy = cp $< $@
-
-u-boot.dtb: dts/dt.dtb
-	$(call cmd,copy)
-
-OBJCOPYFLAGS_u-boot.hex := -O ihex
-
-OBJCOPYFLAGS_u-boot.srec := -O srec
-
-u-boot.hex u-boot.srec: u-boot FORCE
-	$(call if_changed,objcopy)
-
-OBJCOPYFLAGS_u-boot.bin := -O binary
-
-u-boot.bin: u-boot FORCE
-	$(call if_changed,objcopy)
-	$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
-	$(BOARD_SIZE_CHECK)
-
-u-boot.ldr:	u-boot
+$(obj)u-boot.ldr:	$(obj)u-boot
 		$(CREATE_LDR_ENV)
 		$(LDR) -T $(CONFIG_BFIN_CPU) -c $@ $< $(LDR_FLAGS)
 		$(BOARD_SIZE_CHECK)
 
-OBJCOPYFLAGS_u-boot.ldr.hex := -I binary -O ihex
+$(obj)u-boot.ldr.hex:	$(obj)u-boot.ldr
+		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@ -I binary
 
-OBJCOPYFLAGS_u-boot.ldr.srec := -I binary -O srec
+$(obj)u-boot.ldr.srec:	$(obj)u-boot.ldr
+		$(OBJCOPY) ${OBJCFLAGS} -O srec $< $@ -I binary
 
-u-boot.ldr.hex u-boot.ldr.srec: u-boot.ldr FORCE
-	$(call if_changed,objcopy)
+$(obj)u-boot.img:	$(obj)u-boot.bin
+		$(obj)tools/mkimage -A $(ARCH) -T firmware -C none \
+		-a $(CONFIG_SYS_TEXT_BASE) -e 0 \
+		-n $(shell sed -n -e 's/.*U_BOOT_VERSION//p' $(VERSION_FILE) | \
+			sed -e 's/"[	 ]*$$/ for $(BOARD) board"/') \
+		-d $< $@
 
-#
-# U-Boot entry point, needed for booting of full-blown U-Boot
-# from the SPL U-Boot version.
-#
-ifndef CONFIG_SYS_UBOOT_START
-CONFIG_SYS_UBOOT_START := 0
-endif
+$(obj)u-boot.imx:       $(obj)u-boot.bin
+		$(obj)tools/mkimage -n $(IMX_CONFIG) -T imximage \
+		-e $(CONFIG_SYS_TEXT_BASE) -d $< $@
 
-MKIMAGEFLAGS_u-boot.img = -A $(ARCH) -T firmware -C none -O u-boot \
-	-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_UBOOT_START) \
-	-n "U-Boot $(UBOOTRELEASE) for $(BOARD) board"
+$(obj)u-boot.kwb:       $(obj)u-boot.bin
+		$(obj)tools/mkimage -n $(CONFIG_SYS_KWD_CONFIG) -T kwbimage \
+		-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_TEXT_BASE) -d $< $@
 
-MKIMAGEFLAGS_u-boot.kwb = -n $(CONFIG_SYS_KWD_CONFIG) -T kwbimage \
-		-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_TEXT_BASE)
+$(obj)u-boot.sha1:	$(obj)u-boot.bin
+		$(obj)tools/ubsha1 $(obj)u-boot.bin
 
-MKIMAGEFLAGS_u-boot.pbl = -n $(CONFIG_SYS_FSL_PBL_RCW) \
-		-R $(CONFIG_SYS_FSL_PBL_PBI) -T pblimage
-
-u-boot.img u-boot.kwb u-boot.pbl: u-boot.bin FORCE
-	$(call if_changed,mkimage)
-
-u-boot.imx: u-boot.bin
-	$(Q)$(MAKE) $(build)=arch/arm/imx-common $@
-
-u-boot.sha1:	u-boot.bin
-		tools/ubsha1 u-boot.bin
-
-u-boot.dis:	u-boot
+$(obj)u-boot.dis:	$(obj)u-boot
 		$(OBJDUMP) -d $< > $@
 
-ifdef CONFIG_TPL
-SPL_PAYLOAD := tpl/u-boot-with-tpl.bin
-else
-SPL_PAYLOAD := u-boot.bin
-endif
-
-OBJCOPYFLAGS_u-boot-with-spl.bin = -I binary -O binary \
-				   --pad-to=$(CONFIG_SPL_PAD_TO)
-u-boot-with-spl.bin: spl/u-boot-spl.bin $(SPL_PAYLOAD) FORCE
-	$(call if_changed,pad_cat)
-
-OBJCOPYFLAGS_u-boot-with-tpl.bin = -I binary -O binary \
-				   --pad-to=$(CONFIG_TPL_PAD_TO)
-tpl/u-boot-with-tpl.bin: tpl/u-boot-tpl.bin u-boot.bin FORCE
-	$(call if_changed,pad_cat)
-
-SPL: spl/u-boot-spl.bin FORCE
-	$(Q)$(MAKE) $(build)=arch/arm/imx-common $@
-
-u-boot-with-spl.imx u-boot-with-nand-spl.imx: SPL u-boot.bin FORCE
-	$(Q)$(MAKE) $(build)=arch/arm/imx-common $@
-
-MKIMAGEFLAGS_u-boot.ubl = -n $(UBL_CONFIG) -T ublimage -e $(CONFIG_SYS_TEXT_BASE)
-
-u-boot.ubl: u-boot-with-spl.bin FORCE
-	$(call if_changed,mkimage)
-
-MKIMAGEFLAGS_u-boot-spl.ais = -s -n $(if $(CONFIG_AIS_CONFIG_FILE), \
-	$(srctree)/$(CONFIG_AIS_CONFIG_FILE:"%"=%),"/dev/null") \
-	-T aisimage -e $(CONFIG_SPL_TEXT_BASE)
-spl/u-boot-spl.ais: spl/u-boot-spl.bin FORCE
-	$(call if_changed,mkimage)
-
-OBJCOPYFLAGS_u-boot.ais = -I binary -O binary --pad-to=$(CONFIG_SPL_MAX_SIZE)
-u-boot.ais: spl/u-boot-spl.ais u-boot.img FORCE
-	$(call if_changed,pad_cat)
-
-u-boot.sb: u-boot.bin spl/u-boot-spl.bin
-	$(Q)$(MAKE) $(build)=arch/arm/cpu/arm926ejs/mxs $(objtree)/u-boot.sb
-
-# On x600 (SPEAr600) U-Boot is appended to U-Boot SPL.
-# Both images are created using mkimage (crc etc), so that the ROM
-# bootloader can check its integrity. Padding needs to be done to the
-# SPL image (with mkimage header) and not the binary. Otherwise the resulting image
-# which is loaded/copied by the ROM bootloader to SRAM doesn't fit.
-# The resulting image containing both U-Boot images is called u-boot.spr
-MKIMAGEFLAGS_u-boot-spl.img = -A $(ARCH) -T firmware -C none \
-	-a $(CONFIG_SPL_TEXT_BASE) -e $(CONFIG_SPL_TEXT_BASE) -n XLOADER
-spl/u-boot-spl.img: spl/u-boot-spl.bin FORCE
-	$(call if_changed,mkimage)
-
-OBJCOPYFLAGS_u-boot.spr = -I binary -O binary --pad-to=$(CONFIG_SPL_PAD_TO) \
-			  --gap-fill=0xff
-u-boot.spr: spl/u-boot-spl.img u-boot.img FORCE
-	$(call if_changed,pad_cat)
-
-ifneq ($(CONFIG_TEGRA),)
-OBJCOPYFLAGS_u-boot-nodtb-tegra.bin = -O binary --pad-to=$(CONFIG_SYS_TEXT_BASE)
-u-boot-nodtb-tegra.bin: spl/u-boot-spl u-boot.bin FORCE
-	$(call if_changed,pad_cat)
-
-ifeq ($(CONFIG_OF_SEPARATE),y)
-u-boot-dtb-tegra.bin: u-boot-nodtb-tegra.bin dts/dt.dtb FORCE
-	$(call if_changed,cat)
-endif
-endif
-
-u-boot-img.bin: spl/u-boot-spl.bin u-boot.img FORCE
-	$(call if_changed,cat)
-
-# PPC4xx needs the SPL at the end of the image, since the reset vector
-# is located at 0xfffffffc. So we can't use the "u-boot-img.bin" target
-# and need to introduce a new build target with the full blown U-Boot
-# at the start padded up to the start of the SPL image. And then concat
-# the SPL image to the end.
-
-OBJCOPYFLAGS_u-boot-img-spl-at-end.bin := -I binary -O binary \
-	--pad-to=$(CONFIG_UBOOT_PAD_TO) --gap-fill=0xff
-u-boot-img-spl-at-end.bin: u-boot.img spl/u-boot-spl.bin FORCE
-	$(call if_changed,pad_cat)
-
-# Create a new ELF from a raw binary file.  This is useful for arm64
-# where static relocation needs to be performed on the raw binary,
-# but certain simulators only accept an ELF file (but don't do the
-# relocation).
-# FIXME refactor dts/Makefile to share target/arch detection
-u-boot.elf: u-boot.bin
-	@$(OBJCOPY)  -B aarch64 -I binary -O elf64-littleaarch64 \
-		$< u-boot-elf.o
-	@$(LD) u-boot-elf.o -o $@ \
-		--defsym=_start=$(CONFIG_SYS_TEXT_BASE) \
-		-Ttext=$(CONFIG_SYS_TEXT_BASE)
-
-# Rule to link u-boot
-# May be overridden by arch/$(ARCH)/config.mk
-quiet_cmd_u-boot__ ?= LD      $@
-      cmd_u-boot__ ?= $(LD) $(LDFLAGS) $(LDFLAGS_u-boot) -o $@ \
-      -T u-boot.lds $(u-boot-init)                             \
-      --start-group $(u-boot-main) --end-group                 \
-      $(PLATFORM_LIBS) -Map u-boot.map
-
-u-boot:	$(u-boot-init) $(u-boot-main) u-boot.lds
-	$(call if_changed,u-boot__)
+GEN_UBOOT = \
+		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \
+		sed  -n -e 's/.*\($(SYM_PREFIX)__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
+		cd $(LNDIR) && $(LD) $(LDFLAGS) $(LDFLAGS_$(@F)) $$UNDEF_SYM $(__OBJS) \
+			--start-group $(__LIBS) --end-group $(PLATFORM_LIBS) \
+			-Map u-boot.map -o u-boot
+$(obj)u-boot:	depend \
+		$(SUBDIRS) $(OBJS) $(LIBBOARD) $(LIBS) $(LDSCRIPT) $(obj)u-boot.lds
+		$(GEN_UBOOT)
 ifeq ($(CONFIG_KALLSYMS),y)
-	smap=`$(call SYSTEM_MAP,u-boot) | \
-		awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
-	$(CC) $(c_flags) -DSYSTEM_MAP="\"$${smap}\"" \
-		-c $(srctree)/common/system_map.c -o common/system_map.o
-	$(call cmd,u-boot__) common/system_map.o
+		smap=`$(call SYSTEM_MAP,u-boot) | \
+			awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
+		$(CC) $(CFLAGS) -DSYSTEM_MAP="\"$${smap}\"" \
+			-c common/system_map.c -o $(obj)common/system_map.o
+		$(GEN_UBOOT) $(obj)common/system_map.o
 endif
 
-# The actual objects are generated when descending, 
-# make sure no implicit rule kicks in
-$(sort $(u-boot-init) $(u-boot-main)): $(u-boot-dirs) ;
+$(OBJS):	depend
+		$(MAKE) -C $(CPUDIR) $(if $(REMOTE_BUILD),$@,$(notdir $@))
 
-# Handle descending into subdirectories listed in $(vmlinux-dirs)
-# Preset locale variables to speed up the build process. Limit locale
-# tweaks to this spot to avoid wrong language settings when running
-# make menuconfig etc.
-# Error messages still appears in the original language
+$(LIBS):	depend $(SUBDIRS)
+		$(MAKE) -C $(dir $(subst $(obj),,$@))
 
-PHONY += $(u-boot-dirs)
-$(u-boot-dirs): prepare scripts
-	$(Q)$(MAKE) $(build)=$@
+$(LIBBOARD):	depend $(LIBS)
+		$(MAKE) -C $(dir $(subst $(obj),,$@))
 
-tools: prepare
-# The "tools" are needed early
-$(filter-out tools, $(u-boot-dirs)): tools
-# The "examples" conditionally depend on U-Boot (say, when USE_PRIVATE_LIBGCC
-# is "yes"), so compile examples after U-Boot is compiled.
-examples: $(filter-out examples, $(u-boot-dirs))
+$(SUBDIRS):	depend
+		$(MAKE) -C $@ all
 
-define filechk_uboot.release
-	echo "$(UBOOTVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
-endef
+$(LDSCRIPT):	depend
+		$(MAKE) -C $(dir $@) $(notdir $@)
 
-# Store (new) UBOOTRELEASE string in include/config/uboot.release
-include/config/uboot.release: Makefile FORCE
-	$(call filechk,uboot.release)
+$(obj)u-boot.lds: $(LDSCRIPT)
+		$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
 
+nand_spl:	$(TIMESTAMP_FILE) $(VERSION_FILE) depend
+		$(MAKE) -C nand_spl/board/$(BOARDDIR) all
 
-# Things we need to do before we recursively start building the kernel
-# or the modules are listed in "prepare".
-# A multi level approach is used. prepareN is processed before prepareN-1.
-# archprepare is used in arch Makefiles and when processed asm symlink,
-# version.h and scripts_basic is processed / created.
+$(obj)u-boot-nand.bin:	nand_spl $(obj)u-boot.bin
+		cat $(obj)nand_spl/u-boot-spl-16k.bin $(obj)u-boot.bin > $(obj)u-boot-nand.bin
 
-# Listed in dependency order
-PHONY += prepare archprepare prepare0 prepare1 prepare2 prepare3
+onenand_ipl:	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
+		$(MAKE) -C onenand_ipl/board/$(BOARDDIR) all
 
-# prepare3 is used to check if we are building in a separate output directory,
-# and if so do:
-# 1) Check that make has not been executed in the kernel src $(srctree)
-prepare3: include/config/uboot.release
-ifneq ($(KBUILD_SRC),)
-	@$(kecho) '  Using $(srctree) as source for u-boot'
-	$(Q)if [ -f $(srctree)/include/config.mk ]; then \
-		echo >&2 "  $(srctree) is not clean, please run 'make mrproper'"; \
-		echo >&2 "  in the '$(srctree)' directory.";\
-		/bin/false; \
-	fi;
+$(obj)u-boot-onenand.bin:	onenand_ipl $(obj)u-boot.bin
+		cat $(ONENAND_BIN) $(obj)u-boot.bin > $(obj)u-boot-onenand.bin
+
+$(obj)u-boot-sec.bin:	$(obj)u-boot.bin
+		./scripts/c110_sign.sh
+
+ifeq ($(CONFIG_SECURE_BOOTING),y)
+$(obj)u-boot-sig.bin:	$(obj)u-boot-sec.bin
+else
+$(obj)u-boot-sig.bin:	$(obj)u-boot.bin
 endif
-
-# prepare2 creates a makefile if using a separate output directory
-prepare2: prepare3 outputmakefile
-
-prepare1: prepare2 $(version_h) $(timestamp_h)
-ifeq ($(__HAVE_ARCH_GENERIC_BOARD),)
-ifeq ($(CONFIG_SYS_GENERIC_BOARD),y)
-	@echo >&2 "  Your architecture does not support generic board."
-	@echo >&2 "  Please undefine CONFIG_SYS_GENERIC_BOARD in your board config file."
-	@/bin/false
+		@echo -n "BoOt" > sig-magic
+		@echo -n `date +%Y%m%d%H` > sig-date
+		@echo -n "none" > sig-product
+		@# workaround for old version used board
+ifeq ($(BOARD),trats)
+		@echo -n "slp_u1" > sig-board
+else
+		@echo -n "slp_midasq" > sig-board
 endif
+		@cat sig-magic /dev/zero | head -c 12 > sig-tmp
+		@cat sig-tmp sig-date /dev/zero | head -c 24 > sig-tmp2
+		@cat sig-tmp2 sig-product /dev/zero | head -c 48 > sig-tmp
+ifeq ($(CONFIG_MMC_BOOT),y)
+		@cat sig-tmp sig-board /dev/zero | head -c 512 > sig-hdr
+		@cat u-boot.bin /dev/zero | head -c 1048064 > u-boot-pad.bin
+		@cat u-boot-pad.bin sig-hdr > u-boot-mmc.bin
+else
+		@cat sig-tmp sig-board /dev/zero | head -c 64 > sig-hdr
+		@cat sig-hdr u-boot.bin > u-boot-onenand.bin
 endif
-ifeq ($(wildcard $(LDSCRIPT)),)
-	@echo >&2 "  Could not find linker script."
-	@/bin/false
-endif
+		@rm -f sig-* u-boot-pad.bin
 
-archprepare: prepare1 scripts_basic
+$(VERSION_FILE):
+		@( printf '#define U_BOOT_VERSION "U-Boot %s%s"\n' "$(U_BOOT_VERSION)" \
+		 '$(shell $(TOPDIR)/tools/setlocalversion $(TOPDIR))' ) > $@.tmp
+		@( printf '#define CC_VERSION_STRING "%s"\n' \
+		 '$(shell $(CC) --version | head -n 1)' )>>  $@.tmp
+		@( printf '#define LD_VERSION_STRING "%s"\n' \
+		 '$(shell $(LD) -v | head -n 1)' )>>  $@.tmp
+		@cmp -s $@ $@.tmp && rm -f $@.tmp || mv -f $@.tmp $@
 
-prepare0: archprepare FORCE
-	$(Q)$(MAKE) $(build)=.
+$(TIMESTAMP_FILE):
+		@LC_ALL=C date +'#define U_BOOT_DATE "%b %d %C%y"' > $@
+		@LC_ALL=C date +'#define U_BOOT_TIME "%T"' >> $@
 
-# All the preparing..
-prepare: prepare0
+updater:
+		$(MAKE) -C tools/updater all
 
-# Generate some files
-# ---------------------------------------------------------------------------
+# Explicitly make _depend in subdirs containing multiple targets to prevent
+# parallel sub-makes creating .depend files simultaneously.
+depend dep:	$(TIMESTAMP_FILE) $(VERSION_FILE) \
+		$(obj)include/autoconf.mk \
+		$(obj)include/generated/generic-asm-offsets.h
+		for dir in $(SUBDIRS) $(CPUDIR) $(dir $(LDSCRIPT)) ; do \
+			$(MAKE) -C $$dir _depend ; done
 
-define filechk_version.h
-	(echo \#define PLAIN_VERSION \"$(UBOOTRELEASE)\"; \
-	echo \#define U_BOOT_VERSION \"U-Boot \" PLAIN_VERSION; \
-	echo \#define CC_VERSION_STRING \"$$($(CC) --version | head -n 1)\"; \
-	echo \#define LD_VERSION_STRING \"$$($(LD) --version | head -n 1)\"; )
-endef
+TAG_SUBDIRS = $(SUBDIRS)
+TAG_SUBDIRS += $(dir $(__LIBS))
+TAG_SUBDIRS += include
 
-define filechk_timestamp.h
-	(LC_ALL=C date +'#define U_BOOT_DATE "%b %d %C%y"'; \
-	LC_ALL=C date +'#define U_BOOT_TIME "%T"')
-endef
+tags ctags:
+		ctags -w -o $(obj)ctags `find $(TAG_SUBDIRS) \
+						-name '*.[chS]' -print`
 
-$(version_h): $(srctree)/Makefile FORCE
-	$(call filechk,version.h)
+etags:
+		etags -a -o $(obj)etags `find $(TAG_SUBDIRS) \
+						-name '*.[chS]' -print`
+cscope:
+		find $(TAG_SUBDIRS) -name '*.[chS]' -print > cscope.files
+		cscope -b -q -k
 
-$(timestamp_h): $(srctree)/Makefile FORCE
-	$(call filechk,timestamp.h)
+SYSTEM_MAP = \
+		$(NM) $1 | \
+		grep -v '\(compiled\)\|\(\.o$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
+		LC_ALL=C sort
+$(obj)System.map:	$(obj)u-boot
+		@$(call SYSTEM_MAP,$<) > $(obj)System.map
 
 #
 # Auto-generate the autoconf.mk file (which is included by all makefiles)
@@ -1033,120 +507,52 @@ $(timestamp_h): $(srctree)/Makefile FORCE
 # This target actually generates 2 files; autoconf.mk and autoconf.mk.dep.
 # the dep file is only include in this top level makefile to determine when
 # to regenerate the autoconf.mk file.
+$(obj)include/autoconf.mk.dep: $(obj)include/config.h include/common.h
+	@$(XECHO) Generating $@ ; \
+	set -e ; \
+	: Generate the dependancies ; \
+	$(CC) -x c -DDO_DEPS_ONLY -M $(HOSTCFLAGS) $(CPPFLAGS) \
+		-MQ $(obj)include/autoconf.mk include/common.h > $@
 
-quiet_cmd_autoconf_dep = GEN     $@
-      cmd_autoconf_dep = $(CC) -x c -DDO_DEPS_ONLY -M $(c_flags) \
-	-MQ include/autoconf.mk $(srctree)/include/common.h > $@ || rm $@
+$(obj)include/autoconf.mk: $(obj)include/config.h
+	@$(XECHO) Generating $@ ; \
+	set -e ; \
+	: Extract the config macros ; \
+	$(CPP) $(CFLAGS) -DDO_DEPS_ONLY -dM include/common.h | \
+		sed -n -f tools/scripts/define2mk.sed > $@.tmp && \
+	mv $@.tmp $@
 
-include/autoconf.mk.dep: include/config.h include/common.h
-	$(call cmd,autoconf_dep)
+$(obj)include/generated/generic-asm-offsets.h:	$(obj)include/autoconf.mk.dep \
+	$(obj)lib/asm-offsets.s
+	@$(XECHO) Generating $@
+	tools/scripts/make-asm-offsets $(obj)lib/asm-offsets.s $@
 
-quiet_cmd_autoconf = GEN     $@
-      cmd_autoconf = \
-	$(CPP) $(c_flags) -DDO_DEPS_ONLY -dM $(srctree)/include/common.h > $@.tmp && \
-	sed -n -f $(srctree)/tools/scripts/define2mk.sed $@.tmp > $@; \
-	rm $@.tmp
-
-include/autoconf.mk: include/config.h
-	$(call cmd,autoconf)
-
-# ---------------------------------------------------------------------------
-
-PHONY += depend dep
-depend dep:
-	@echo '*** Warning: make $@ is unnecessary now.'
-
-# ---------------------------------------------------------------------------
-quiet_cmd_cpp_lds = LDS     $@
-cmd_cpp_lds = $(CPP) $(cpp_flags) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ \
-		-x assembler-with-cpp -P -o $@ $<
-
-u-boot.lds: $(LDSCRIPT) prepare FORCE
-	$(call if_changed,cpp_lds)
-
-PHONY += nand_spl
-nand_spl: prepare
-	$(Q)$(MAKE) $(build)=nand_spl/board/$(BOARDDIR) all
-
-nand_spl/u-boot-spl-16k.bin: nand_spl
-	@:
-
-u-boot-nand.bin: nand_spl/u-boot-spl-16k.bin u-boot.bin FORCE
-	$(call if_changed,cat)
-
-spl/u-boot-spl.bin: spl/u-boot-spl
-	@:
-spl/u-boot-spl: tools prepare
-	$(Q)$(MAKE) obj=spl -f $(srctree)/spl/Makefile all
-
-tpl/u-boot-tpl.bin: tools prepare
-	$(Q)$(MAKE) obj=tpl -f $(srctree)/spl/Makefile all CONFIG_TPL_BUILD=y
-
-TAG_SUBDIRS := $(u-boot-dirs) include
-
-FIND := find
-FINDFLAGS := -L
-
-tags ctags:
-		ctags -w -o ctags `$(FIND) $(FINDFLAGS) $(TAG_SUBDIRS) \
-						-name '*.[chS]' -print`
-
-etags:
-		etags -a -o $(obj)etags `$(FIND) $(FINDFLAGS) $(TAG_SUBDIRS) \
-						-name '*.[chS]' -print`
-cscope:
-		$(FIND) $(FINDFLAGS) $(TAG_SUBDIRS) -name '*.[chS]' -print > \
-						cscope.files
-		cscope -b -q -k
-
-SYSTEM_MAP = \
-		$(NM) $1 | \
-		grep -v '\(compiled\)\|\(\.o$$\)\|\( [aUw] \)\|\(\.\.ng$$\)\|\(LASH[RL]DI\)' | \
-		LC_ALL=C sort
-System.map:	u-boot
-		@$(call SYSTEM_MAP,$<) > $@
-
-checkthumb:
-	@if test $(call cc-version) -lt 0404; then \
-		echo -n '*** Your GCC does not produce working '; \
-		echo 'binaries in THUMB mode.'; \
-		echo '*** Your board is configured for THUMB mode.'; \
-		false; \
-	fi
-
-# GCC 3.x is reported to have problems generating the type of relocation
-# that U-Boot wants.
-# See http://lists.denx.de/pipermail/u-boot/2012-September/135156.html
-checkgcc4:
-	@if test $(call cc-version) -lt 0400; then \
-		echo -n '*** Your GCC is too old, please upgrade to GCC 4.x or newer'; \
-		false; \
-	fi
-
-checkdtc:
-	@if test $(call dtc-version) -lt 0104; then \
-		echo '*** Your dtc is too old, please upgrade to dtc 1.4 or newer'; \
-		false; \
-	fi
+$(obj)lib/asm-offsets.s:	$(obj)include/autoconf.mk.dep \
+	$(src)lib/asm-offsets.c
+	@mkdir -p $(obj)lib
+	$(CC) -DDO_DEPS_ONLY \
+		$(CFLAGS) $(CFLAGS_$(BCURDIR)/$(@F)) $(CFLAGS_$(BCURDIR)) \
+		-o $@ $(src)lib/asm-offsets.c -c -S
 
 #########################################################################
+else	# !config.mk
+all $(obj)u-boot.hex $(obj)u-boot.srec $(obj)u-boot.bin \
+$(obj)u-boot.img $(obj)u-boot.dis $(obj)u-boot \
+$(filter-out tools,$(SUBDIRS)) $(TIMESTAMP_FILE) $(VERSION_FILE) \
+updater depend dep tags ctags etags cscope $(obj)System.map:
+	@echo "System not configured - see README" >&2
+	@ exit 1
 
-# ARM relocations should all be R_ARM_RELATIVE (32-bit) or
-# R_AARCH64_RELATIVE (64-bit).
-checkarmreloc: u-boot
-	@RELOC="`$(CROSS_COMPILE)readelf -r -W $< | cut -d ' ' -f 4 | \
-		grep R_A | sort -u`"; \
-	if test "$$RELOC" != "R_ARM_RELATIVE" -a \
-		 "$$RELOC" != "R_AARCH64_RELATIVE"; then \
-		echo "$< contains unexpected relocations: $$RELOC"; \
-		false; \
-	fi
+tools:
+	$(MAKE) -C $@ all
+endif	# config.mk
 
-env: scripts_basic
-	$(Q)$(MAKE) $(build)=tools/$@
+easylogo env gdb:
+	$(MAKE) -C tools/$@ all MTD_VERSION=${MTD_VERSION}
+gdbtools: gdb
 
-tools-all: HOST_TOOLS_ALL=y
-tools-all: env tools ;
+tools-all: easylogo env gdb
+	$(MAKE) -C tools HOST_TOOLS_ALL=y
 
 .PHONY : CHANGELOG
 CHANGELOG:
@@ -1157,251 +563,660 @@ include/license.h: tools/bin2header COPYING
 	cat COPYING | gzip -9 -c | ./tools/bin2header license_gzip > include/license.h
 #########################################################################
 
-###
-# Cleaning is done on three levels.
-# make clean     Delete most generated files
-#                Leave enough to build external modules
-# make mrproper  Delete the current configuration, and all generated files
-# make distclean Remove editor backup files, patch leftover files and the like
+unconfig:
+	@rm -f $(obj)include/config.h $(obj)include/config.mk \
+		$(obj)board/*/config.tmp $(obj)board/*/*/config.tmp \
+		$(obj)include/autoconf.mk $(obj)include/autoconf.mk.dep
 
-# Directories & files removed with 'make clean'
-CLEAN_DIRS  += $(MODVERDIR)
-CLEAN_FILES += u-boot.lds include/bmp_logo.h include/bmp_logo_data.h \
-	       board/*/config.tmp board/*/*/config.tmp \
-	       include/autoconf.mk* include/spl-autoconf.mk \
-	       include/tpl-autoconf.mk
+%_config::	unconfig
+	@$(MKCONFIG) -A $(@:_config=)
 
-# Directories & files removed with 'make clobber'
-CLOBBER_DIRS  += $(patsubst %,spl/%, $(filter-out Makefile, \
-		 $(shell ls -1 spl 2>/dev/null))) \
-		 tpl
-CLOBBER_FILES += u-boot* MLO* SPL System.map nand_spl/u-boot*
+sinclude $(obj).boards.depend
+$(obj).boards.depend:	boards.cfg
+	awk '(NF && $$1 !~ /^#/) { print $$1 ": " $$1 "_config; $$(MAKE)" }' $< > $@
 
-# Directories & files removed with 'make mrproper'
-MRPROPER_DIRS  += include/config include/generated
-MRPROPER_FILES += .config .config.old \
-		  tags TAGS cscope* GPATH GTAGS GRTAGS GSYMS \
-		  include/config.h include/config.mk
-
-# clean - Delete most, but leave enough to build external modules
 #
-clean: rm-dirs  := $(CLEAN_DIRS)
-clean: rm-files := $(CLEAN_FILES)
-
-clean-dirs	:= $(foreach f,$(u-boot-alldirs),$(if $(wildcard $f/Makefile),$f))
-
-clean-dirs      := $(addprefix _clean_, $(clean-dirs) doc/DocBook)
-
-PHONY += $(clean-dirs) clean archclean
-$(clean-dirs):
-	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
-
-# TODO: Do not use *.cfgtmp
-clean: $(clean-dirs)
-	$(call cmd,rmdirs)
-	$(call cmd,rmfiles)
-	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
-		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
-		-o -name '*.ko.*' -o -name '*.su' -o -name '*.cfgtmp' \
-		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
-		-o -name '*.symtypes' -o -name 'modules.order' \
-		-o -name modules.builtin -o -name '.tmp_*.o.*' \
-		-o -name '*.gcno' \) -type f -print | xargs rm -f
-	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
-		-path './nand_spl/*' -type l -print | xargs rm -f
-
-# clobber
+# Functions to generate common board directory names
 #
-clobber: rm-dirs  := $(CLOBBER_DIRS)
-clobber: rm-files := $(CLOBBER_FILES)
+lcname	= $(shell echo $(1) | sed -e 's/\(.*\)_config/\L\1/')
+ucname	= $(shell echo $(1) | sed -e 's/\(.*\)_config/\U\1/')
 
-PHONY += clobber
+#########################################################################
+## Coldfire
+#########################################################################
 
-clobber: clean
-	$(call cmd,rmdirs)
-	$(call cmd,rmfiles)
+astro_mcf5373l_config \
+astro_mcf5373l_RAM_config :	unconfig
+	@$(MKCONFIG) -n $@ -t $@ astro_mcf5373l m68k mcf532x mcf5373l astro
 
-# mrproper - Delete all generated files, including .config
-#
-mrproper: rm-dirs  := $(wildcard $(MRPROPER_DIRS))
-mrproper: rm-files := $(wildcard $(MRPROPER_FILES))
-mrproper-dirs      := $(addprefix _mrproper_,scripts)
+M52277EVB_config \
+M52277EVB_spansion_config \
+M52277EVB_stmicro_config :	unconfig
+	@case "$@" in \
+	M52277EVB_config)		FLASH=SPANSION;; \
+	M52277EVB_spansion_config)	FLASH=SPANSION;; \
+	M52277EVB_stmicro_config)	FLASH=STMICRO;; \
+	esac; \
+	if [ "$${FLASH}" = "SPANSION" ] ; then \
+		echo "#define CONFIG_SYS_SPANSION_BOOT"	>> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0x00000000" > $(obj)board/freescale/m52277evb/config.tmp ; \
+		cp $(obj)board/freescale/m52277evb/u-boot.spa $(obj)board/freescale/m52277evb/u-boot.lds ; \
+	fi; \
+	if [ "$${FLASH}" = "STMICRO" ] ; then \
+		echo "#define CONFIG_CF_SBF"	>> $(obj)include/config.h ; \
+		echo "#define CONFIG_SYS_STMICRO_BOOT"	>> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0x43E00000" > $(obj)board/freescale/m52277evb/config.tmp ; \
+		cp $(obj)board/freescale/m52277evb/u-boot.stm $(obj)board/freescale/m52277evb/u-boot.lds ; \
+	fi
+	@$(MKCONFIG) -n $@ -a M52277EVB m68k mcf5227x m52277evb freescale
 
-PHONY += $(mrproper-dirs) mrproper archmrproper
-$(mrproper-dirs):
-	$(Q)$(MAKE) $(clean)=$(patsubst _mrproper_%,%,$@)
+M5235EVB_config \
+M5235EVB_Flash16_config \
+M5235EVB_Flash32_config:	unconfig
+	@case "$@" in \
+	M5235EVB_config)		FLASH=16;; \
+	M5235EVB_Flash16_config)	FLASH=16;; \
+	M5235EVB_Flash32_config)	FLASH=32;; \
+	esac; \
+	if [ "$${FLASH}" != "16" ] ; then \
+		echo "#define NORFLASH_PS32BIT	1" >> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0xFFC00000" > $(obj)board/freescale/m5235evb/config.tmp ; \
+		cp $(obj)board/freescale/m5235evb/u-boot.32 $(obj)board/freescale/m5235evb/u-boot.lds ; \
+	else \
+		echo "CONFIG_SYS_TEXT_BASE = 0xFFE00000" > $(obj)board/freescale/m5235evb/config.tmp ; \
+		cp $(obj)board/freescale/m5235evb/u-boot.16 $(obj)board/freescale/m5235evb/u-boot.lds ; \
+	fi
+	@$(MKCONFIG) -n $@ -a M5235EVB m68k mcf523x m5235evb freescale
 
-mrproper: clobber $(mrproper-dirs)
-	$(call cmd,rmdirs)
-	$(call cmd,rmfiles)
-	@rm -f arch/*/include/asm/arch arch/*/include/asm/proc
+cobra5272_config :		unconfig
+	@$(MKCONFIG) $@ m68k mcf52x2 cobra5272
 
-# distclean
-#
-PHONY += distclean
+EB+MCF-EV123_config :		unconfig
+	@mkdir -p $(obj)include
+	@mkdir -p $(obj)board/BuS/EB+MCF-EV123
+	@echo "CONFIG_SYS_TEXT_BASE = 0xFFE00000"|tee $(obj)board/BuS/EB+MCF-EV123/textbase.mk
+	@$(MKCONFIG) -n $@ EB+MCF-EV123 m68k mcf52x2 EB+MCF-EV123 BuS
 
-distclean: mrproper
-	@find $(srctree) $(RCS_FIND_IGNORE) \
-		\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
-		-o -name '*.bak' -o -name '#*#' -o -name '.*.orig' \
-		-o -name '.*.rej' \
-		-o -name '*%' -o -name '.*.cmd' -o -name 'core' \) \
-		-type f -print | xargs rm -f
+EB+MCF-EV123_internal_config :	unconfig
+	@mkdir -p $(obj)include
+	@mkdir -p $(obj)board/BuS/EB+MCF-EV123
+	@echo "CONFIG_SYS_TEXT_BASE = 0xF0000000"|tee $(obj)board/BuS/EB+MCF-EV123/textbase.mk
+	@$(MKCONFIG) -n $@ EB+MCF-EV123 m68k mcf52x2 EB+MCF-EV123 BuS
+
+M5329AFEE_config \
+M5329BFEE_config :	unconfig
+	@case "$@" in \
+	M5329AFEE_config)	NAND=0;; \
+	M5329BFEE_config)	NAND=16;; \
+	esac; \
+	if [ "$${NAND}" != "0" ] ; then \
+		echo "#define NANDFLASH_SIZE	$${NAND}" > $(obj)include/config.h ; \
+	fi
+	@$(MKCONFIG) -n $@ -a M5329EVB m68k mcf532x m5329evb freescale
+
+M5373EVB_config :	unconfig
+	@case "$@" in \
+	M5373EVB_config)	NAND=16;; \
+	esac; \
+	if [ "$${NAND}" != "0" ] ; then \
+		echo "#define NANDFLASH_SIZE	$${NAND}" > $(obj)include/config.h ; \
+	fi
+	@$(MKCONFIG) -a M5373EVB m68k mcf532x m5373evb freescale
+
+M54451EVB_config \
+M54451EVB_stmicro_config :	unconfig
+	@case "$@" in \
+	M54451EVB_config)		FLASH=NOR;; \
+	M54451EVB_stmicro_config)	FLASH=STMICRO;; \
+	esac; \
+	if [ "$${FLASH}" = "NOR" ] ; then \
+		echo "CONFIG_SYS_TEXT_BASE = 0x00000000" > $(obj)board/freescale/m54451evb/config.tmp ; \
+		cp $(obj)board/freescale/m54451evb/u-boot.spa $(obj)board/freescale/m54451evb/u-boot.lds ; \
+	fi; \
+	if [ "$${FLASH}" = "STMICRO" ] ; then \
+		echo "#define CONFIG_CF_SBF"	>> $(obj)include/config.h ; \
+		echo "#define CONFIG_SYS_STMICRO_BOOT"	>> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0x47E00000" > $(obj)board/freescale/m54451evb/config.tmp ; \
+		cp $(obj)board/freescale/m54451evb/u-boot.stm $(obj)board/freescale/m54451evb/u-boot.lds ; \
+	fi; \
+	echo "#define CONFIG_SYS_INPUT_CLKSRC 24000000" >> $(obj)include/config.h ;
+	@$(MKCONFIG) -n $@ -a M54451EVB m68k mcf5445x m54451evb freescale
+
+M54455EVB_config \
+M54455EVB_atmel_config \
+M54455EVB_intel_config \
+M54455EVB_a33_config \
+M54455EVB_a66_config \
+M54455EVB_i33_config \
+M54455EVB_i66_config \
+M54455EVB_stm33_config :	unconfig
+	@case "$@" in \
+	M54455EVB_config)		FLASH=ATMEL; FREQ=33333333;; \
+	M54455EVB_atmel_config)		FLASH=ATMEL; FREQ=33333333;; \
+	M54455EVB_intel_config)		FLASH=INTEL; FREQ=33333333;; \
+	M54455EVB_a33_config)		FLASH=ATMEL; FREQ=33333333;; \
+	M54455EVB_a66_config)		FLASH=ATMEL; FREQ=66666666;; \
+	M54455EVB_i33_config)		FLASH=INTEL; FREQ=33333333;; \
+	M54455EVB_i66_config)		FLASH=INTEL; FREQ=66666666;; \
+	M54455EVB_stm33_config)		FLASH=STMICRO; FREQ=33333333;; \
+	esac; \
+	if [ "$${FLASH}" = "INTEL" ] ; then \
+		echo "#define CONFIG_SYS_INTEL_BOOT" >> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0x00000000" > $(obj)board/freescale/m54455evb/config.tmp ; \
+		cp $(obj)board/freescale/m54455evb/u-boot.int $(obj)board/freescale/m54455evb/u-boot.lds ; \
+	fi; \
+	if [ "$${FLASH}" = "ATMEL" ] ; then \
+		echo "#define CONFIG_SYS_ATMEL_BOOT"	>> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0x04000000" > $(obj)board/freescale/m54455evb/config.tmp ; \
+		cp $(obj)board/freescale/m54455evb/u-boot.atm $(obj)board/freescale/m54455evb/u-boot.lds ; \
+	fi; \
+	if [ "$${FLASH}" = "STMICRO" ] ; then \
+		echo "#define CONFIG_CF_SBF"	>> $(obj)include/config.h ; \
+		echo "#define CONFIG_SYS_STMICRO_BOOT"	>> $(obj)include/config.h ; \
+		echo "CONFIG_SYS_TEXT_BASE = 0x4FE00000" > $(obj)board/freescale/m54455evb/config.tmp ; \
+		cp $(obj)board/freescale/m54455evb/u-boot.stm $(obj)board/freescale/m54455evb/u-boot.lds ; \
+	fi; \
+	echo "#define CONFIG_SYS_INPUT_CLKSRC $${FREQ}" >> $(obj)include/config.h ; \
+	@$(MKCONFIG) -n $@ -a M54455EVB m68k mcf5445x m54455evb freescale
+
+M5475AFE_config \
+M5475BFE_config \
+M5475CFE_config \
+M5475DFE_config \
+M5475EFE_config \
+M5475FFE_config \
+M5475GFE_config :	unconfig
+	@case "$@" in \
+	M5475AFE_config)	BOOT=2;CODE=0;VID=0;USB=0;RAM=64;RAM1=0;; \
+	M5475BFE_config)	BOOT=2;CODE=16;VID=0;USB=0;RAM=64;RAM1=0;; \
+	M5475CFE_config)	BOOT=2;CODE=16;VID=1;USB=1;RAM=64;RAM1=0;; \
+	M5475DFE_config)	BOOT=2;CODE=0;VID=0;USB=1;RAM=64;RAM1=0;; \
+	M5475EFE_config)	BOOT=2;CODE=0;VID=1;USB=1;RAM=64;RAM1=0;; \
+	M5475FFE_config)	BOOT=2;CODE=32;VID=1;USB=1;RAM=64;RAM1=64;; \
+	M5475GFE_config)	BOOT=4;CODE=0;VID=0;USB=0;RAM=64;RAM1=0;; \
+	esac; \
+	echo "#define CONFIG_SYS_BUSCLK	133333333" > $(obj)include/config.h ; \
+	echo "#define CONFIG_SYS_BOOTSZ	$${BOOT}" >> $(obj)include/config.h ; \
+	echo "#define CONFIG_SYS_DRAMSZ	$${RAM}" >> $(obj)include/config.h ; \
+	if [ "$${RAM1}" != "0" ] ; then \
+		echo "#define CONFIG_SYS_DRAMSZ1	$${RAM1}" >> $(obj)include/config.h ; \
+	fi; \
+	if [ "$${CODE}" != "0" ] ; then \
+		echo "#define CONFIG_SYS_NOR1SZ	$${CODE}" >> $(obj)include/config.h ; \
+	fi; \
+	if [ "$${VID}" == "1" ] ; then \
+		echo "#define CONFIG_SYS_VIDEO" >> $(obj)include/config.h ; \
+	fi; \
+	if [ "$${USB}" == "1" ] ; then \
+		echo "#define CONFIG_SYS_USBCTRL" >> $(obj)include/config.h ; \
+	fi
+	@$(MKCONFIG) -n $@ -a M5475EVB m68k mcf547x_8x m547xevb freescale
+
+M5485AFE_config \
+M5485BFE_config \
+M5485CFE_config \
+M5485DFE_config \
+M5485EFE_config \
+M5485FFE_config \
+M5485GFE_config \
+M5485HFE_config :	unconfig
+	@case "$@" in \
+	M5485AFE_config)	BOOT=2;CODE=0;VID=0;USB=0;RAM=64;RAM1=0;; \
+	M5485BFE_config)	BOOT=2;CODE=16;VID=0;USB=0;RAM=64;RAM1=0;; \
+	M5485CFE_config)	BOOT=2;CODE=16;VID=1;USB=1;RAM=64;RAM1=0;; \
+	M5485DFE_config)	BOOT=2;CODE=0;VID=0;USB=1;RAM=64;RAM1=0;; \
+	M5485EFE_config)	BOOT=2;CODE=0;VID=1;USB=1;RAM=64;RAM1=0;; \
+	M5485FFE_config)	BOOT=2;CODE=32;VID=1;USB=1;RAM=64;RAM1=64;; \
+	M5485GFE_config)	BOOT=4;CODE=0;VID=0;USB=0;RAM=64;RAM1=0;; \
+	M5485HFE_config)	BOOT=2;CODE=16;VID=1;USB=0;RAM=64;RAM1=0;; \
+	esac; \
+	echo "#define CONFIG_SYS_BUSCLK	100000000" > $(obj)include/config.h ; \
+	echo "#define CONFIG_SYS_BOOTSZ	$${BOOT}" >> $(obj)include/config.h ; \
+	echo "#define CONFIG_SYS_DRAMSZ	$${RAM}" >> $(obj)include/config.h ; \
+	if [ "$${RAM1}" != "0" ] ; then \
+		echo "#define CONFIG_SYS_DRAMSZ1	$${RAM1}" >> $(obj)include/config.h ; \
+	fi; \
+	if [ "$${CODE}" != "0" ] ; then \
+		echo "#define CONFIG_SYS_NOR1SZ	$${CODE}" >> $(obj)include/config.h ; \
+	fi; \
+	if [ "$${VID}" == "1" ] ; then \
+		echo "#define CONFIG_SYS_VIDEO" >> $(obj)include/config.h ; \
+	fi; \
+	if [ "$${USB}" == "1" ] ; then \
+		echo "#define CONFIG_SYS_USBCTRL" >> $(obj)include/config.h ; \
+	fi
+	@$(MKCONFIG) -n $@ -a M5485EVB m68k mcf547x_8x m548xevb freescale
+
+#========================================================================
+# ARM
+#========================================================================
+
+#########################################################################
+## Atmel AT91RM9200 Systems
+#########################################################################
+
+CPUAT91_RAM_config \
+CPUAT91_config	:	unconfig
+	@mkdir -p $(obj)include
+	@echo "#define CONFIG_$(@:_config=) 1"	>$(obj)include/config.h
+	@$(MKCONFIG) -n $@ -a cpuat91 arm arm920t cpuat91 eukrea at91
+
+#########################################################################
+## ARM926EJ-S Systems
+#########################################################################
+
+at91sam9260ek_nandflash_config \
+at91sam9260ek_dataflash_cs0_config \
+at91sam9260ek_dataflash_cs1_config \
+at91sam9260ek_config \
+at91sam9g20ek_nandflash_config \
+at91sam9g20ek_dataflash_cs0_config \
+at91sam9g20ek_dataflash_cs1_config \
+at91sam9g20ek_config	:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring 9g20,$@)" ] ; then \
+		echo "#define CONFIG_AT91SAM9G20EK 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_AT91SAM9260EK 1"	>>$(obj)include/config.h ; \
+	fi;
+	@if [ "$(findstring _nandflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NANDFLASH 1"	>>$(obj)include/config.h ; \
+	elif [ "$(findstring dataflash_cs0,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_DATAFLASH_CS0 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_SYS_USE_DATAFLASH_CS1 1"	>>$(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a at91sam9260ek arm arm926ejs at91sam9260ek atmel at91
+
+at91sam9xeek_nandflash_config \
+at91sam9xeek_dataflash_cs0_config \
+at91sam9xeek_dataflash_cs1_config \
+at91sam9xeek_config	:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring _nandflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NANDFLASH 1"	>>$(obj)include/config.h ; \
+	elif [ "$(findstring dataflash_cs0,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_DATAFLASH_CS0 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_SYS_USE_DATAFLASH_CS1 1"	>>$(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a at91sam9260ek arm arm926ejs at91sam9260ek atmel at91
+
+at91sam9261ek_nandflash_config \
+at91sam9261ek_dataflash_cs0_config \
+at91sam9261ek_dataflash_cs3_config \
+at91sam9261ek_config \
+at91sam9g10ek_nandflash_config \
+at91sam9g10ek_dataflash_cs0_config \
+at91sam9g10ek_dataflash_cs3_config \
+at91sam9g10ek_config	:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring 9g10,$@)" ] ; then \
+		echo "#define CONFIG_AT91SAM9G10EK 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_AT91SAM9261EK 1"	>>$(obj)include/config.h ; \
+	fi;
+	@if [ "$(findstring _nandflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NANDFLASH 1"	>>$(obj)include/config.h ; \
+	elif [ "$(findstring dataflash_cs0,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_DATAFLASH_CS3 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_SYS_USE_DATAFLASH_CS0 1"	>>$(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a at91sam9261ek arm arm926ejs at91sam9261ek atmel at91
+
+at91sam9263ek_norflash_config \
+at91sam9263ek_norflash_boot_config \
+at91sam9263ek_nandflash_config \
+at91sam9263ek_dataflash_config \
+at91sam9263ek_dataflash_cs0_config \
+at91sam9263ek_config	:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring _nandflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NANDFLASH 1"	>>$(obj)include/config.h ; \
+	elif [ "$(findstring norflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NORFLASH 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_SYS_USE_DATAFLASH 1"	>>$(obj)include/config.h ; \
+	fi;
+	@if [ "$(findstring norflash_boot,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_BOOT_NORFLASH 1"	>>$(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a at91sam9263ek arm arm926ejs at91sam9263ek atmel at91
+
+at91sam9rlek_nandflash_config \
+at91sam9rlek_dataflash_config \
+at91sam9rlek_dataflash_cs0_config \
+at91sam9rlek_config	:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring _nandflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NANDFLASH 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_SYS_USE_DATAFLASH 1"	>>$(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a at91sam9rlek arm arm926ejs at91sam9rlek atmel at91
+
+CPU9G20_128M_config \
+CPU9G20_config \
+CPU9260_128M_config \
+CPU9260_config	:	unconfig
+	@mkdir -p $(obj)include
+	@echo "#define CONFIG_$(@:_config=) 1" >$(obj)include/config.h
+	@$(MKCONFIG) -n $@ -a cpu9260 arm arm926ejs cpu9260 eukrea at91
+
+at91sam9m10g45ek_nandflash_config \
+at91sam9m10g45ek_dataflash_config \
+at91sam9m10g45ek_dataflash_cs0_config \
+at91sam9m10g45ek_config \
+at91sam9g45ekes_nandflash_config \
+at91sam9g45ekes_dataflash_config \
+at91sam9g45ekes_dataflash_cs0_config \
+at91sam9g45ekes_config	:	unconfig
+	@mkdir -p $(obj)include
+		@if [ "$(findstring 9m10,$@)" ] ; then \
+		echo "#define CONFIG_AT91SAM9M10G45EK 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_AT91SAM9G45EKES 1"	>>$(obj)include/config.h ; \
+	fi;
+	@if [ "$(findstring _nandflash,$@)" ] ; then \
+		echo "#define CONFIG_SYS_USE_NANDFLASH 1"	>>$(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_ATMEL_SPI 1"	>>$(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a at91sam9m10g45ek arm arm926ejs at91sam9m10g45ek atmel at91
+
+pm9g45_config	:	unconfig
+	@mkdir -p $(obj)include
+	@$(MKCONFIG) -a pm9g45 arm arm926ejs pm9g45 ronetix at91
+
+SBC35_A9G20_NANDFLASH_config \
+SBC35_A9G20_EEPROM_config \
+SBC35_A9G20_config	:	unconfig
+	@mkdir -p $(obj)include
+	@echo "#define CONFIG_$(@:_config=) 1" >$(obj)include/config.h
+	@$(MKCONFIG) -n $@ -a sbc35_a9g20 arm arm926ejs sbc35_a9g20 calao at91
+
+TNY_A9G20_NANDFLASH_config \
+TNY_A9G20_EEPROM_config \
+TNY_A9G20_config \
+TNY_A9260_NANDFLASH_config \
+TNY_A9260_EEPROM_config \
+TNY_A9260_config	:	unconfig
+	@mkdir -p $(obj)include
+	@echo "#define CONFIG_$(@:_config=) 1" >$(obj)include/config.h
+	@$(MKCONFIG) -n $@ -a tny_a9260 arm arm926ejs tny_a9260 calao at91
+
+########################################################################
+## ARM Integrator boards - see doc/README-integrator for more info.
+integratorap_config	\
+ap_config		\
+ap966_config		\
+ap922_config		\
+ap922_XA10_config	\
+ap7_config		\
+ap720t_config		\
+ap920t_config		\
+ap926ejs_config		\
+ap946es_config: unconfig
+	@board/armltd/integrator/split_by_variant.sh ap $@
+
+integratorcp_config	\
+cp_config		\
+cp920t_config		\
+cp926ejs_config		\
+cp946es_config		\
+cp1136_config		\
+cp966_config		\
+cp922_config		\
+cp922_XA10_config	\
+cp1026_config: unconfig
+	@board/armltd/integrator/split_by_variant.sh cp $@
+
+nhk8815_config \
+nhk8815_onenand_config:	unconfig
+	@mkdir -p $(obj)include
+	@ > $(obj)include/config.h
+	@if [ "$(findstring _onenand, $@)" ] ; then \
+		echo "#define CONFIG_BOOT_ONENAND" >> $(obj)include/config.h; \
+	fi
+	@$(MKCONFIG) -n $@ -a nhk8815 arm arm926ejs nhk8815 st nomadik
+
+xtract_omap1610xxx = $(subst _cs0boot,,$(subst _cs3boot,,$(subst _cs_autoboot,,$(subst _config,,$1))))
+
+omap1610inn_config \
+omap1610inn_cs0boot_config \
+omap1610inn_cs3boot_config \
+omap1610inn_cs_autoboot_config \
+omap1610h2_config \
+omap1610h2_cs0boot_config \
+omap1610h2_cs3boot_config \
+omap1610h2_cs_autoboot_config:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring _cs0boot_, $@)" ] ; then \
+		echo "#define CONFIG_CS0_BOOT" >> .$(obj)include/config.h ; \
+	elif [ "$(findstring _cs_autoboot_, $@)" ] ; then \
+		echo "#define CONFIG_CS_AUTOBOOT" >> $(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_CS3_BOOT" >> $(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a $(call xtract_omap1610xxx,$@) arm arm926ejs omap1610inn ti omap
+
+omap730p2_config \
+omap730p2_cs0boot_config \
+omap730p2_cs3boot_config :	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring _cs0boot_, $@)" ] ; then \
+		echo "#define CONFIG_CS0_BOOT" >> $(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_CS3_BOOT" >> $(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ -a omap730p2 arm arm926ejs omap730p2 ti omap
+
+spear300_config \
+spear310_config \
+spear320_config :	unconfig
+	@$(MKCONFIG) -n $@ -t $@ spear3xx arm arm926ejs $(@:_config=) spear spear
+
+spear600_config :	unconfig
+	@$(MKCONFIG) -n $@ -t $@ spear6xx arm arm926ejs $(@:_config=) spear spear
+
+SX1_stdout_serial_config \
+SX1_config:		unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring _stdout_serial_, $@)" ] ; then \
+		echo "#undef CONFIG_STDOUT_USBTTY" >> $(obj)include/config.h ; \
+	else \
+		echo "#define CONFIG_STDOUT_USBTTY" >> $(obj)include/config.h ; \
+	fi;
+	@$(MKCONFIG) -n $@ SX1 arm arm925t sx1
+
+# TRAB default configuration:	8 MB Flash, 32 MB RAM
+trab_config \
+trab_bigram_config \
+trab_bigflash_config \
+trab_old_config:	unconfig
+	@mkdir -p $(obj)include
+	@mkdir -p $(obj)board/trab
+	@[ -z "$(findstring _bigram,$@)" ] || \
+		{ echo "#define CONFIG_FLASH_8MB"  >>$(obj)include/config.h ; \
+		  echo "#define CONFIG_RAM_32MB"   >>$(obj)include/config.h ; \
+		}
+	@[ -z "$(findstring _bigflash,$@)" ] || \
+		{ echo "#define CONFIG_FLASH_16MB" >>$(obj)include/config.h ; \
+		  echo "#define CONFIG_RAM_16MB"   >>$(obj)include/config.h ; \
+		  echo "CONFIG_SYS_TEXT_BASE = 0x0CF40000" >$(obj)board/trab/config.tmp ; \
+		}
+	@[ -z "$(findstring _old,$@)" ] || \
+		{ echo "#define CONFIG_FLASH_8MB"  >>$(obj)include/config.h ; \
+		  echo "#define CONFIG_RAM_16MB"   >>$(obj)include/config.h ; \
+		  echo "CONFIG_SYS_TEXT_BASE = 0x0CF40000" >$(obj)board/trab/config.tmp ; \
+		}
+	@$(MKCONFIG) -n $@ -a trab arm arm920t trab - s3c24x0
+
+tx25_config	: unconfig
+	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
+	@$(MKCONFIG) $@ arm arm926ejs tx25 karo mx25
+
+edb9301_config \
+edb9302_config \
+edb9302a_config \
+edb9307_config \
+edb9307a_config \
+edb9312_config \
+edb9315_config \
+edb9315a_config: unconfig
+	@$(MKCONFIG) -n $@ -t $(@:_config=) edb93xx arm arm920t edb93xx - ep93xx
+
+#########################################################################
+# ARM supplied Versatile development boards
+#########################################################################
+
+versatile_config	\
+versatileab_config	\
+versatilepb_config :	unconfig
+	@board/armltd/versatile/split_by_variant.sh $@
+
+#########################################################################
+## XScale Systems
+#########################################################################
+
+pdnb3_config \
+scpu_config:	unconfig
+	@mkdir -p $(obj)include
+	@if [ "$(findstring scpu_,$@)" ] ; then \
+		echo "#define CONFIG_SCPU"	>>$(obj)include/config.h ; \
+	fi
+	@$(MKCONFIG) -n $@ -a pdnb3 arm ixp pdnb3 prodrive
+
+#########################################################################
+## ARM1136 Systems
+#########################################################################
+
+apollon_config		: unconfig
+	@mkdir -p $(obj)include
+	@echo "#define CONFIG_ONENAND_U_BOOT" > $(obj)include/config.h
+	@echo "CONFIG_ONENAND_U_BOOT = y" >> $(obj)include/config.mk
+	@$(MKCONFIG) $@ arm arm1136 apollon - omap24xx
+
+imx31_phycore_eet_config \
+imx31_phycore_config	: unconfig
+	@mkdir -p $(obj)include
+	@if [ -n "$(findstring _eet_,$@)" ]; then			\
+		echo "#define CONFIG_IMX31_PHYCORE_EET" >> $(obj)include/config.h;	\
+	fi
+	@$(MKCONFIG) -n $@ -a imx31_phycore arm arm1136 imx31_phycore - mx31
+
+mx31pdk_config \
+mx31pdk_nand_config	: unconfig
+	@mkdir -p $(obj)include
+	@if [ -n "$(findstring _nand_,$@)" ]; then					\
+		echo "#define CONFIG_NAND_U_BOOT" >> $(obj)include/config.h;		\
+	else										\
+		echo "#define CONFIG_SKIP_LOWLEVEL_INIT" >> $(obj)include/config.h;	\
+	fi
+	@$(MKCONFIG) -n $@ -a mx31pdk arm arm1136 mx31pdk freescale mx31
+
+#########################################################################
+## ARM1176 Systems
+#########################################################################
+smdk6400_noUSB_config	\
+smdk6400_config	:	unconfig
+	@mkdir -p $(obj)include $(obj)board/samsung/smdk6400
+	@mkdir -p $(obj)nand_spl/board/samsung/smdk6400
+	@echo "#define CONFIG_NAND_U_BOOT" > $(obj)include/config.h
+	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
+	@if [ -z "$(findstring smdk6400_noUSB_config,$@)" ]; then			\
+		echo "RAM_TEXT = 0x57e00000" >> $(obj)board/samsung/smdk6400/config.tmp;\
+	else										\
+		echo "RAM_TEXT = 0xc7e00000" >> $(obj)board/samsung/smdk6400/config.tmp;\
+	fi
+	@$(MKCONFIG) smdk6400 arm arm1176 smdk6400 samsung s3c64xx
+	@echo "CONFIG_NAND_U_BOOT = y" >> $(obj)include/config.mk
+
+#========================================================================
+# Nios
+#========================================================================
+
+#########################################################################
+## Nios-II
+#########################################################################
+
+# nios2 generic boards
+NIOS2_GENERIC = nios2-generic
+
+$(NIOS2_GENERIC:%=%_config) : unconfig
+	@$(MKCONFIG) $@ nios2 nios2 nios2-generic altera
+
+#########################################################################
+#########################################################################
+
+clean:
+	@rm -f $(obj)examples/standalone/82559_eeprom			  \
+	       $(obj)examples/standalone/atmel_df_pow2			  \
+	       $(obj)examples/standalone/eepro100_eeprom		  \
+	       $(obj)examples/standalone/hello_world			  \
+	       $(obj)examples/standalone/interrupt			  \
+	       $(obj)examples/standalone/mem_to_mem_idma2intr		  \
+	       $(obj)examples/standalone/sched				  \
+	       $(obj)examples/standalone/smc91111_eeprom		  \
+	       $(obj)examples/standalone/test_burst			  \
+	       $(obj)examples/standalone/timer
+	@rm -f $(obj)examples/api/demo{,.bin}
+	@rm -f $(obj)tools/bmp_logo	   $(obj)tools/easylogo/easylogo  \
+	       $(obj)tools/env/{fw_printenv,fw_setenv} \
+	       $(obj)tools/envcrc					  \
+	       $(obj)tools/gdb/{astest,gdbcont,gdbsend}			  \
+	       $(obj)tools/gen_eth_addr    $(obj)tools/img2srec		  \
+	       $(obj)tools/mkimage	   $(obj)tools/mpc86x_clk	  \
+	       $(obj)tools/ncb		   $(obj)tools/ubsha1		  \
+	       $(obj)tools/mkheader
+	@rm -f $(obj)board/cray/L1/{bootscript.c,bootscript.image}	  \
+	       $(obj)board/matrix_vision/*/bootscript.img		  \
+	       $(obj)board/netstar/{eeprom,crcek,crcit,*.srec,*.bin}	  \
+	       $(obj)board/trab/trab_fkt   $(obj)board/voiceblue/eeprom   \
+	       $(obj)board/armltd/{integratorap,integratorcp}/u-boot.lds  \
+	       $(obj)u-boot.lds						  \
+	       $(obj)arch/blackfin/cpu/bootrom-asm-offsets.[chs]
+	@rm -f $(obj)include/bmp_logo.h
+	@rm -f $(obj)lib/asm-offsets.s
+	@rm -f $(obj)nand_spl/{u-boot.lds,u-boot-spl,u-boot-spl.map,System.map}
+	@rm -f $(obj)onenand_ipl/onenand-{ipl,ipl.bin,ipl.map}
+	@rm -f $(ONENAND_BIN)
+	@rm -f $(obj)onenand_ipl/u-boot.lds
+	@rm -f $(TIMESTAMP_FILE) $(VERSION_FILE)
+	@find $(OBJTREE) -type f \
+		\( -name 'core' -o -name '*.bak' -o -name '*~' \
+		-o -name '*.o'	-o -name '*.a' -o -name '*.exe'	\) -print \
+		| xargs rm -f
+
+clobber:	clean
+	@find $(OBJTREE) -type f \( -name '*.depend' \
+		-o -name '*.srec' -o -name '*.bin' -o -name u-boot.img \) \
+		-print0 \
+		| xargs -0 rm -f
+	@rm -f $(OBJS) $(obj)*.bak $(obj)ctags $(obj)etags $(obj)TAGS \
+		$(obj)cscope.* $(obj)*.*~
+	@rm -f $(obj)u-boot $(obj)u-boot.map $(obj)u-boot.hex $(ALL)
+	@rm -f $(obj)u-boot.kwb
+	@rm -f $(obj)u-boot.imx
+	@rm -f $(obj)tools/{env/crc32.c,inca-swap-bytes}
+	@rm -f $(obj)arch/powerpc/cpu/mpc824x/bedbug_603e.c
+	@rm -fr $(obj)include/asm/proc $(obj)include/asm/arch $(obj)include/asm
+	@rm -fr $(obj)include/generated
+	@[ ! -d $(obj)nand_spl ] || find $(obj)nand_spl -name "*" -type l -print | xargs rm -f
+	@[ ! -d $(obj)onenand_ipl ] || find $(obj)onenand_ipl -name "*" -type l -print | xargs rm -f
+
+ifeq ($(OBJTREE),$(SRCTREE))
+mrproper \
+distclean:	clobber unconfig
+else
+mrproper \
+distclean:	clobber unconfig
+	rm -rf $(obj)*
+endif
 
 backup:
 	F=`basename $(TOPDIR)` ; cd .. ; \
 	gtar --force-local -zcvf `LC_ALL=C date "+$$F-%Y-%m-%d-%T.tar.gz"` $$F
 
-help:
-	@echo  'Cleaning targets:'
-	@echo  '  clean		  - Remove most generated files but keep the config and'
-	@echo  '                    necessities for testing u-boot'
-	@echo  '  clobber	  - Remove most generated files but keep the config'
-	@echo  '  mrproper	  - Remove all generated files + config + various backup files'
-	@echo  '  distclean	  - mrproper + remove editor backup and patch files'
-	@echo  ''
-# uncomment after adding Kconfig feature
-#	@echo  'Configuration targets:'
-#	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
-#	@echo  ''
-	@echo  'Other generic targets:'
-	@echo  '  all		  - Build all necessary images depending on configuration'
-	@echo  '  u-boot	  - Build the bare u-boot'
-	@echo  '  dir/            - Build all files in dir and below'
-	@echo  '  dir/file.[oisS] - Build specified target only'
-	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
-	@echo  '                    (requires a recent binutils and recent build (System.map))'
-	@echo  '  tags/TAGS	  - Generate tags file for editors'
-	@echo  '  cscope	  - Generate cscope index'
-	@echo  '  ubootrelease	  - Output the release version string'
-	@echo  '  ubootversion	  - Output the version stored in Makefile'
-	@echo  ''
-	@echo  'Static analysers'
-	@echo  '  checkstack      - Generate a list of stack hogs'
-	@echo  ''
-	@echo  'Documentation targets:'
-	@$(MAKE) -f $(srctree)/doc/DocBook/Makefile dochelp
-	@echo  ''
-	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
-	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
-	@echo  '  make O=dir [targets] Locate all output files in "dir", including .config'
-	@echo  '  make C=1   [targets] Check all c source with $$CHECK (sparse by default)'
-	@echo  '  make C=2   [targets] Force check of all c source with $$CHECK'
-	@echo  '  make RECORDMCOUNT_WARN=1 [targets] Warn about ignored mcount sections'
-	@echo  '  make W=n   [targets] Enable extra gcc checks, n=1,2,3 where'
-	@echo  '		1: warnings which may be relevant and do not occur too often'
-	@echo  '		2: warnings which occur quite often but may still be relevant'
-	@echo  '		3: more obscure warnings, can most likely be ignored'
-	@echo  '		Multiple levels can be combined with W=12 or W=123'
-	@echo  ''
-	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
-	@echo  'For further info see the ./README file'
-
-
-# Documentation targets
-# ---------------------------------------------------------------------------
-%docs: scripts_basic FORCE
-	$(Q)$(MAKE) $(build)=scripts build_docproc
-	$(Q)$(MAKE) $(build)=doc/DocBook $@
-
-# Dummies...
-PHONY += prepare scripts
-prepare: ;
-scripts: ;
-
-endif #ifeq ($(config-targets),1)
-endif #ifeq ($(mixed-targets),1)
-
-PHONY += checkstack ubootrelease ubootversion
-
-checkstack:
-	$(OBJDUMP) -d u-boot $$(find . -name u-boot-spl) | \
-	$(PERL) $(src)/scripts/checkstack.pl $(ARCH)
-
-ubootrelease:
-	@echo "$(UBOOTVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion $(srctree))"
-
-ubootversion:
-	@echo $(UBOOTVERSION)
-
-# Single targets
-# ---------------------------------------------------------------------------
-# Single targets are compatible with:
-# - build with mixed source and output
-# - build with separate output dir 'make O=...'
-# - external modules
-#
-#  target-dir => where to store outputfile
-#  build-dir  => directory in kernel source tree to use
-
-ifeq ($(KBUILD_EXTMOD),)
-        build-dir  = $(patsubst %/,%,$(dir $@))
-        target-dir = $(dir $@)
-else
-        zap-slash=$(filter-out .,$(patsubst %/,%,$(dir $@)))
-        build-dir  = $(KBUILD_EXTMOD)$(if $(zap-slash),/$(zap-slash))
-        target-dir = $(if $(KBUILD_EXTMOD),$(dir $<),$(dir $@))
-endif
-
-%.s: %.c prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-%.i: %.c prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-%.o: %.c prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-%.lst: %.c prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-%.s: %.S prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-%.o: %.S prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-%.symtypes: %.c prepare scripts FORCE
-	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
-
-# Modules
-/: prepare scripts FORCE
-	$(cmd_crmodverdir)
-	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
-	$(build)=$(build-dir)
-%/: prepare scripts FORCE
-	$(cmd_crmodverdir)
-	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
-	$(build)=$(build-dir)
-%.ko: prepare scripts FORCE
-	$(cmd_crmodverdir)
-	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1)   \
-	$(build)=$(build-dir) $(@:.ko=.o)
-	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
-
-# FIXME Should go into a make.lib or something 
-# ===========================================================================
-
-quiet_cmd_rmdirs = $(if $(wildcard $(rm-dirs)),CLEAN   $(wildcard $(rm-dirs)))
-      cmd_rmdirs = rm -rf $(rm-dirs)
-
-quiet_cmd_rmfiles = $(if $(wildcard $(rm-files)),CLEAN   $(wildcard $(rm-files)))
-      cmd_rmfiles = rm -f $(rm-files)
-
-# read all saved command lines
-
-targets := $(wildcard $(sort $(targets)))
-cmd_files := $(wildcard .*.cmd $(foreach f,$(targets),$(dir $(f)).$(notdir $(f)).cmd))
-
-ifneq ($(cmd_files),)
-  $(cmd_files): ;	# Do not try to update included dependency files
-  include $(cmd_files)
-endif
-
-# Shorthand for $(Q)$(MAKE) -f scripts/Makefile.clean obj=dir
-# Usage:
-# $(Q)$(MAKE) $(clean)=dir
-clean := -f $(if $(KBUILD_SRC),$(srctree)/)scripts/Makefile.clean obj
-
-endif	# skip-makefile
-
-PHONY += FORCE
-FORCE:
-
-# Declare the contents of the .PHONY variable as phony.  We keep that
-# information in a variable so we can use it in if_changed and friends.
-.PHONY: $(PHONY)
+#########################################################################

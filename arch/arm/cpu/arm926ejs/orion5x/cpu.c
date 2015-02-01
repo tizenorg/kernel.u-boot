@@ -1,20 +1,35 @@
 /*
- * Copyright (C) 2010 Albert ARIBAUD <albert.u.boot@aribaud.net>
+ * Copyright (C) 2010 Albert ARIBAUD <albert.aribaud@free.fr>
  *
  * Based on original Kirkwood support which is
  * (C) Copyright 2009
  * Marvell Semiconductor <www.marvell.com>
  * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
 #include <netdev.h>
 #include <asm/cache.h>
-#include <asm/io.h>
 #include <u-boot/md5.h>
-#include <asm/arch/cpu.h>
+#include <asm/arch/orion5x.h>
 #include <hush.h>
 
 #define BUFLEN	16
@@ -178,8 +193,8 @@ u32 orion5x_device_rev(void)
  */
 int print_cpuinfo(void)
 {
-	char dev_str[7]; /* room enough for 0x0000 plus null byte */
-	char rev_str[5]; /* room enough for 0x00 plus null byte */
+	char dev_str[] = "0x0000";
+	char rev_str[] = "0x00";
 	char *dev_name = NULL;
 	char *rev_name = NULL;
 
@@ -276,9 +291,7 @@ int arch_misc_init(void)
 	writel(ORION5X_MPP0_7, ORION5X_MPP_BASE+0x00);
 	writel(ORION5X_MPP8_15, ORION5X_MPP_BASE+0x04);
 	writel(ORION5X_MPP16_23, ORION5X_MPP_BASE+0x50);
-	writel(ORION5X_GPIO_OUT_VALUE, ORION5X_GPIO_BASE+0x00);
 	writel(ORION5X_GPIO_OUT_ENABLE, ORION5X_GPIO_BASE+0x04);
-	writel(ORION5X_GPIO_IN_POLARITY, ORION5X_GPIO_BASE+0x0c);
 
 	/* initialize timer */
 	timer_init_r();

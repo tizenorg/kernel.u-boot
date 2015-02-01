@@ -1,16 +1,19 @@
-/*
- * Copyright (C) 2012 Samsung Electronics
+/* linux/arm/arch/plat-s5p/include/plat/mipi_dsim.h
  *
- * Author: InKi Dae <inki.dae@samsung.com>
- * Author: Donghwa Lee <dh09.lee@samsung.com>
+ * Platform data header for Samsung SoC MIPI-DSIM.
  *
- * SPDX-License-Identifier:	GPL-2.0+
- */
+ * Copyright (c) 2011 Samsung Electronics Co., Ltd
+ *
+ * InKi Dae <inki.dae@samsung.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+*/
 
 #ifndef _DSIM_H
 #define _DSIM_H
 
-#include <linux/list.h>
 #include <linux/fb.h>
 
 #define PANEL_NAME_SIZE		(32)
@@ -59,55 +62,7 @@ enum mipi_dsim_pixel_format {
 	DSIM_24BPP_888
 };
 
-/* MIPI DSI Processor-to-Peripheral transaction types */
-enum {
-	MIPI_DSI_V_SYNC_START				= 0x01,
-	MIPI_DSI_V_SYNC_END				= 0x11,
-	MIPI_DSI_H_SYNC_START				= 0x21,
-	MIPI_DSI_H_SYNC_END				= 0x31,
-
-	MIPI_DSI_COLOR_MODE_OFF				= 0x02,
-	MIPI_DSI_COLOR_MODE_ON				= 0x12,
-	MIPI_DSI_SHUTDOWN_PERIPHERAL			= 0x22,
-	MIPI_DSI_TURN_ON_PERIPHERAL			= 0x32,
-
-	MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM		= 0x03,
-	MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM		= 0x13,
-	MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM		= 0x23,
-
-	MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM		= 0x04,
-	MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM		= 0x14,
-	MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM		= 0x24,
-
-	MIPI_DSI_DCS_SHORT_WRITE			= 0x05,
-	MIPI_DSI_DCS_SHORT_WRITE_PARAM			= 0x15,
-
-	MIPI_DSI_DCS_READ				= 0x06,
-
-	MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE		= 0x37,
-
-	MIPI_DSI_END_OF_TRANSMISSION			= 0x08,
-
-	MIPI_DSI_NULL_PACKET				= 0x09,
-	MIPI_DSI_BLANKING_PACKET			= 0x19,
-	MIPI_DSI_GENERIC_LONG_WRITE			= 0x29,
-	MIPI_DSI_DCS_LONG_WRITE				= 0x39,
-
-	MIPI_DSI_LOOSELY_PACKED_PIXEL_STREAM_YCBCR20	= 0x0c,
-	MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR24		= 0x1c,
-	MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16		= 0x2c,
-
-	MIPI_DSI_PACKED_PIXEL_STREAM_30			= 0x0d,
-	MIPI_DSI_PACKED_PIXEL_STREAM_36			= 0x1d,
-	MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12		= 0x3d,
-
-	MIPI_DSI_PACKED_PIXEL_STREAM_16			= 0x0e,
-	MIPI_DSI_PACKED_PIXEL_STREAM_18			= 0x1e,
-	MIPI_DSI_PIXEL_STREAM_3BYTE_18			= 0x2e,
-	MIPI_DSI_PACKED_PIXEL_STREAM_24			= 0x3e,
-};
-
-/*
+/**
  * struct mipi_dsim_config - interface for configuring mipi-dsi controller.
  *
  * @auto_flush: enable or disable Auto flush of MD FIFO using VSYNC pulse.
@@ -223,17 +178,26 @@ struct mipi_dsim_config {
 	unsigned short			rx_timeout;
 };
 
-/*
+/**
  * struct mipi_dsim_device - global interface for mipi-dsi driver.
  *
- * @dsim_config: infomation for configuring mipi-dsi controller.
+ * @dev: driver model representation of the device.
+ * @id: unique device id.
+ * @clock: pointer to MIPI-DSI clock of clock framework.
+ * @irq: interrupt number to MIPI-DSI controller.
+ * @reg_base: base address to memory mapped SRF of MIPI-DSI controller.
+ *	(virtual address)
+ * @lock: the mutex protecting this data structure.
+ * @dsim_info: infomation for configuring mipi-dsi controller.
  * @master_ops: callbacks to mipi-dsi operations.
  * @dsim_lcd_dev: pointer to activated ddi device.
  *	(it would be registered by mipi-dsi driver.)
  * @dsim_lcd_drv: pointer to activated_ddi driver.
  *	(it would be registered by mipi-dsi driver.)
+ * @lcd_info: pointer to mipi_lcd_info structure.
  * @state: specifies status of MIPI-DSI controller.
  *	the status could be RESET, INIT, STOP, HSCLKEN and ULPS.
+ * @resume_complete: indicates whether resume operation is completed or not.
  * @data_lane: specifiec enabled data lane number.
  *	this variable would be set by driver according to e_no_data_lane
  *	automatically.
@@ -250,11 +214,11 @@ struct mipi_dsim_device {
 	unsigned int			data_lane;
 	enum mipi_dsim_byte_clk_src	e_clk_src;
 
-	struct exynos_platform_mipi_dsim	*pd;
+	struct s5p_platform_mipi_dsim	*pd;
 };
 
-/*
- * struct exynos_platform_mipi_dsim - interface to platform data
+/**
+ * struct s5p_platform_mipi_dsim - interface to platform data
  *	for mipi-dsi driver.
  *
  * @lcd_panel_name: specifies lcd panel name registered to mipi-dsi driver.
@@ -262,11 +226,10 @@ struct mipi_dsim_device {
  * @dsim_config: pointer of structure for configuring mipi-dsi controller.
  * @lcd_panel_info: pointer for lcd panel specific structure.
  *	this structure specifies width, height, timing and polarity and so on.
- * @lcd_power: callback pointer for enabling or disabling lcd power.
  * @mipi_power: callback pointer for enabling or disabling mipi power.
  * @phy_enable: pointer to a callback controlling D-PHY enable/reset
  */
-struct exynos_platform_mipi_dsim {
+struct s5p_platform_mipi_dsim {
 	char				lcd_panel_name[PANEL_NAME_SIZE];
 
 	struct mipi_dsim_config		*dsim_config;
@@ -274,12 +237,11 @@ struct exynos_platform_mipi_dsim {
 
 	int (*lcd_power)(void);
 	int (*mipi_power)(void);
-	void (*phy_enable)(unsigned int dev_index, unsigned int enable);
+	int (*phy_enable)(int on, u32 reset);
 };
-
-/*
+/**
  * struct mipi_dsim_master_ops - callbacks to mipi-dsi operations.
- *
+ * 
  * @cmd_write: transfer command to lcd panel at LP mode.
  * @cmd_read: read command from rx register.
  * @get_dsim_frame_done: get the status that all screen data have been
@@ -289,9 +251,10 @@ struct exynos_platform_mipi_dsim {
  * @trigger: trigger display controller.
  *	- this one would be used only in case of CPU mode.
  */
+
 struct mipi_dsim_master_ops {
 	int (*cmd_write)(struct mipi_dsim_device *dsim, unsigned int data_id,
-		const unsigned char *data0, unsigned int data1);
+		unsigned int data0, unsigned int data1);
 	int (*cmd_read)(struct mipi_dsim_device *dsim, unsigned int data_id,
 		unsigned int data0, unsigned int data1);
 	int (*get_dsim_frame_done)(struct mipi_dsim_device *dsim);
@@ -301,28 +264,34 @@ struct mipi_dsim_master_ops {
 	void (*trigger)(struct fb_info *info);
 };
 
-/*
+/**
  * device structure for mipi-dsi based lcd panel.
  *
  * @name: name of the device to use with this device, or an
  *	alias for that name.
+ * @dev: driver model representation of the device.
  * @id: id of device to be registered.
  * @bus_id: bus id for identifing connected bus
  *	and this bus id should be same as id of mipi_dsim_device.
+ * @irq: irq number for signaling when framebuffer transfer of
+ * 	lcd panel module is completed.
+ *	this irq would be used only for MIPI-DSI based CPU mode lcd panel.
  * @master: pointer to mipi-dsi master device object.
  * @platform_data: lcd panel specific platform data.
  */
 struct mipi_dsim_lcd_device {
 	char			*name;
+	char			*panel_id;
+	int			panel_type;
 	int			id;
 	int			bus_id;
-	int			reverse_panel;
+	int			reverse;
 
 	struct mipi_dsim_device *master;
 	void			*platform_data;
 };
 
-/*
+/**
  * driver structure for mipi-dsi based lcd panel.
  *
  * this structure should be registered by lcd panel driver.
@@ -333,9 +302,6 @@ struct mipi_dsim_lcd_device {
  *	alias for that name.
  * @id: id of driver to be registered.
  *	this id would be used for finding device object registered.
- * @mipi_panel_init: callback pointer for initializing lcd panel based on mipi
- *	dsi interface.
- * @mipi_display_on: callback pointer for lcd panel display on.
  */
 struct mipi_dsim_lcd_driver {
 	char			*name;
@@ -345,31 +311,27 @@ struct mipi_dsim_lcd_driver {
 	void	(*mipi_display_on)(struct mipi_dsim_device *dsim_dev);
 };
 
-#ifdef CONFIG_EXYNOS_MIPI_DSIM
-int exynos_mipi_dsi_init(void);
-#else
-static inline int exynos_mipi_dsi_init(void)
-{
-	return 0;
-}
-#endif
+int s5p_mipi_dsi_init(void);
 
-/*
+/**
  * register mipi_dsim_lcd_driver object defined by lcd panel driver
  * to mipi-dsi driver.
  */
-int exynos_mipi_dsi_register_lcd_driver(struct mipi_dsim_lcd_driver
+int s5p_mipi_dsi_register_lcd_driver(struct mipi_dsim_lcd_driver
 						*lcd_drv);
 
-/*
+/**
  * register mipi_dsim_lcd_device to mipi-dsi master.
  */
-int exynos_mipi_dsi_register_lcd_device(struct mipi_dsim_lcd_device
+int s5p_mipi_dsi_register_lcd_device(struct mipi_dsim_lcd_device
 						*lcd_dev);
 
-void exynos_set_dsim_platform_data(struct exynos_platform_mipi_dsim *pd);
-
-/* panel driver init based on mipi dsi interface */
-void s6e8ax0_init(void);
+/**
+ * s5p_dsim_phy_enable - global MIPI-DSI receiver D-PHY control
+ * @pdev: MIPI-DSIM platform device
+ * @on: true to enable D-PHY and deassert its reset
+ *	false to disable D-PHY
+ */
+int s5p_dsim_phy_enable(int on);
 
 #endif /* _DSIM_H */

@@ -23,9 +23,6 @@
 #include <asm/errno.h>
 #include <jffs2/load_kernel.h>
 
-#undef ubi_msg
-#define ubi_msg(fmt, ...) printf("UBI: " fmt "\n", ##__VA_ARGS__)
-
 #define DEV_TYPE_NONE		0
 #define DEV_TYPE_NAND		1
 #define DEV_TYPE_ONENAND	2
@@ -123,27 +120,6 @@ static int ubi_info(int layout)
 	return 0;
 }
 
-static int ubi_check_volumename(const struct ubi_volume *vol, char *name)
-{
-	return strcmp(vol->name, name);
-}
-
-static int ubi_check(char *name)
-{
-	int i;
-
-	for (i = 0; i < (ubi->vtbl_slots + 1); i++) {
-		if (!ubi->volumes[i])
-			continue;	/* Empty record */
-
-		if (!ubi_check_volumename(ubi->volumes[i], name))
-			return 0;
-	}
-
-	return -EEXIST;
-}
-
-
 static int verify_mkvol_req(const struct ubi_device *ubi,
 			    const struct ubi_mkvol_req *req)
 {
@@ -188,7 +164,7 @@ bad:
 	return err;
 }
 
-static int ubi_create_vol(char *volume, int64_t size, int dynamic)
+static int ubi_create_vol(char *volume, int size, int dynamic)
 {
 	struct ubi_mkvol_req req;
 	int err;
@@ -212,7 +188,7 @@ static int ubi_create_vol(char *volume, int64_t size, int dynamic)
 		printf("verify_mkvol_req failed %d\n", err);
 		return err;
 	}
-	printf("Creating %s volume %s of size %lld\n",
+	printf("Creating %s volume %s of size %d\n",
 		dynamic ? "dynamic" : "static", volume, size);
 	/* Call real ubi create volume */
 	return ubi_create_volume(ubi, &req);
@@ -287,14 +263,27 @@ out_err:
 	return err;
 }
 
-int ubi_volume_continue_write(char *volume, void *buf, size_t size)
+static int ubi_volume_write(char *volume, void *buf, size_t size)
 {
 	int err = 1;
+	int rsvd_bytes = 0;
 	struct ubi_volume *vol;
 
 	vol = ubi_find_volume(volume);
 	if (vol == NULL)
 		return ENODEV;
+
+	rsvd_bytes = vol->reserved_pebs * (ubi->leb_size - vol->data_pad);
+	if (size < 0 || size > rsvd_bytes) {
+		printf("size > volume size! Aborting!\n");
+		return EINVAL;
+	}
+
+	err = ubi_start_update(ubi, vol, size);
+	if (err < 0) {
+		printf("Cannot start volume update\n");
+		return -err;
+	}
 
 	err = ubi_more_update_data(ubi, vol, buf, size);
 	if (err < 0) {
@@ -319,43 +308,15 @@ int ubi_volume_continue_write(char *volume, void *buf, size_t size)
 		ubi_gluebi_updated(vol);
 	}
 
+	printf("%d bytes written to volume %s\n", size, volume);
+
 	return 0;
 }
 
-int ubi_volume_begin_write(char *volume, void *buf, size_t size,
-	size_t full_size)
-{
-	int err = 1;
-	int rsvd_bytes = 0;
-	struct ubi_volume *vol;
-
-	vol = ubi_find_volume(volume);
-	if (vol == NULL)
-		return ENODEV;
-
-	rsvd_bytes = vol->reserved_pebs * (ubi->leb_size - vol->data_pad);
-	if (size < 0 || size > rsvd_bytes) {
-		printf("size > volume size! Aborting!\n");
-		return EINVAL;
-	}
-
-	err = ubi_start_update(ubi, vol, full_size);
-	if (err < 0) {
-		printf("Cannot start volume update\n");
-		return -err;
-	}
-
-	return ubi_volume_continue_write(volume, buf, size);
-}
-
-int ubi_volume_write(char *volume, void *buf, size_t size)
-{
-	return ubi_volume_begin_write(volume, buf, size, size);
-}
-
-int ubi_volume_read(char *volume, char *buf, size_t size)
+static int ubi_volume_read(char *volume, char *buf, size_t size)
 {
 	int err, lnum, off, len, tbuf_size;
+	size_t count_save = size;
 	void *tbuf;
 	unsigned long long tmp;
 	struct ubi_volume *vol;
@@ -364,6 +325,8 @@ int ubi_volume_read(char *volume, char *buf, size_t size)
 	vol = ubi_find_volume(volume);
 	if (vol == NULL)
 		return ENODEV;
+
+	printf("Read %d bytes from volume %s to %p\n", size, volume, buf);
 
 	if (vol->updating) {
 		printf("updating");
@@ -384,7 +347,7 @@ int ubi_volume_read(char *volume, char *buf, size_t size)
 	if (vol->corrupted)
 		printf("read from corrupted volume %d", vol->vol_id);
 	if (offp + size > vol->used_bytes)
-		size = vol->used_bytes - offp;
+		count_save = size = vol->used_bytes - offp;
 
 	tbuf_size = vol->usable_leb_size;
 	if (size < tbuf_size)
@@ -469,82 +432,26 @@ static int ubi_dev_scan(struct mtd_info *info, char *ubidev,
 	return 0;
 }
 
-int ubi_part(char *part_name, const char *vid_header_offset)
+static int do_ubi(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
+	size_t size = 0;
+	ulong addr = 0;
 	int err = 0;
-	char mtd_dev[16];
-	struct mtd_device *dev;
-	struct part_info *part;
-	u8 pnum;
+
+	if (argc < 2)
+		return cmd_usage(cmdtp);
 
 	if (mtdparts_init() != 0) {
 		printf("Error initializing mtdparts!\n");
 		return 1;
 	}
 
-#ifdef CONFIG_CMD_UBIFS
-	/*
-	 * Automatically unmount UBIFS partition when user
-	 * changes the UBI device. Otherwise the following
-	 * UBIFS commands will crash.
-	 */
-	if (ubifs_is_mounted())
-		cmd_ubifs_umount();
-#endif
-
-	/* todo: get dev number for NAND... */
-	ubi_dev.nr = 0;
-
-	/*
-	 * Call ubi_exit() before re-initializing the UBI subsystem
-	 */
-	if (ubi_initialized) {
-		ubi_exit();
-		del_mtd_partitions(ubi_dev.mtd_info);
-	}
-
-	/*
-	 * Search the mtd device number where this partition
-	 * is located
-	 */
-	if (find_dev_and_part(part_name, &dev, &pnum, &part)) {
-		printf("Partition %s not found!\n", part_name);
-		return 1;
-	}
-	sprintf(mtd_dev, "%s%d", MTD_DEV_TYPE(dev->id->type), dev->id->num);
-	ubi_dev.mtd_info = get_mtd_device_nm(mtd_dev);
-	if (IS_ERR(ubi_dev.mtd_info)) {
-		printf("Partition %s not found on device %s!\n", part_name,
-		       mtd_dev);
-		return 1;
-	}
-
-	ubi_dev.selected = 1;
-
-	strcpy(ubi_dev.part_name, part_name);
-	err = ubi_dev_scan(ubi_dev.mtd_info, ubi_dev.part_name,
-			vid_header_offset);
-	if (err) {
-		printf("UBI init error %d\n", err);
-		ubi_dev.selected = 0;
-		return err;
-	}
-
-	ubi = ubi_devices[0];
-
-	return 0;
-}
-
-static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	int64_t size = 0;
-	ulong addr = 0;
-
-	if (argc < 2)
-		return CMD_RET_USAGE;
-
 	if (strcmp(argv[1], "part") == 0) {
+		char mtd_dev[16];
+		struct mtd_device *dev;
+		struct part_info *part;
 		const char *vid_header_offset = NULL;
+		u8 pnum;
 
 		/* Print current partition */
 		if (argc == 2) {
@@ -559,12 +466,60 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 
 		if (argc < 3)
-			return CMD_RET_USAGE;
+			return cmd_usage(cmdtp);
+
+#ifdef CONFIG_CMD_UBIFS
+		/*
+		 * Automatically unmount UBIFS partition when user
+		 * changes the UBI device. Otherwise the following
+		 * UBIFS commands will crash.
+		 */
+		if (ubifs_is_mounted())
+			cmd_ubifs_umount();
+#endif
+
+		/* todo: get dev number for NAND... */
+		ubi_dev.nr = 0;
+
+		/*
+		 * Call ubi_exit() before re-initializing the UBI subsystem
+		 */
+		if (ubi_initialized) {
+			ubi_exit();
+			del_mtd_partitions(ubi_dev.mtd_info);
+		}
+
+		/*
+		 * Search the mtd device number where this partition
+		 * is located
+		 */
+		if (find_dev_and_part(argv[2], &dev, &pnum, &part)) {
+			printf("Partition %s not found!\n", argv[2]);
+			return 1;
+		}
+		sprintf(mtd_dev, "%s%d", MTD_DEV_TYPE(dev->id->type), dev->id->num);
+		ubi_dev.mtd_info = get_mtd_device_nm(mtd_dev);
+		if (IS_ERR(ubi_dev.mtd_info)) {
+			printf("Partition %s not found on device %s!\n", argv[2], mtd_dev);
+			return 1;
+		}
+
+		ubi_dev.selected = 1;
 
 		if (argc > 3)
 			vid_header_offset = argv[3];
+		strcpy(ubi_dev.part_name, argv[2]);
+		err = ubi_dev_scan(ubi_dev.mtd_info, ubi_dev.part_name,
+				vid_header_offset);
+		if (err) {
+			printf("UBI init error %d\n", err);
+			ubi_dev.selected = 0;
+			return err;
+		}
 
-		return ubi_part(argv[2], vid_header_offset);
+		ubi = ubi_devices[0];
+
+		return 0;
 	}
 
 	if ((strcmp(argv[1], "part") != 0) && (!ubi_dev.selected)) {
@@ -577,14 +532,6 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (argc > 2 && !strncmp(argv[2], "l", 1))
 			layout = 1;
 		return ubi_info(layout);
-	}
-
-	if (strcmp(argv[1], "check") == 0) {
-		if (argc > 2)
-			return ubi_check(argv[2]);
-
-		printf("Error, no volume name passed\n");
-		return 1;
 	}
 
 	if (strncmp(argv[1], "create", 6) == 0) {
@@ -605,13 +552,13 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 		/* E.g., create volume size */
 		if (argc == 4) {
-			size = simple_strtoull(argv[3], NULL, 16);
+			size = simple_strtoul(argv[3], NULL, 16);
 			argc--;
 		}
 		/* Use maximum available size */
 		if (!size) {
-			size = (int64_t)ubi->avail_pebs * ubi->leb_size;
-			printf("No size specified -> Using max size (%lld)\n", size);
+			size = ubi->avail_pebs * ubi->leb_size;
+			printf("No size specified -> Using max size (%u)\n", size);
 		}
 		/* E.g., create volume */
 		if (argc == 3)
@@ -625,8 +572,6 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (strncmp(argv[1], "write", 5) == 0) {
-		int ret;
-
 		if (argc < 5) {
 			printf("Please see usage\n");
 			return 1;
@@ -635,26 +580,7 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		addr = simple_strtoul(argv[2], NULL, 16);
 		size = simple_strtoul(argv[4], NULL, 16);
 
-		if (strlen(argv[1]) == 10 &&
-		    strncmp(argv[1] + 5, ".part", 5) == 0) {
-			if (argc < 6) {
-				ret = ubi_volume_continue_write(argv[3],
-						(void *)addr, size);
-			} else {
-				size_t full_size;
-				full_size = simple_strtoul(argv[5], NULL, 16);
-				ret = ubi_volume_begin_write(argv[3],
-						(void *)addr, size, full_size);
-			}
-		} else {
-			ret = ubi_volume_write(argv[3], (void *)addr, size);
-		}
-		if (!ret) {
-			printf("%lld bytes written to volume %s\n", size,
-			       argv[3]);
-		}
-
-		return ret;
+		return ubi_volume_write(argv[3], (void *)addr, size);
 	}
 
 	if (strncmp(argv[1], "read", 4) == 0) {
@@ -672,12 +598,8 @@ static int do_ubi(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			argc--;
 		}
 
-		if (argc == 3) {
-			printf("Read %lld bytes from volume %s to %lx\n", size,
-			       argv[3], addr);
-
+		if (argc == 3)
 			return ubi_volume_read(argv[3], (char *)addr, size);
-		}
 	}
 
 	printf("Please see usage\n");
@@ -692,14 +614,10 @@ U_BOOT_CMD(
 		" header offset)\n"
 	"ubi info [l[ayout]]"
 		" - Display volume and ubi layout information\n"
-	"ubi check volumename"
-		" - check if volumename exists\n"
 	"ubi create[vol] volume [size] [type]"
 		" - create volume name with size\n"
 	"ubi write[vol] address volume size"
 		" - Write volume from address with size\n"
-	"ubi write.part address volume size [fullsize]\n"
-		" - Write part of a volume from address\n"
 	"ubi read[vol] address volume [size]"
 		" - Read volume to address with size\n"
 	"ubi remove[vol] volume"

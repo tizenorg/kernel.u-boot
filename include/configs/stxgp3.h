@@ -7,7 +7,23 @@
  * (C) Copyright 2002,2003 Motorola,Inc.
  * Xianghua Xiao <X.Xiao@motorola.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /* mpc8560ads board configuration file */
@@ -22,6 +38,7 @@
 /* High Level Configuration Options */
 #define CONFIG_BOOKE		1	/* BOOKE		*/
 #define CONFIG_E500		1	/* BOOKE e500 family	*/
+#define CONFIG_MPC85xx		1	/* MPC8540/MPC8560	*/
 #define CONFIG_CPM2		1	/* has CPM2 */
 #define CONFIG_STXGP3		1	/* Silicon Tx GPPP board specific*/
 #define CONFIG_MPC8560		1
@@ -92,12 +109,15 @@
 
 #ifdef CONFIG_SYS_RAMBOOT
 #define CONFIG_SYS_CCSRBAR_DEFAULT	0x40000000	/* CCSRBAR by BDI cfg	*/
+#else
+#define CONFIG_SYS_CCSRBAR_DEFAULT	0xff700000	/* CCSRBAR Default	*/
 #endif
-#define CONFIG_SYS_CCSRBAR		0xfdf00000
-#define CONFIG_SYS_CCSRBAR_PHYS_LOW	CONFIG_SYS_CCSRBAR
+#define CONFIG_SYS_CCSRBAR             0xfdf00000      /* relocated CCSRBAR    */
+#define CONFIG_SYS_CCSRBAR_PHYS	CONFIG_SYS_CCSRBAR	/* physical addr of CCSRBAR */
+#define CONFIG_SYS_IMMR		CONFIG_SYS_CCSRBAR	/* PQII uses CONFIG_SYS_IMMR	*/
 
 /* DDR Setup */
-#define CONFIG_SYS_FSL_DDR1
+#define CONFIG_FSL_DDR1
 #define CONFIG_SPD_EEPROM		/* Use SPD EEPROM for DDR setup*/
 #define CONFIG_DDR_SPD
 #undef CONFIG_FSL_DDR_INTERACTIVE
@@ -156,23 +176,24 @@
 /* Use the HUSH parser */
 #define CONFIG_SYS_HUSH_PARSER
 #ifdef  CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 #endif
 
 /*
  * I2C
  */
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_FSL
-#define CONFIG_SYS_FSL_I2C_SPEED	400000
-#define CONFIG_SYS_FSL_I2C_SLAVE	0x7F
-#define CONFIG_SYS_FSL_I2C_OFFSET	0x3000
-
+#define CONFIG_FSL_I2C		/* Use FSL common I2C driver */
+#define CONFIG_HARD_I2C		/* I2C with hardware support*/
+#undef	CONFIG_SOFT_I2C			/* I2C bit-banged */
+#define CONFIG_SYS_I2C_SPEED		400000	/* I2C speed and slave address	*/
+#define CONFIG_SYS_I2C_SLAVE		0x7F
 #if 0
 #define CONFIG_SYS_I2C_NOPROBES        {0x00}  /* Don't probe these addrs */
 #else
 /* I did the 'if 0' so we could keep the syntax above if ever needed. */
 #undef CONFIG_SYS_I2C_NOPROBES
 #endif
+#define CONFIG_SYS_I2C_OFFSET		0x3000
 
 /* RapdIO Map configuration, mapped 1:1.
 */
@@ -191,6 +212,7 @@
 
 #if defined(CONFIG_PCI)			/* PCI Ethernet card */
 
+#define CONFIG_NET_MULTI
 #define CONFIG_PCI_PNP			/* do pci plug-and-play */
 
 #undef CONFIG_EEPRO100
@@ -208,6 +230,10 @@
 #endif /* CONFIG_PCI */
 
 #if defined(CONFIG_TSEC_ENET)
+
+#ifndef CONFIG_NET_MULTI
+#define CONFIG_NET_MULTI	1
+#endif
 
 #define CONFIG_MII		1	/* MII PHY management		*/
 
@@ -237,8 +263,8 @@
    * - Select bus for bd/buffers
    * - Full duplex
    */
-  #define CONFIG_SYS_CMXFCR_MASK2      (CMXFCR_FC2 | CMXFCR_RF2CS_MSK | CMXFCR_TF2CS_MSK)
-  #define CONFIG_SYS_CMXFCR_VALUE2     (CMXFCR_RF2CS_CLK13 | CMXFCR_TF2CS_CLK14)
+  #define CONFIG_SYS_CMXFCR_MASK       (CMXFCR_FC2 | CMXFCR_RF2CS_MSK | CMXFCR_TF2CS_MSK)
+  #define CONFIG_SYS_CMXFCR_VALUE      (CMXFCR_RF2CS_CLK13 | CMXFCR_TF2CS_CLK14)
   #define CONFIG_SYS_CPMFCR_RAMTYPE    0
 #if 0
   #define CONFIG_SYS_FCC_PSMR          (FCC_PSMR_FDE)
@@ -330,6 +356,7 @@
 #define CONFIG_SYS_MAXARGS	16		/* max number of command args	*/
 #define CONFIG_SYS_BARGSIZE	CONFIG_SYS_CBSIZE	/* Boot Argument Buffer Size	*/
 #define CONFIG_SYS_LOAD_ADDR	0x1000000	/* default load address */
+#define CONFIG_SYS_HZ		1000		/* decrementer freq: 1 ms ticks */
 
 /*
  * For booting Linux, the board info and command line data
@@ -340,6 +367,7 @@
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	230400	/* speed to run kgdb serial port */
+#define CONFIG_KGDB_SER_INDEX	2	/* which serial port to use */
 #endif
 
 /*Note: change below for your network setting!!! */
@@ -357,8 +385,8 @@
 #define CONFIG_GATEWAYIP	192.168.85.1
 #define CONFIG_NETMASK		255.255.255.0
 #define CONFIG_HOSTNAME		STX_GP3
-#define CONFIG_ROOTPATH		"/gppproot"
-#define CONFIG_BOOTFILE		"uImage"
+#define CONFIG_ROOTPATH		/gppproot
+#define CONFIG_BOOTFILE		uImage
 #define CONFIG_LOADADDR		0x1000000
 
 #endif	/* __CONFIG_H */

@@ -5,33 +5,42 @@
  * Ronetix GmbH <www.ronetix.at>
  *
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian@popies.net>
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
  * Lead Tech Design <www.leadtechdesign.com>
  *
  * Configuation settings for the PM9G45 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/*
- * SoC must be defined first, before hardware.h is included.
- * In this case SoC is defined in boards.cfg.
- */
-#include <asm/hardware.h>
-
+#define CONFIG_ARM926EJS	1	/* This is an ARM926EJS Core */
 #define CONFIG_PM9G45		1	/* It's an Ronetix PM9G45 */
-#define CONFIG_SYS_AT91_CPU_NAME	"AT91SAM9G45"
-
-#define MACH_TYPE_PM9G45	2672
-#define CONFIG_MACH_TYPE	MACH_TYPE_PM9G45
+#define CONFIG_AT91SAM9G45	1	/* It's an Atmel AT91SAM9G45 SoC */
 
 /* ARM asynchronous clock */
 #define CONFIG_SYS_AT91_MAIN_CLOCK	12000000 /* from 12 MHz crystal */
-#define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock xtal */
-#define CONFIG_SYS_TEXT_BASE		0x73f00000
+#define CONFIG_SYS_HZ			1000
+#define CONFIG_SYS_TEXT_BASE	0x73f00000
+#define CONFIG_AT91FAMILY
 
 #define CONFIG_ARCH_CPU_INIT
 
@@ -40,22 +49,20 @@
 #define CONFIG_INITRD_TAG	1
 
 #define CONFIG_SKIP_LOWLEVEL_INIT
-#define CONFIG_BOARD_EARLY_INIT_F
 
 /*
  * Hardware drivers
  */
 #define CONFIG_AT91_GPIO	1
 #define CONFIG_ATMEL_USART	1
-#define CONFIG_USART_BASE		ATMEL_BASE_DBGU
-#define	CONFIG_USART_ID			ATMEL_ID_SYS
+#define CONFIG_USART3		1	/* USART 3 is DBGU */
 
 #define CONFIG_SYS_USE_NANDFLASH	1
 
 /* LED */
 #define CONFIG_AT91_LED
-#define CONFIG_RED_LED		GPIO_PIN_PD(31) /* this is the user1 led */
-#define CONFIG_GREEN_LED	GPIO_PIN_PD(0)  /* this is the user2 led */
+#define	CONFIG_RED_LED		AT91_PIO_PORTD, 31 /* this is the user1 led */
+#define	CONFIG_GREEN_LED	AT91_PIO_PORTD, 0 /* this is the user2 led */
 
 #define CONFIG_BOOTDELAY	3
 
@@ -98,6 +105,7 @@
 
 /* NAND flash */
 #ifdef CONFIG_CMD_NAND
+#define CONFIG_NAND_MAX_CHIPS		1
 #define CONFIG_NAND_ATMEL
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		0x40000000
@@ -106,20 +114,20 @@
 #define CONFIG_SYS_NAND_MASK_ALE	(1 << 21)
 /* our CLE is AD22 */
 #define CONFIG_SYS_NAND_MASK_CLE	(1 << 22)
-#define CONFIG_SYS_NAND_ENABLE_PIN	GPIO_PIN_PC(14)
-#define CONFIG_SYS_NAND_READY_PIN	GPIO_PIN_PD(3)
+#define CONFIG_SYS_NAND_ENABLE_PIN	AT91_PIO_PORTC, 14
+#define CONFIG_SYS_NAND_READY_PIN	AT91_PIO_PORTD, 3
 
 #endif
 
 /* Ethernet */
 #define CONFIG_MACB			1
 #define CONFIG_RMII			1
+#define CONFIG_NET_MULTI		1
 #define CONFIG_NET_RETRY_COUNT		20
 #define CONFIG_RESET_PHY_R		1
 
 /* USB */
 #define CONFIG_USB_ATMEL
-#define CONFIG_USB_ATMEL_CLK_SEL_UPLL
 #define CONFIG_USB_OHCI_NEW		1
 #define CONFIG_DOS_PARTITION		1
 #define CONFIG_SYS_USB_OHCI_CPU_INIT	1
@@ -151,6 +159,7 @@
 				"rootfstype=jffs2"
 
 #define CONFIG_BAUDRATE			115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
 
 #define CONFIG_SYS_PROMPT		"U-Boot> "
 #define CONFIG_SYS_CBSIZE		256
@@ -161,6 +170,7 @@
 #define CONFIG_CMDLINE_EDITING		1
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 /*
  * Size of malloc() pool
@@ -171,5 +181,11 @@
 #define CONFIG_SYS_SDRAM_BASE	PHYS_SDRAM
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_SDRAM_BASE + 0x1000 - \
 				GENERATED_GBL_DATA_SIZE)
+
+#define CONFIG_STACKSIZE		(32*1024)	/* regular stack */
+
+#ifdef CONFIG_USE_IRQ
+#error CONFIG_USE_IRQ not supported
+#endif
 
 #endif

@@ -9,7 +9,23 @@
  * (C) Copyright 2010
  * Matthias Weisser <weisserm@arcor.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef MB86R0X_H
@@ -480,48 +496,6 @@ struct mb86r0x_gdc {
 	uint32_t pad07[7*1024];
 	struct mb86r0x_gdc_geom geom;
 	uint32_t pad08[7*1024];
-};
-
-/* mb86r0x ddr2c */
-struct mb86r0x_ddr2c {
-	uint16_t dric;
-	uint16_t dric1;
-	uint16_t dric2;
-	uint16_t drca;
-	uint16_t drcm;
-	uint16_t drcst1;
-	uint16_t drcst2;
-	uint16_t drcr;
-	uint16_t pad00[8];
-	uint16_t drcf;
-	uint16_t pad01[7];
-	uint16_t drasr;
-	uint16_t pad02[15];
-	uint16_t drims;
-	uint16_t pad03[7];
-	uint16_t dros;
-	uint16_t pad04;
-	uint16_t dribsodt1;
-	uint16_t dribsocd;
-	uint16_t dribsocd2;
-	uint16_t pad05[3];
-	uint16_t droaba;
-	uint16_t pad06[9];
-	uint16_t drobs;
-	uint16_t pad07[5];
-	uint16_t drimr1;
-	uint16_t drimr2;
-	uint16_t drimr3;
-	uint16_t drimr4;
-	uint16_t droisr1;
-	uint16_t droisr2;
-};
-
-/* mb86r0x memc */
-struct mb86r0x_memc {
-	uint32_t mcfmode[8];
-	uint32_t mcftim[8];
-	uint32_t mcfarea[8];
 };
 
 #endif /* __ASSEMBLY__ */

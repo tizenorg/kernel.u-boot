@@ -2,7 +2,23 @@
  * (C) Copyright 2000-2006
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -20,7 +36,10 @@
 #define RESERVED		0xe0
 #define DEFLATED		8
 
-void *gzalloc(void *x, unsigned items, unsigned size)
+void *zalloc(void *, unsigned, unsigned);
+void zfree(void *, void *, unsigned);
+
+void *zalloc(void *x, unsigned items, unsigned size)
 {
 	void *p;
 
@@ -32,7 +51,7 @@ void *gzalloc(void *x, unsigned items, unsigned size)
 	return (p);
 }
 
-void gzfree(void *x, void *addr, unsigned nb)
+void zfree(void *x, void *addr, unsigned nb)
 {
 	free (addr);
 }
@@ -75,8 +94,8 @@ int zunzip(void *dst, int dstlen, unsigned char *src, unsigned long *lenp,
 	z_stream s;
 	int r;
 
-	s.zalloc = gzalloc;
-	s.zfree = gzfree;
+	s.zalloc = zalloc;
+	s.zfree = zfree;
 
 	r = inflateInit2(&s, -MAX_WBITS);
 	if (r != Z_OK) {
@@ -87,16 +106,12 @@ int zunzip(void *dst, int dstlen, unsigned char *src, unsigned long *lenp,
 	s.avail_in = *lenp - offset;
 	s.next_out = dst;
 	s.avail_out = dstlen;
-	do {
-		r = inflate(&s, Z_FINISH);
-		if (stoponerr == 1 && r != Z_STREAM_END &&
-		    (s.avail_out == 0 || r != Z_BUF_ERROR)) {
-			printf("Error: inflate() returned %d\n", r);
-			inflateEnd(&s);
-			return -1;
-		}
-		s.avail_in = *lenp - offset - (int)(s.next_out - (unsigned char*)dst);
-	} while (r == Z_BUF_ERROR);
+	r = inflate(&s, Z_FINISH);
+	if ((r != Z_STREAM_END) && (stoponerr==1)) {
+		printf ("Error: inflate() returned %d\n", r);
+		inflateEnd(&s);
+		return (-1);
+	}
 	*lenp = s.next_out - (unsigned char *) dst;
 	inflateEnd(&s);
 

@@ -2,11 +2,26 @@
  * Copyright (C) Marvell International Ltd. and its affiliates
  * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
-#include <asm/io.h>
 #include <asm/arch/kirkwood.h>
 
 #define UBOOT_CNTR	0	/* counter to use for uboot timer */
@@ -70,8 +85,15 @@ struct kwtmr_registers *kwtmr_regs = (struct kwtmr_registers *)KW_TIMER_BASE;
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define timestamp gd->arch.tbl
-#define lastdec gd->arch.lastinc
+#define timestamp gd->tbl
+#define lastdec gd->lastinc
+
+void reset_timer_masked(void)
+{
+	/* reset time */
+	lastdec = READ_TIMER;
+	timestamp = 0;
+}
 
 ulong get_timer_masked(void)
 {
@@ -90,9 +112,19 @@ ulong get_timer_masked(void)
 	return timestamp;
 }
 
+void reset_timer(void)
+{
+	reset_timer_masked();
+}
+
 ulong get_timer(ulong base)
 {
 	return get_timer_masked() - base;
+}
+
+void set_timer(ulong t)
+{
+	timestamp = t;
 }
 
 void __udelay(unsigned long usec)
@@ -132,26 +164,7 @@ int timer_init(void)
 	writel(cntmrctrl, CNTMR_CTRL_REG);
 
 	/* init the timestamp and lastdec value */
-	lastdec = READ_TIMER;
-	timestamp = 0;
+	reset_timer_masked();
 
 	return 0;
-}
-
-/*
- * This function is derived from PowerPC code (read timebase as long long).
- * On ARM it just returns the timer value.
- */
-unsigned long long get_ticks(void)
-{
-	return get_timer(0);
-}
-
-/*
- * This function is derived from PowerPC code (timebase clock frequency).
- * On ARM it returns the number of timer ticks per second.
- */
-ulong get_tbclk (void)
-{
-	return (ulong)CONFIG_SYS_HZ;
 }

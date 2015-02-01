@@ -1,9 +1,12 @@
 /*
- * Copyright 2010-2012 Freescale Semiconductor, Inc.
+ * Copyright 2010 Freescale Semiconductor, Inc.
  * Authors: Srikanth Srinivasan <srikanth.srinivasan@freescale.com>
  *          Timur Tabi <timur@freescale.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
  */
 
 #include <common.h>
@@ -14,14 +17,14 @@
 #include <asm/cache.h>
 #include <asm/immap_85xx.h>
 #include <asm/fsl_pci.h>
-#include <fsl_ddr_sdram.h>
+#include <asm/fsl_ddr_sdram.h>
 #include <asm/fsl_serdes.h>
 #include <asm/io.h>
 #include <libfdt.h>
 #include <fdt_support.h>
-#include <fsl_mdio.h>
 #include <tsec.h>
 #include <asm/fsl_law.h>
+#include <asm/mp.h>
 #include <netdev.h>
 #include <i2c.h>
 #include <hwconfig.h>
@@ -36,19 +39,12 @@ int board_early_init_f(void)
 
 	/* Set pmuxcr to allow both i2c1 and i2c2 */
 	setbits_be32(&gur->pmuxcr, 0x1000);
-#ifdef CONFIG_SYS_RAMBOOT
-	setbits_be32(&gur->pmuxcr,
-		in_be32(&gur->pmuxcr) | MPC85xx_PMUXCR_SD_DATA);
-#endif
 
 	/* Read back the register to synchronize the write. */
 	in_be32(&gur->pmuxcr);
 
 	/* Set the pin muxing to enable ETSEC2. */
 	clrbits_be32(&gur->pmuxcr2, 0x001F8000);
-
-	/* Enable the SPI */
-	clrsetbits_8(&pixis->brdcfg0, PIXIS_ELBC_SPI_MASK, PIXIS_SPI);
 
 	return 0;
 }
@@ -57,8 +53,9 @@ int checkboard(void)
 {
 	u8 sw;
 
-	printf("Board: P1022DS Sys ID: 0x%02x, "
-	       "Sys Ver: 0x%02x, FPGA Ver: 0x%02x, ",
+	puts("Board: P1022DS ");
+
+	printf("Sys ID: 0x%02x, Sys Ver: 0x%02x, FPGA Ver: 0x%02x, ",
 		in_8(&pixis->id), in_8(&pixis->arch), in_8(&pixis->scver));
 
 	sw = in_8(&PIXIS_SW(PIXIS_LBMAP_SWITCH));
@@ -94,19 +91,11 @@ int checkboard(void)
 /* Choose the 11.2896Mhz codec reference clock */
 #define CONFIG_PIXIS_BRDCFG1_AUDCLK_11		0x01
 
-/* Connect to USB2 */
-#define CONFIG_PIXIS_BRDCFG0_USB2		0x10
-/* Connect to TFM bus */
-#define CONFIG_PIXIS_BRDCFG1_TDM		0x0c
-/* Connect to SPI */
-#define CONFIG_PIXIS_BRDCFG0_SPI		0x80
-
 int misc_init_r(void)
 {
 	u8 temp;
 	const char *audclk;
 	size_t arglen;
-	ccsr_gur_t *gur = (void *)(CONFIG_SYS_MPC85xx_GUTS_ADDR);
 
 	/* For DVI, enable the TFP410 Encoder. */
 
@@ -124,48 +113,22 @@ int misc_init_r(void)
 		return -1;
 	debug("DVI Encoder Read: 0x%02x\n",temp);
 
-	/* Enable the USB2 in PMUXCR2 and FGPA */
-	if (hwconfig("usb2")) {
-		clrsetbits_be32(&gur->pmuxcr2, MPC85xx_PMUXCR2_ETSECUSB_MASK,
-			MPC85xx_PMUXCR2_USB);
-		setbits_8(&pixis->brdcfg0, CONFIG_PIXIS_BRDCFG0_USB2);
-	}
-
-	/* tdm and audio can not enable simultaneous*/
-	if (hwconfig("tdm") && hwconfig("audclk")){
-		printf("WARNING: TDM and AUDIO can not be enabled simultaneous !\n");
-		return -1;
-	}
-
-	/* Enable the TDM in PMUXCR and FGPA */
-	if (hwconfig("tdm")) {
-		clrsetbits_be32(&gur->pmuxcr, MPC85xx_PMUXCR_TDM_MASK,
-			MPC85xx_PMUXCR_TDM);
-		setbits_8(&pixis->brdcfg1, CONFIG_PIXIS_BRDCFG1_TDM);
-		/* TDM need some configration option by SPI */
-		clrsetbits_be32(&gur->pmuxcr, MPC85xx_PMUXCR_SPI_MASK,
-			MPC85xx_PMUXCR_SPI);
-		setbits_8(&pixis->brdcfg0, CONFIG_PIXIS_BRDCFG0_SPI);
-	}
-
 	/*
 	 * Enable the reference clock for the WM8776 codec, and route the MUX
 	 * pins for SSI. The default is the 12.288 MHz clock
 	 */
 
-	if (hwconfig("audclk")) {
-		temp = in_8(&pixis->brdcfg1) & ~(CONFIG_PIXIS_BRDCFG1_SSI_TDM_MASK |
-			CONFIG_PIXIS_BRDCFG1_AUDCLK_MASK);
-		temp |= CONFIG_PIXIS_BRDCFG1_SSI_TDM_SSI;
+	temp = in_8(&pixis->brdcfg1) & ~(CONFIG_PIXIS_BRDCFG1_SSI_TDM_MASK |
+		CONFIG_PIXIS_BRDCFG1_AUDCLK_MASK);
+	temp |= CONFIG_PIXIS_BRDCFG1_SSI_TDM_SSI;
 
-		audclk = hwconfig_arg("audclk", &arglen);
-		/* Check the first two chars only */
-		if (audclk && (strncmp(audclk, "11", 2) == 0))
-			temp |= CONFIG_PIXIS_BRDCFG1_AUDCLK_11;
-		else
-			temp |= CONFIG_PIXIS_BRDCFG1_AUDCLK_12;
-		setbits_8(&pixis->brdcfg1, temp);
-	}
+	audclk = hwconfig_arg("audclk", &arglen);
+	/* Check the first two chars only */
+	if (audclk && (strncmp(audclk, "11", 2) == 0))
+		temp |= CONFIG_PIXIS_BRDCFG1_AUDCLK_11;
+	else
+		temp |= CONFIG_PIXIS_BRDCFG1_AUDCLK_12;
+	out_8(&pixis->brdcfg1, temp);
 
 	return 0;
 }
@@ -280,7 +243,6 @@ int board_early_init_r(void)
  */
 int board_eth_init(bd_t *bis)
 {
-	struct fsl_pq_mdio_info mdio_info;
 	struct tsec_info_struct tsec_info[2];
 	unsigned int num = 0;
 
@@ -293,10 +255,6 @@ int board_eth_init(bd_t *bis)
 	num++;
 #endif
 
-	mdio_info.regs = (struct tsec_mii_mng *)CONFIG_SYS_MDIO_BASE_ADDR;
-	mdio_info.name = DEFAULT_MII_NAME;
-	fsl_pq_mdio_init(bis, &mdio_info);
-
 	return tsec_eth_init(bis, tsec_info, num) + pci_eth_init(bis);
 }
 
@@ -305,8 +263,7 @@ int board_eth_init(bd_t *bis)
  * ft_codec_setup - fix up the clock-frequency property of the codec node
  *
  * Update the clock-frequency property based on the value of the 'audclk'
- * hwconfig option.  If audclk is not specified, then don't write anything
- * to the device tree, because it means that the codec clock is disabled.
+ * hwconfig option.  If audclk is not specified, then default to 12.288MHz.
  */
 static void ft_codec_setup(void *blob, const char *compatible)
 {
@@ -315,15 +272,12 @@ static void ft_codec_setup(void *blob, const char *compatible)
 	u32 freq;
 
 	audclk = hwconfig_arg("audclk", &arglen);
-	if (audclk) {
-		if (strncmp(audclk, "11", 2) == 0)
-			freq = 11289600;
-		else
-			freq = 12288000;
+	if (audclk && (strncmp(audclk, "11", 2) == 0))
+		freq = 11289600;
+	else
+		freq = 12288000;
 
-		do_fixup_by_compat_u32(blob, compatible, "clock-frequency",
-				       freq, 1);
-	}
+	do_fixup_by_compat_u32(blob, compatible, "clock-frequency", freq, 1);
 }
 
 void ft_board_setup(void *blob, bd_t *bd)
@@ -338,10 +292,6 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 	fdt_fixup_memory(blob, (u64)base, (u64)size);
 
-#ifdef CONFIG_HAS_FSL_DR_USB
-	fdt_fixup_dr_usb(blob, bd);
-#endif
-
 	FT_FSL_PCI_SETUP;
 
 #ifdef CONFIG_FSL_SGMII_RISER
@@ -350,5 +300,12 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 	/* Update the WM8776 node's clock frequency property */
 	ft_codec_setup(blob, "wlf,wm8776");
+}
+#endif
+
+#ifdef CONFIG_MP
+void board_lmb_reserve(struct lmb *lmb)
+{
+	cpu_mp_lmb_reserve(lmb);
 }
 #endif

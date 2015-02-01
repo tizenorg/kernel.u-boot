@@ -1,40 +1,52 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian@popies.net>
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
  * Lead Tech Design <www.leadtechdesign.com>
  * Ilko Iliev <www.ronetix.at>
  *
  * Configuation settings for the RONETIX PM9261 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/*
- * SoC must be defined first, before hardware.h is included.
- * In this case SoC is defined in boards.cfg.
- */
-
-#include <asm/hardware.h>
 /* ARM asynchronous clock */
+#define CONFIG_SYS_AT91_CPU_NAME	"AT91SAM9261"
 
 #define CONFIG_DISPLAY_BOARDINFO
 
 #define MASTER_PLL_DIV		15
 #define MASTER_PLL_MUL		162
 #define MAIN_PLL_DIV		2
-#define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock xtal */
 #define CONFIG_SYS_AT91_MAIN_CLOCK	18432000
 
-#define CONFIG_SYS_AT91_CPU_NAME	"AT91SAM9261"
+#define CONFIG_SYS_HZ		1000
+
+#define CONFIG_ARM926EJS	1	/* This is an ARM926EJS Core	*/
+#define CONFIG_AT91SAM9261	1	/* It's an Atmel AT91SAM9261 SoC*/
 #define CONFIG_PM9261		1	/* on a Ronetix PM9261 Board	*/
 #define CONFIG_ARCH_CPU_INIT
+#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff	*/
 #define CONFIG_SYS_TEXT_BASE	0
-
-#define MACH_TYPE_PM9261	1187
-#define CONFIG_MACH_TYPE	MACH_TYPE_PM9261
+#define CONFIG_AT91FAMILY
 
 /* clocks */
 /* CKGR_MOR - enable main osc. */
@@ -50,13 +62,15 @@
 #define	CONFIG_SYS_MCKR1_VAL		\
 		(AT91_PMC_MCKR_CSS_SLOW |	\
 		 AT91_PMC_MCKR_PRES_1 |	\
-		 AT91_PMC_MCKR_MDIV_2)
+		 AT91_PMC_MCKR_MDIV_2 |	\
+		 AT91_PMC_MCKR_PLLADIV_1)
 
 /* PCK/2 = MCK Master Clock from PLLA */
 #define	CONFIG_SYS_MCKR2_VAL		\
 		(AT91_PMC_MCKR_CSS_PLLA |	\
 		 AT91_PMC_MCKR_PRES_1 |	\
-		 AT91_PMC_MCKR_MDIV_2)
+		 AT91_PMC_MCKR_MDIV_2 |	\
+		 AT91_PMC_MCKR_PLLADIV_1)
 
 /* define PDC[31:16] as DATA[31:16] */
 #define CONFIG_SYS_PIOC_PDR_VAL1	0xFFFF0000
@@ -140,15 +154,16 @@
 #define CONFIG_INITRD_TAG	1
 
 #undef CONFIG_SKIP_LOWLEVEL_INIT
-#define CONFIG_BOARD_EARLY_INIT_F
 
 /*
  * Hardware drivers
  */
 #define CONFIG_AT91_GPIO	1
 #define CONFIG_ATMEL_USART	1
-#define CONFIG_USART_BASE		ATMEL_BASE_DBGU
-#define	CONFIG_USART_ID			ATMEL_ID_SYS
+#undef CONFIG_USART0
+#undef CONFIG_USART1
+#undef CONFIG_USART2
+#define CONFIG_USART3		1	/* USART 3 is DBGU */
 
 /* LCD */
 #define CONFIG_LCD			1
@@ -164,9 +179,9 @@
 
 /* LED */
 #define CONFIG_AT91_LED
-#define CONFIG_RED_LED		GPIO_PIN_PC(12)
-#define CONFIG_GREEN_LED	GPIO_PIN_PC(13)
-#define CONFIG_YELLOW_LED	GPIO_PIN_PC(15)
+#define	CONFIG_RED_LED		AT91_PIO_PORTC, 12
+#define	CONFIG_GREEN_LED	AT91_PIO_PORTC, 13
+#define	CONFIG_YELLOW_LED	AT91_PIO_PORTC, 15
 
 #define CONFIG_BOOTDELAY	3
 
@@ -212,6 +227,7 @@
 
 /* NAND flash */
 #define CONFIG_NAND_ATMEL
+#define NAND_MAX_CHIPS				1
 #define CONFIG_SYS_MAX_NAND_DEVICE		1
 #define CONFIG_SYS_NAND_BASE			0x40000000
 #define CONFIG_SYS_NAND_DBW_8			1
@@ -219,8 +235,8 @@
 #define CONFIG_SYS_NAND_MASK_ALE		(1 << 22)
 /* our CLE is AD21 */
 #define CONFIG_SYS_NAND_MASK_CLE		(1 << 21)
-#define CONFIG_SYS_NAND_ENABLE_PIN		GPIO_PIN_PC(14)
-#define CONFIG_SYS_NAND_READY_PIN		GPIO_PIN_PA(16)
+#define CONFIG_SYS_NAND_ENABLE_PIN		AT91_PIO_PORTC, 14
+#define CONFIG_SYS_NAND_READY_PIN		AT91_PIO_PORTA, 16
 
 /* NOR flash */
 #define CONFIG_SYS_FLASH_CFI			1
@@ -238,10 +254,10 @@
 #define CONFIG_DM9000_USE_16BIT			1
 #define CONFIG_NET_RETRY_COUNT			20
 #define CONFIG_RESET_PHY_R			1
+#define CONFIG_NET_MULTI
 
 /* USB */
 #define CONFIG_USB_ATMEL
-#define CONFIG_USB_ATMEL_CLK_SEL_PLLB
 #define CONFIG_USB_OHCI_NEW			1
 #define CONFIG_DOS_PARTITION			1
 #define CONFIG_SYS_USB_OHCI_CPU_INIT		1
@@ -341,6 +357,7 @@
 #endif
 
 #define CONFIG_BAUDRATE			115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
 
 #define CONFIG_SYS_PROMPT		"pm9261> "
 #define CONFIG_SYS_CBSIZE		256
@@ -359,5 +376,11 @@
 #define CONFIG_SYS_SDRAM_BASE	PHYS_SDRAM
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_SDRAM_BASE + 0x1000 - \
 				GENERATED_GBL_DATA_SIZE)
+
+#define CONFIG_STACKSIZE		(32 * 1024)	/* regular stack */
+
+#ifdef CONFIG_USE_IRQ
+#error CONFIG_USE_IRQ not supported
+#endif
 
 #endif

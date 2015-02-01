@@ -7,7 +7,23 @@
  *
  * Configuration settings for the 3430 TI SDP3430 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -20,10 +36,11 @@
 /*
  * High Level Configuration Options
  */
+#define CONFIG_ARMV7		1	/* This is an ARM V7 CPU core */
 #define CONFIG_OMAP		1	/* in a TI OMAP core */
 #define CONFIG_OMAP34XX		1	/* which is a 34XX */
+#define CONFIG_OMAP3430		1	/* which is in a 3430 */
 #define CONFIG_OMAP3_3430SDP	1	/* working with SDP Rev2 */
-#define CONFIG_OMAP_COMMON
 
 #define CONFIG_SDRC	/* The chip has SDRC controller */
 
@@ -46,14 +63,13 @@
 #define V_OSCK			26000000	/* Clock output from T2 */
 #define V_SCLK			(V_OSCK >> 1)
 
+#undef CONFIG_USE_IRQ			/* no support for IRQs */
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_CMDLINE_TAG		1	/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS	1
 #define CONFIG_INITRD_TAG		1
 #define CONFIG_REVISION_TAG		1
-
-#define CONFIG_OF_LIBFDT		1
 
 /*
  * Size of malloc() pool
@@ -62,6 +78,7 @@
  */
 #define CONFIG_ENV_SIZE			(256 << 10)
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (256 << 10))
+						/* initial data */
 
 /*--------------------------------------------------------------------------*/
 
@@ -114,10 +131,15 @@
 /*
  * I2C for power management setup
  */
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_OMAP24_I2C_SPEED	100000
-#define CONFIG_SYS_OMAP24_I2C_SLAVE	1
-#define CONFIG_SYS_I2C_OMAP34XX
+#define CONFIG_HARD_I2C			1
+#define CONFIG_SYS_I2C_SPEED		100000
+#define CONFIG_SYS_I2C_SLAVE		1
+#define CONFIG_SYS_I2C_BUS		0
+#define CONFIG_SYS_I2C_BUS_SELECT	1
+#define CONFIG_DRIVER_OMAP34XX_I2C	1
+
+/* DDR - I use Infineon DDR */
+#define CONFIG_OMAP3_INFINEON_DDR	1
 
 /* OMITTED:  single 1 Gbit MT29F1G NAND flash */
 
@@ -167,9 +189,8 @@
  */
 
 #if defined(CONFIG_CMD_MMC)
-#define CONFIG_GENERIC_MMC		1
 #define CONFIG_MMC			1
-#define CONFIG_OMAP_HSMMC		1
+#define CONFIG_OMAP3_MMC		1
 #define CONFIG_DOS_PARTITION		1
 #endif
 
@@ -179,6 +200,7 @@
  */
 #if defined(CONFIG_CMD_NET)
 
+#define CONFIG_NET_MULTI
 #define CONFIG_LAN91C96
 #define CONFIG_LAN91C96_BASE	DEBUG_BASE
 #define CONFIG_LAN91C96_EXT_PHY
@@ -245,8 +267,9 @@
 
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"OMAP34XX SDP # "
-#define CONFIG_SYS_CBSIZE		512	/* Console I/O Buffer Size */
+#define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
 					sizeof(CONFIG_SYS_PROMPT) + 16)
@@ -273,6 +296,18 @@
  */
 #define CONFIG_SYS_TIMERBASE		(OMAP34XX_GPT2)
 #define CONFIG_SYS_PTV			2	/* Divisor: 2^(PTV+1) => 8 */
+#define CONFIG_SYS_HZ			1000
+
+/*
+ * Stack sizes
+ *
+ * The stack sizes are set up in start.S using the settings below
+ */
+#define CONFIG_STACKSIZE	(128 << 10) /* Regular stack */
+#ifdef CONFIG_USE_IRQ
+#define CONFIG_STACKSIZE_IRQ	(4 << 10) /* IRQ stack */
+#define CONFIG_STACKSIZE_FIQ	(4 << 10) /* FIQ stack */
+#endif
 
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1
 #define CONFIG_SYS_INIT_RAM_ADDR	0x4020f800
@@ -285,7 +320,11 @@
  */
 #define CONFIG_NR_DRAM_BANKS	2	/* CS1 may or may not be populated */
 #define PHYS_SDRAM_1		OMAP34XX_SDRC_CS0
+#define PHYS_SDRAM_1_SIZE	(32 << 20) /* at least 32 meg */
 #define PHYS_SDRAM_2		OMAP34XX_SDRC_CS1
+
+/* SDRAM Bank Allocation method */
+#define SDRC_R_B_C		1
 
 /*--------------------------------------------------------------------------*/
 
@@ -319,6 +358,14 @@
  *  - rest for filesystem
  */
 
-#define CONFIG_SYS_CACHELINE_SIZE	64
+/*--------------------------------------------------------------------------*/
+
+#ifndef __ASSEMBLY__
+extern unsigned int boot_flash_base;
+extern volatile unsigned int boot_flash_env_addr;
+extern unsigned int boot_flash_off;
+extern unsigned int boot_flash_sec;
+extern unsigned int boot_flash_type;
+#endif
 
 #endif				/* __CONFIG_H */

@@ -16,8 +16,19 @@
  *
  * ----------------------------------------------------------------------------
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  * ----------------------------------------------------------------------------
  *
  *  Overview:
@@ -27,6 +38,7 @@
  Modifications:
  ver. 1.0: Feb 2005, Vinod/Sudhakar
  -
+ *
  */
 
 #include <common.h>
@@ -164,22 +176,12 @@ static void nand_davinci_hwcontrol(struct mtd_info *mtd, int cmd,
 
 #ifdef CONFIG_SYS_NAND_HW_ECC
 
-static u_int32_t nand_davinci_readecc(struct mtd_info *mtd)
-{
-	u_int32_t	ecc = 0;
-
-	ecc = __raw_readl(&(davinci_emif_regs->nandfecc[
-				CONFIG_SYS_NAND_CS - 2]));
-
-	return ecc;
-}
-
 static void nand_davinci_enable_hwecc(struct mtd_info *mtd, int mode)
 {
 	u_int32_t	val;
 
-	/* reading the ECC result register resets the ECC calculation */
-	nand_davinci_readecc(mtd);
+	(void)__raw_readl(&(davinci_emif_regs->nandfecc[
+				CONFIG_SYS_NAND_CS - 2]));
 
 	val = __raw_readl(&davinci_emif_regs->nandfcr);
 	val |= DAVINCI_NANDFCR_NAND_ENABLE(CONFIG_SYS_NAND_CS);
@@ -187,12 +189,22 @@ static void nand_davinci_enable_hwecc(struct mtd_info *mtd, int mode)
 	__raw_writel(val, &davinci_emif_regs->nandfcr);
 }
 
+static u_int32_t nand_davinci_readecc(struct mtd_info *mtd, u_int32_t region)
+{
+	u_int32_t	ecc = 0;
+
+	ecc = __raw_readl(&(davinci_emif_regs->nandfecc[region - 1]));
+
+	return ecc;
+}
+
 static int nand_davinci_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 		u_char *ecc_code)
 {
 	u_int32_t		tmp;
+	const int region = 1;
 
-	tmp = nand_davinci_readecc(mtd);
+	tmp = nand_davinci_readecc(mtd, region);
 
 	/* Squeeze 4 bytes ECC into 3 bytes by removing RESERVED bits
 	 * and shifting. RESERVED bits are 31 to 28 and 15 to 12. */
@@ -266,17 +278,6 @@ static int nand_davinci_correct_data(struct mtd_info *mtd, u_char *dat,
 static struct nand_ecclayout nand_davinci_4bit_layout_oobfirst = {
 #if defined(CONFIG_SYS_NAND_PAGE_2K)
 	.eccbytes = 40,
-#ifdef CONFIG_NAND_6BYTES_OOB_FREE_10BYTES_ECC
-	.eccpos = {
-		6,   7,  8,  9, 10,	11, 12, 13, 14, 15,
-		22, 23, 24, 25, 26,	27, 28, 29, 30, 31,
-		38, 39, 40, 41, 42,	43, 44, 45, 46, 47,
-		54, 55, 56, 57, 58,	59, 60, 61, 62, 63,
-	},
-	.oobfree = {
-		{2, 4}, {16, 6}, {32, 6}, {48, 6},
-	},
-#else
 	.eccpos = {
 		24, 25, 26, 27, 28,
 		29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
@@ -287,7 +288,6 @@ static struct nand_ecclayout nand_davinci_4bit_layout_oobfirst = {
 	.oobfree = {
 		{.offset = 2, .length = 22, },
 	},
-#endif	/* #ifdef CONFIG_NAND_6BYTES_OOB_FREE_10BYTES_ECC */
 #elif defined(CONFIG_SYS_NAND_PAGE_4K)
 	.eccbytes = 80,
 	.eccpos = {
@@ -607,13 +607,12 @@ void davinci_nand_init(struct nand_chip *nand)
 {
 	nand->chip_delay  = 0;
 #ifdef CONFIG_SYS_NAND_USE_FLASH_BBT
-	nand->bbt_options	  |= NAND_BBT_USE_FLASH;
+	nand->options	  |= NAND_USE_FLASH_BBT;
 #endif
 #ifdef CONFIG_SYS_NAND_HW_ECC
 	nand->ecc.mode = NAND_ECC_HW;
 	nand->ecc.size = 512;
 	nand->ecc.bytes = 3;
-	nand->ecc.strength = 1;
 	nand->ecc.calculate = nand_davinci_calculate_ecc;
 	nand->ecc.correct  = nand_davinci_correct_data;
 	nand->ecc.hwctl  = nand_davinci_enable_hwecc;
@@ -624,7 +623,6 @@ void davinci_nand_init(struct nand_chip *nand)
 	nand->ecc.mode = NAND_ECC_HW_OOB_FIRST;
 	nand->ecc.size = 512;
 	nand->ecc.bytes = 10;
-	nand->ecc.strength = 4;
 	nand->ecc.calculate = nand_davinci_4bit_calculate_ecc;
 	nand->ecc.correct = nand_davinci_4bit_correct_data;
 	nand->ecc.hwctl = nand_davinci_4bit_enable_hwecc;

@@ -1,19 +1,27 @@
 /*
  * (C) Copyright 2004-2005, Greg Ungerer <greg.ungerer@opengear.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 #include <asm/arch/platform.h>
-
-/*
- * Initial timer set constants. Nothing complicated, just set for a 1ms
- * tick.
- */
-#define	TIMER_INTERVAL	(TICKS_PER_uSEC * mSEC_1)
-#define	TIMER_COUNT	(TIMER_INTERVAL / 2)
-#define	TIMER_PULSE	TIMER_COUNT
 
 /*
  * Handy KS8695 register access functions.
@@ -25,13 +33,31 @@ ulong timer_ticks;
 
 int timer_init (void)
 {
+	reset_timer();
+
+	return 0;
+}
+
+/*
+ * Initial timer set constants. Nothing complicated, just set for a 1ms
+ * tick.
+ */
+#define	TIMER_INTERVAL	(TICKS_PER_uSEC * mSEC_1)
+#define	TIMER_COUNT	(TIMER_INTERVAL / 2)
+#define	TIMER_PULSE	TIMER_COUNT
+
+void reset_timer_masked(void)
+{
 	/* Set the hadware timer for 1ms */
 	ks8695_write(KS8695_TIMER1, TIMER_COUNT);
 	ks8695_write(KS8695_TIMER1_PCOUNT, TIMER_PULSE);
 	ks8695_write(KS8695_TIMER_CTRL, 0x2);
 	timer_ticks = 0;
+}
 
-	return 0;
+void reset_timer(void)
+{
+	reset_timer_masked();
 }
 
 ulong get_timer_masked(void)
@@ -48,6 +74,11 @@ ulong get_timer_masked(void)
 ulong get_timer(ulong base)
 {
        return (get_timer_masked() - base);
+}
+
+void set_timer(ulong t)
+{
+	timer_ticks = t;
 }
 
 void __udelay(ulong usec)

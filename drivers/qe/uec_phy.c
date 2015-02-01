@@ -7,7 +7,11 @@
  *		Driver for UEC on QE
  *		Based on 8260_io/fcc_enet.c
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute	it and/or modify it
+ * under  the terms of	the GNU General	 Public License as published by the
+ * Free Software Foundation;  either version 2 of the  License, or (at your
+ * option) any later version.
+ *
  */
 
 #include "common.h"
@@ -21,7 +25,6 @@
 #include "uec.h"
 #include "uec_phy.h"
 #include "miiphy.h"
-#include <phy.h>
 
 #define ugphy_printk(format, arg...)  \
 	printf(format "\n", ## arg)
@@ -81,7 +84,7 @@
 #endif
 
 struct fixed_phy_port {
-	char name[16];	/* ethernet port name */
+	char name[NAMESIZE];	/* ethernet port name */
 	unsigned int speed;	/* specified speed 10,100 or 1000 */
 	unsigned int duplex;	/* specified duplex FULL or HALF */
 };
@@ -118,8 +121,8 @@ static int gbit_config_aneg (struct uec_mii_info *mii_info);
 static int genmii_config_aneg (struct uec_mii_info *mii_info);
 static int genmii_update_link (struct uec_mii_info *mii_info);
 static int genmii_read_status (struct uec_mii_info *mii_info);
-u16 uec_phy_read(struct uec_mii_info *mii_info, u16 regnum);
-void uec_phy_write(struct uec_mii_info *mii_info, u16 regnum, u16 val);
+u16 phy_read (struct uec_mii_info *mii_info, u16 regnum);
+void phy_write (struct uec_mii_info *mii_info, u16 regnum, u16 val);
 
 /* Write value to the PHY for this device to the register at regnum, */
 /* waiting until the write is done before it returns.  All PHY */
@@ -239,7 +242,7 @@ static void config_genmii_advert (struct uec_mii_info *mii_info)
 	advertise = mii_info->advertising;
 
 	/* Setup standard advertisement */
-	adv = uec_phy_read(mii_info, MII_ADVERTISE);
+	adv = phy_read (mii_info, MII_ADVERTISE);
 	adv &= ~(ADVERTISE_ALL | ADVERTISE_100BASE4);
 	if (advertise & ADVERTISED_10baseT_Half)
 		adv |= ADVERTISE_10HALF;
@@ -249,7 +252,7 @@ static void config_genmii_advert (struct uec_mii_info *mii_info)
 		adv |= ADVERTISE_100HALF;
 	if (advertise & ADVERTISED_100baseT_Full)
 		adv |= ADVERTISE_100FULL;
-	uec_phy_write(mii_info, MII_ADVERTISE, adv);
+	phy_write (mii_info, MII_ADVERTISE, adv);
 }
 
 static void genmii_setup_forced (struct uec_mii_info *mii_info)
@@ -257,7 +260,7 @@ static void genmii_setup_forced (struct uec_mii_info *mii_info)
 	u16 ctrl;
 	u32 features = mii_info->phyinfo->features;
 
-	ctrl = uec_phy_read(mii_info, MII_BMCR);
+	ctrl = phy_read (mii_info, MII_BMCR);
 
 	ctrl &= ~(BMCR_FULLDPLX | BMCR_SPEED100 |
 		  BMCR_SPEED1000 | BMCR_ANENABLE);
@@ -287,7 +290,7 @@ static void genmii_setup_forced (struct uec_mii_info *mii_info)
 		break;
 	}
 
-	uec_phy_write(mii_info, MII_BMCR, ctrl);
+	phy_write (mii_info, MII_BMCR, ctrl);
 }
 
 /* Enable and Restart Autonegotiation */
@@ -295,9 +298,9 @@ static void genmii_restart_aneg (struct uec_mii_info *mii_info)
 {
 	u16 ctl;
 
-	ctl = uec_phy_read(mii_info, MII_BMCR);
+	ctl = phy_read (mii_info, MII_BMCR);
 	ctl |= (BMCR_ANENABLE | BMCR_ANRESTART);
-	uec_phy_write(mii_info, MII_BMCR, ctl);
+	phy_write (mii_info, MII_BMCR, ctl);
 }
 
 static int gbit_config_aneg (struct uec_mii_info *mii_info)
@@ -310,14 +313,14 @@ static int gbit_config_aneg (struct uec_mii_info *mii_info)
 		config_genmii_advert (mii_info);
 		advertise = mii_info->advertising;
 
-		adv = uec_phy_read(mii_info, MII_CTRL1000);
+		adv = phy_read (mii_info, MII_CTRL1000);
 		adv &= ~(ADVERTISE_1000FULL |
 			 ADVERTISE_1000HALF);
 		if (advertise & SUPPORTED_1000baseT_Half)
 			adv |= ADVERTISE_1000HALF;
 		if (advertise & SUPPORTED_1000baseT_Full)
 			adv |= ADVERTISE_1000FULL;
-		uec_phy_write(mii_info, MII_CTRL1000, adv);
+		phy_write (mii_info, MII_CTRL1000, adv);
 
 		/* Start/Restart aneg */
 		genmii_restart_aneg (mii_info);
@@ -332,13 +335,13 @@ static int marvell_config_aneg (struct uec_mii_info *mii_info)
 	/* The Marvell PHY has an errata which requires
 	 * that certain registers get written in order
 	 * to restart autonegotiation */
-	uec_phy_write(mii_info, MII_BMCR, BMCR_RESET);
+	phy_write (mii_info, MII_BMCR, BMCR_RESET);
 
-	uec_phy_write(mii_info, 0x1d, 0x1f);
-	uec_phy_write(mii_info, 0x1e, 0x200c);
-	uec_phy_write(mii_info, 0x1d, 0x5);
-	uec_phy_write(mii_info, 0x1e, 0);
-	uec_phy_write(mii_info, 0x1e, 0x100);
+	phy_write (mii_info, 0x1d, 0x1f);
+	phy_write (mii_info, 0x1e, 0x200c);
+	phy_write (mii_info, 0x1d, 0x5);
+	phy_write (mii_info, 0x1e, 0);
+	phy_write (mii_info, 0x1e, 0x100);
 
 	gbit_config_aneg (mii_info);
 
@@ -370,13 +373,13 @@ static int genmii_update_link (struct uec_mii_info *mii_info)
 	u16 status;
 
 	/* Status is read once to clear old link state */
-	uec_phy_read(mii_info, MII_BMSR);
+	phy_read (mii_info, MII_BMSR);
 
 	/*
 	 * Wait if the link is up, and autonegotiation is in progress
 	 * (ie - we're capable and it's not done)
 	 */
-	status = uec_phy_read(mii_info, MII_BMSR);
+	status = phy_read(mii_info, MII_BMSR);
 	if ((status & BMSR_LSTATUS) && (status & BMSR_ANEGCAPABLE)
 	    && !(status & BMSR_ANEGCOMPLETE)) {
 		int i = 0;
@@ -392,7 +395,7 @@ static int genmii_update_link (struct uec_mii_info *mii_info)
 
 			i++;
 			udelay(1000);	/* 1 ms */
-			status = uec_phy_read(mii_info, MII_BMSR);
+			status = phy_read(mii_info, MII_BMSR);
 		}
 		mii_info->link = 1;
 	} else {
@@ -417,7 +420,7 @@ static int genmii_read_status (struct uec_mii_info *mii_info)
 		return err;
 
 	if (mii_info->autoneg) {
-		status = uec_phy_read(mii_info, MII_STAT1000);
+		status = phy_read(mii_info, MII_STAT1000);
 
 		if (status & (LPA_1000FULL | LPA_1000HALF)) {
 			mii_info->speed = SPEED_1000;
@@ -426,7 +429,7 @@ static int genmii_read_status (struct uec_mii_info *mii_info)
 			else
 				mii_info->duplex = DUPLEX_HALF;
 		} else {
-			status = uec_phy_read(mii_info, MII_LPA);
+			status = phy_read(mii_info, MII_LPA);
 
 			if (status & (LPA_10FULL | LPA_100FULL))
 				mii_info->duplex = DUPLEX_FULL;
@@ -453,63 +456,62 @@ static int bcm_init(struct uec_mii_info *mii_info)
 
 	gbit_config_aneg(mii_info);
 
-	if ((uec->uec_info->enet_interface_type ==
-				PHY_INTERFACE_MODE_RGMII_RXID) &&
-			(uec->uec_info->speed == SPEED_1000)) {
+	if ((uec->uec_info->enet_interface_type == RGMII_RXID) &&
+	   (uec->uec_info->speed == 1000)) {
 		u16 val;
 		int cnt = 50;
 
 		/* Wait for aneg to complete. */
 		do
-			val = uec_phy_read(mii_info, MII_BMSR);
+			val = phy_read(mii_info, MII_BMSR);
 		while (--cnt && !(val & BMSR_ANEGCOMPLETE));
 
 		/* Set RDX clk delay. */
-		uec_phy_write(mii_info, 0x18, 0x7 | (7 << 12));
+		phy_write(mii_info, 0x18, 0x7 | (7 << 12));
 
-		val = uec_phy_read(mii_info, 0x18);
+		val = phy_read(mii_info, 0x18);
 		/* Set RDX-RXC skew. */
 		val |= (1 << 8);
 		val |= (7 | (7 << 12));
 		/* Write bits 14:0. */
 		val |= (1 << 15);
-		uec_phy_write(mii_info, 0x18, val);
+		phy_write(mii_info, 0x18, val);
 	}
 
 	 return 0;
 }
 
-static int uec_marvell_init(struct uec_mii_info *mii_info)
+static int marvell_init(struct uec_mii_info *mii_info)
 {
 	struct eth_device *edev = mii_info->dev;
 	uec_private_t *uec = edev->priv;
-	phy_interface_t iface = uec->uec_info->enet_interface_type;
+	enum fsl_phy_enet_if iface = uec->uec_info->enet_interface_type;
 	int	speed = uec->uec_info->speed;
 
-	if ((speed == SPEED_1000) &&
-	   (iface == PHY_INTERFACE_MODE_RGMII_ID ||
-	    iface == PHY_INTERFACE_MODE_RGMII_RXID ||
-	    iface == PHY_INTERFACE_MODE_RGMII_TXID)) {
+	if ((speed == 1000) &&
+	   (iface == RGMII_ID ||
+	    iface == RGMII_RXID ||
+	    iface == RGMII_TXID)) {
 		int temp;
 
-		temp = uec_phy_read(mii_info, MII_M1111_PHY_EXT_CR);
-		if (iface == PHY_INTERFACE_MODE_RGMII_ID) {
+		temp = phy_read(mii_info, MII_M1111_PHY_EXT_CR);
+		if (iface == RGMII_ID) {
 			temp |= MII_M1111_RX_DELAY | MII_M1111_TX_DELAY;
-		} else if (iface == PHY_INTERFACE_MODE_RGMII_RXID) {
+		} else if (iface == RGMII_RXID) {
 			temp &= ~MII_M1111_TX_DELAY;
 			temp |= MII_M1111_RX_DELAY;
-		} else if (iface == PHY_INTERFACE_MODE_RGMII_TXID) {
+		} else if (iface == RGMII_TXID) {
 			temp &= ~MII_M1111_RX_DELAY;
 			temp |= MII_M1111_TX_DELAY;
 		}
-		uec_phy_write(mii_info, MII_M1111_PHY_EXT_CR, temp);
+		phy_write(mii_info, MII_M1111_PHY_EXT_CR, temp);
 
-		temp = uec_phy_read(mii_info, MII_M1111_PHY_EXT_SR);
+		temp = phy_read(mii_info, MII_M1111_PHY_EXT_SR);
 		temp &= ~MII_M1111_HWCFG_MODE_MASK;
 		temp |= MII_M1111_HWCFG_MODE_RGMII;
-		uec_phy_write(mii_info, MII_M1111_PHY_EXT_SR, temp);
+		phy_write(mii_info, MII_M1111_PHY_EXT_SR, temp);
 
-		uec_phy_write(mii_info, MII_BMCR, BMCR_RESET);
+		phy_write(mii_info, MII_BMCR, BMCR_RESET);
 	}
 
 	return 0;
@@ -532,7 +534,7 @@ static int marvell_read_status (struct uec_mii_info *mii_info)
 	if (mii_info->autoneg && mii_info->link) {
 		int speed;
 
-		status = uec_phy_read(mii_info, MII_M1011_PHY_SPEC_STATUS);
+		status = phy_read (mii_info, MII_M1011_PHY_SPEC_STATUS);
 
 		/* Get the duplexity */
 		if (status & MII_M1011_PHY_SPEC_STATUS_FULLDUPLEX)
@@ -562,7 +564,7 @@ static int marvell_read_status (struct uec_mii_info *mii_info)
 static int marvell_ack_interrupt (struct uec_mii_info *mii_info)
 {
 	/* Clear the interrupts by reading the reg */
-	uec_phy_read(mii_info, MII_M1011_IEVENT);
+	phy_read (mii_info, MII_M1011_IEVENT);
 
 	return 0;
 }
@@ -570,10 +572,9 @@ static int marvell_ack_interrupt (struct uec_mii_info *mii_info)
 static int marvell_config_intr (struct uec_mii_info *mii_info)
 {
 	if (mii_info->interrupts == MII_INTERRUPT_ENABLED)
-		uec_phy_write(mii_info, MII_M1011_IMASK, MII_M1011_IMASK_INIT);
+		phy_write (mii_info, MII_M1011_IMASK, MII_M1011_IMASK_INIT);
 	else
-		uec_phy_write(mii_info, MII_M1011_IMASK,
-				MII_M1011_IMASK_CLEAR);
+		phy_write (mii_info, MII_M1011_IMASK, MII_M1011_IMASK_CLEAR);
 
 	return 0;
 }
@@ -581,13 +582,13 @@ static int marvell_config_intr (struct uec_mii_info *mii_info)
 static int dm9161_init (struct uec_mii_info *mii_info)
 {
 	/* Reset the PHY */
-	uec_phy_write(mii_info, MII_BMCR, uec_phy_read(mii_info, MII_BMCR) |
+	phy_write (mii_info, MII_BMCR, phy_read (mii_info, MII_BMCR) |
 		   BMCR_RESET);
 	/* PHY and MAC connect */
-	uec_phy_write(mii_info, MII_BMCR, uec_phy_read(mii_info, MII_BMCR) &
+	phy_write (mii_info, MII_BMCR, phy_read (mii_info, MII_BMCR) &
 		   ~BMCR_ISOLATE);
 
-	uec_phy_write(mii_info, MII_DM9161_SCR, MII_DM9161_SCR_INIT);
+	phy_write (mii_info, MII_DM9161_SCR, MII_DM9161_SCR_INIT);
 
 	config_genmii_advert (mii_info);
 	/* Start/restart aneg */
@@ -613,7 +614,7 @@ static int dm9161_read_status (struct uec_mii_info *mii_info)
 	/* If the link is up, read the speed and duplex
 	   If we aren't autonegotiating assume speeds are as set */
 	if (mii_info->autoneg && mii_info->link) {
-		status = uec_phy_read(mii_info, MII_DM9161_SCSR);
+		status = phy_read (mii_info, MII_DM9161_SCSR);
 		if (status & (MII_DM9161_SCSR_100F | MII_DM9161_SCSR_100H))
 			mii_info->speed = SPEED_100;
 		else
@@ -631,7 +632,7 @@ static int dm9161_read_status (struct uec_mii_info *mii_info)
 static int dm9161_ack_interrupt (struct uec_mii_info *mii_info)
 {
 	/* Clear the interrupt by reading the reg */
-	uec_phy_read(mii_info, MII_DM9161_INTR);
+	phy_read (mii_info, MII_DM9161_INTR);
 
 	return 0;
 }
@@ -639,9 +640,9 @@ static int dm9161_ack_interrupt (struct uec_mii_info *mii_info)
 static int dm9161_config_intr (struct uec_mii_info *mii_info)
 {
 	if (mii_info->interrupts == MII_INTERRUPT_ENABLED)
-		uec_phy_write(mii_info, MII_DM9161_INTR, MII_DM9161_INTR_INIT);
+		phy_write (mii_info, MII_DM9161_INTR, MII_DM9161_INTR_INIT);
 	else
-		uec_phy_write(mii_info, MII_DM9161_INTR, MII_DM9161_INTR_STOP);
+		phy_write (mii_info, MII_DM9161_INTR, MII_DM9161_INTR_STOP);
 
 	return 0;
 }
@@ -695,7 +696,7 @@ static int smsc_read_status (struct uec_mii_info *mii_info)
 	if (mii_info->autoneg && mii_info->link) {
 		int	val;
 
-		status = uec_phy_read(mii_info, 0x1f);
+		status = phy_read (mii_info, 0x1f);
 		val = (status & 0x1c) >> 2;
 
 		switch (val) {
@@ -750,7 +751,7 @@ static struct phy_info phy_info_marvell = {
 	.phy_id_mask = 0xffffff00,
 	.name = "Marvell 88E11x1",
 	.features = MII_GBIT_FEATURES,
-	.init = &uec_marvell_init,
+	.init = &marvell_init,
 	.config_aneg = &marvell_config_aneg,
 	.read_status = &marvell_read_status,
 	.ack_interrupt = &marvell_ack_interrupt,
@@ -803,12 +804,12 @@ static struct phy_info *phy_info[] = {
 	NULL
 };
 
-u16 uec_phy_read(struct uec_mii_info *mii_info, u16 regnum)
+u16 phy_read (struct uec_mii_info *mii_info, u16 regnum)
 {
 	return mii_info->mdio_read (mii_info->dev, mii_info->mii_id, regnum);
 }
 
-void uec_phy_write(struct uec_mii_info *mii_info, u16 regnum, u16 val)
+void phy_write (struct uec_mii_info *mii_info, u16 regnum, u16 val)
 {
 	mii_info->mdio_write (mii_info->dev, mii_info->mii_id, regnum, val);
 }
@@ -824,11 +825,11 @@ struct phy_info *uec_get_phy_info (struct uec_mii_info *mii_info)
 	struct phy_info *theInfo = NULL;
 
 	/* Grab the bits from PHYIR1, and put them in the upper half */
-	phy_reg = uec_phy_read(mii_info, MII_PHYSID1);
+	phy_reg = phy_read (mii_info, MII_PHYSID1);
 	phy_ID = (phy_reg & 0xffff) << 16;
 
 	/* Grab the bits from PHYIR2, and put them in the lower half */
-	phy_reg = uec_phy_read(mii_info, MII_PHYSID2);
+	phy_reg = phy_read (mii_info, MII_PHYSID2);
 	phy_ID |= (phy_reg & 0xffff);
 
 	/* loop through all the known PHY types, and find one that */
@@ -851,8 +852,10 @@ struct phy_info *uec_get_phy_info (struct uec_mii_info *mii_info)
 	return theInfo;
 }
 
-void marvell_phy_interface_mode(struct eth_device *dev, phy_interface_t type,
-		int speed)
+void marvell_phy_interface_mode (struct eth_device *dev,
+				 enum fsl_phy_enet_if type,
+				 int speed
+				)
 {
 	uec_private_t *uec = (uec_private_t *) dev->priv;
 	struct uec_mii_info *mii_info;
@@ -864,47 +867,47 @@ void marvell_phy_interface_mode(struct eth_device *dev, phy_interface_t type,
 	}
 	mii_info = uec->mii_info;
 
-	if (type == PHY_INTERFACE_MODE_RGMII) {
-		if (speed == SPEED_100) {
-			uec_phy_write(mii_info, 0x00, 0x9140);
-			uec_phy_write(mii_info, 0x1d, 0x001f);
-			uec_phy_write(mii_info, 0x1e, 0x200c);
-			uec_phy_write(mii_info, 0x1d, 0x0005);
-			uec_phy_write(mii_info, 0x1e, 0x0000);
-			uec_phy_write(mii_info, 0x1e, 0x0100);
-			uec_phy_write(mii_info, 0x09, 0x0e00);
-			uec_phy_write(mii_info, 0x04, 0x01e1);
-			uec_phy_write(mii_info, 0x00, 0x9140);
-			uec_phy_write(mii_info, 0x00, 0x1000);
+	if (type == RGMII) {
+		if (speed == 100) {
+			phy_write (mii_info, 0x00, 0x9140);
+			phy_write (mii_info, 0x1d, 0x001f);
+			phy_write (mii_info, 0x1e, 0x200c);
+			phy_write (mii_info, 0x1d, 0x0005);
+			phy_write (mii_info, 0x1e, 0x0000);
+			phy_write (mii_info, 0x1e, 0x0100);
+			phy_write (mii_info, 0x09, 0x0e00);
+			phy_write (mii_info, 0x04, 0x01e1);
+			phy_write (mii_info, 0x00, 0x9140);
+			phy_write (mii_info, 0x00, 0x1000);
 			udelay (100000);
-			uec_phy_write(mii_info, 0x00, 0x2900);
-			uec_phy_write(mii_info, 0x14, 0x0cd2);
-			uec_phy_write(mii_info, 0x00, 0xa100);
-			uec_phy_write(mii_info, 0x09, 0x0000);
-			uec_phy_write(mii_info, 0x1b, 0x800b);
-			uec_phy_write(mii_info, 0x04, 0x05e1);
-			uec_phy_write(mii_info, 0x00, 0xa100);
-			uec_phy_write(mii_info, 0x00, 0x2100);
+			phy_write (mii_info, 0x00, 0x2900);
+			phy_write (mii_info, 0x14, 0x0cd2);
+			phy_write (mii_info, 0x00, 0xa100);
+			phy_write (mii_info, 0x09, 0x0000);
+			phy_write (mii_info, 0x1b, 0x800b);
+			phy_write (mii_info, 0x04, 0x05e1);
+			phy_write (mii_info, 0x00, 0xa100);
+			phy_write (mii_info, 0x00, 0x2100);
 			udelay (1000000);
-		} else if (speed == SPEED_10) {
-			uec_phy_write(mii_info, 0x14, 0x8e40);
-			uec_phy_write(mii_info, 0x1b, 0x800b);
-			uec_phy_write(mii_info, 0x14, 0x0c82);
-			uec_phy_write(mii_info, 0x00, 0x8100);
+		} else if (speed == 10) {
+			phy_write (mii_info, 0x14, 0x8e40);
+			phy_write (mii_info, 0x1b, 0x800b);
+			phy_write (mii_info, 0x14, 0x0c82);
+			phy_write (mii_info, 0x00, 0x8100);
 			udelay (1000000);
 		}
 	}
 
 	/* handle 88e1111 rev.B2 erratum 5.6 */
 	if (mii_info->autoneg) {
-		status = uec_phy_read(mii_info, MII_BMCR);
-		uec_phy_write(mii_info, MII_BMCR, status | BMCR_ANENABLE);
+		status = phy_read (mii_info, MII_BMCR);
+		phy_write (mii_info, MII_BMCR, status | BMCR_ANENABLE);
 	}
 	/* now the B2 will correctly report autoneg completion status */
 }
 
 void change_phy_interface_mode (struct eth_device *dev,
-				phy_interface_t type, int speed)
+				enum fsl_phy_enet_if type, int speed)
 {
 #ifdef CONFIG_PHY_MODE_NEED_CHANGE
 	marvell_phy_interface_mode (dev, type, speed);

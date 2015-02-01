@@ -18,7 +18,6 @@
 #include <command.h>
 
 #include <asm/blackfin.h>
-#include <asm/clock.h>
 #include <asm/mach-common/bits/otp.h>
 
 static const char *otp_strerror(uint32_t err)
@@ -90,7 +89,7 @@ int do_otp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (argc < 4) {
  usage:
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 	}
 
 	prompt_user = false;

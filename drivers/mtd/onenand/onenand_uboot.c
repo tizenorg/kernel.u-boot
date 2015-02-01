@@ -14,7 +14,7 @@
  */
 
 #include <common.h>
-#include <linux/compat.h>
+#include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/onenand.h>
 
@@ -39,11 +39,6 @@ void onenand_init(void)
 #endif
 
 	onenand_scan(&onenand_mtd, 1);
-
-	if (onenand_chip.device_id & DEVICE_IS_FLEXONENAND)
-		puts("Flex-");
-	puts("OneNAND: ");
-	print_size(onenand_chip.chipsize, "\n");
 
 #ifdef CONFIG_MTD_DEVICE
 	/*

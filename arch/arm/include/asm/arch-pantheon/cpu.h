@@ -3,7 +3,23 @@
  * Marvell Semiconductor <www.marvell.com>
  * Written-by: Lei Wen <leiwen@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef _PANTHEON_CPU_H
@@ -27,17 +43,6 @@ struct panthmpmu_registers {
 };
 
 /*
- * Application Power Management (APMU) Registers
- * Refer Register Datasheet 9.2
- */
-struct panthapmu_registers {
-	u8 pad0[0x0054];
-	u32 sd1;	/*0x0054*/
-	u8 pad1[0x00e0 - 0x054 - 4];
-	u32 sd3;	/*0x00e0*/
-};
-
-/*
  * APB Clock Reset/Control Registers
  * Refer Register Datasheet 6.14
  */
@@ -45,9 +50,7 @@ struct panthapb_registers {
 	u32 uart0;	/*0x000*/
 	u32 uart1;	/*0x004*/
 	u32 gpio;	/*0x008*/
-	u8 pad0[0x02c - 0x08 - 4];
-	u32 twsi;	/*0x02c*/
-	u8 pad1[0x034 - 0x2c - 4];
+	u8 pad0[0x034 - 0x08 - 4];
 	u32 timers;	/*0x034*/
 };
 
@@ -72,6 +75,5 @@ struct panthcpu_registers {
  */
 u32 panth_sdram_base(int);
 u32 panth_sdram_size(int);
-int mv_sdh_init(u32 regbase, u32 max_clk, u32 min_clk, u32 quirks);
 
 #endif /* _PANTHEON_CPU_H */

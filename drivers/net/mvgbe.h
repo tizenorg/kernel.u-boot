@@ -6,7 +6,23 @@
  * based on - Driver for MV64360X ethernet ports
  * Copyright (C) 2002 rabeeh@galileo.co.il
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #ifndef __MVGBE_H__
@@ -68,7 +84,6 @@
 	MVGBE_TX_BURST_SIZE_16_64BIT)
 
 /* Default port serial control value */
-#ifndef PORT_SERIAL_CONTROL_VALUE
 #define PORT_SERIAL_CONTROL_VALUE		( \
 	MVGBE_FORCE_LINK_PASS			| \
 	MVGBE_DIS_AUTO_NEG_FOR_DUPLX		| \
@@ -86,7 +101,6 @@
 	MVGBE_CLR_EXT_LOOPBACK			| \
 	MVGBE_SET_FULL_DUPLEX_MODE		| \
 	MVGBE_DIS_FLOW_CTRL_TX_RX_IN_FULL_DUPLEX)
-#endif
 
 /* Tx WRR confoguration macros */
 #define PORT_MAX_TRAN_UNIT	0x24	/* MTU register (default) 9KByte */
@@ -292,17 +306,10 @@
 #define EBAR_TARGET_GUNIT			0x00000007
 
 /* Window attrib */
-#if defined(CONFIG_DOVE)
-#define EBAR_DRAM_CS0				0x00000000
-#define EBAR_DRAM_CS1				0x00000000
-#define EBAR_DRAM_CS2				0x00000000
-#define EBAR_DRAM_CS3				0x00000000
-#else
 #define EBAR_DRAM_CS0				0x00000E00
 #define EBAR_DRAM_CS1				0x00000D00
 #define EBAR_DRAM_CS2				0x00000B00
 #define EBAR_DRAM_CS3				0x00000700
-#endif
 
 /* DRAM Target interface */
 #define EBAR_DRAM_NO_CACHE_COHERENCY		0x00000000

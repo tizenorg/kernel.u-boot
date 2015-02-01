@@ -2,7 +2,23 @@
  * (C) Copyright 2000-2010
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -79,6 +95,7 @@
 
 #define	CONFIG_RTC_MPC8xx		/* use internal RTC of MPC8xx	*/
 
+#define	CONFIG_NET_MULTI	1	/* the only way to get the FEC in */
 #define	FEC_ENET		1	/* eth.c needs it that way... */
 #undef  CONFIG_SYS_DISCOVER_PHY		/* do not discover phys */
 #define CONFIG_MII		1
@@ -131,8 +148,10 @@
  * Miscellaneous configurable options
  */
 #define	CONFIG_SYS_LONGHELP			/* undef to save memory		*/
+#define	CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt	*/
 
 #define CONFIG_SYS_HUSH_PARSER	1
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 #if defined(CONFIG_CMD_KGDB)
 #define	CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size	*/
@@ -147,6 +166,10 @@
 #define CONFIG_SYS_MEMTEST_END		0x0700000	/* 3 ... 7 MB in DRAM	*/
 
 #define	CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address	*/
+
+#define	CONFIG_SYS_HZ		1000		/* decrementer freq: 1 ms ticks	*/
+
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /*
  * Low Level Configuration Settings
@@ -566,7 +589,7 @@
  +------+----------------+------------------------------------------------------------
  |  #   | Name           | Comment
  +------+----------------+------------------------------------------------------------
- | IRQ1 | UINTER_3V      | S interrupt chips interrupt (common)
+ | IRQ1 | UINTER_3V      | S interupt chips interrupt (common)
  | IRQ3 | IRQ_DSP        | DSP interrupt
  | IRQ4 | IRQ_DSP1       | Extra DSP interrupt
  +------+----------------+------------------------------------------------------------
@@ -610,7 +633,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define CONFIG_IDE_PREINIT	1	/* Use preinit IDE hook */
 #define	CONFIG_IDE_8xx_PCCARD	1	/* Use IDE with PC Card	Adapter	*/
 
 #undef	CONFIG_IDE_8xx_DIRECT		/* Direct IDE    not supported	*/

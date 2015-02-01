@@ -1,3 +1,11 @@
-hostprogs-y := easylogo
+include $(TOPDIR)/config.mk
 
-always := $(hostprogs-y)
+all: $(obj)easylogo
+
+$(obj)easylogo: $(SRCTREE)/tools/easylogo/easylogo.c
+	$(HOSTCC) $(HOSTCFLAGS_NOPED) $(HOSTLDFLAGS) -o $@ $^
+
+clean:
+	rm -f $(obj)easylogo
+
+.PHONY: all clean

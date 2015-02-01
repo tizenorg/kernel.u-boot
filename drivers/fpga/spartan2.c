@@ -2,7 +2,24 @@
  * (C) Copyright 2002
  * Rich Ireland, Enterasys Networks, rireland@enterasys.com.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #include <common.h>		/* core U-Boot definitions */
@@ -31,17 +48,17 @@
 #define CONFIG_SYS_FPGA_WAIT CONFIG_SYS_HZ/100	/* 10 ms */
 #endif
 
-static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize);
-static int Spartan2_sp_dump(Xilinx_desc *desc, const void *buf, size_t bsize);
-/* static int Spartan2_sp_info(Xilinx_desc *desc ); */
+static int Spartan2_sp_load( Xilinx_desc *desc, void *buf, size_t bsize );
+static int Spartan2_sp_dump( Xilinx_desc *desc, void *buf, size_t bsize );
+/* static int Spartan2_sp_info( Xilinx_desc *desc ); */
 
-static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize);
-static int Spartan2_ss_dump(Xilinx_desc *desc, const void *buf, size_t bsize);
-/* static int Spartan2_ss_info(Xilinx_desc *desc ); */
+static int Spartan2_ss_load( Xilinx_desc *desc, void *buf, size_t bsize );
+static int Spartan2_ss_dump( Xilinx_desc *desc, void *buf, size_t bsize );
+/* static int Spartan2_ss_info( Xilinx_desc *desc ); */
 
 /* ------------------------------------------------------------------------- */
 /* Spartan-II Generic Implementation */
-int Spartan2_load(Xilinx_desc *desc, const void *buf, size_t bsize)
+int Spartan2_load (Xilinx_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;
 
@@ -64,7 +81,7 @@ int Spartan2_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 	return ret_val;
 }
 
-int Spartan2_dump(Xilinx_desc *desc, const void *buf, size_t bsize)
+int Spartan2_dump (Xilinx_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;
 
@@ -96,7 +113,7 @@ int Spartan2_info( Xilinx_desc *desc )
 /* ------------------------------------------------------------------------- */
 /* Spartan-II Slave Parallel Generic Implementation */
 
-static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
+static int Spartan2_sp_load (Xilinx_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;	/* assume the worst */
 	Xilinx_Spartan2_Slave_Parallel_fns *fn = desc->iface_fns;
@@ -145,11 +162,11 @@ static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 		}
 
 		/* Establish the initial state */
-		(*fn->pgm) (true, true, cookie);	/* Assert the program, commit */
+		(*fn->pgm) (TRUE, TRUE, cookie);	/* Assert the program, commit */
 
 		/* Get ready for the burn */
 		CONFIG_FPGA_DELAY ();
-		(*fn->pgm) (false, true, cookie);	/* Deassert the program, commit */
+		(*fn->pgm) (FALSE, TRUE, cookie);	/* Deassert the program, commit */
 
 		ts = get_timer (0);		/* get current time */
 		/* Now wait for INIT and BUSY to go high */
@@ -162,20 +179,20 @@ static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 			}
 		} while ((*fn->init) (cookie) && (*fn->busy) (cookie));
 
-		(*fn->wr) (true, true, cookie); /* Assert write, commit */
-		(*fn->cs) (true, true, cookie); /* Assert chip select, commit */
-		(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+		(*fn->wr) (TRUE, TRUE, cookie); /* Assert write, commit */
+		(*fn->cs) (TRUE, TRUE, cookie); /* Assert chip select, commit */
+		(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 		/* Load the data */
 		while (bytecount < bsize) {
 			/* XXX - do we check for an Ctrl-C press in here ??? */
 			/* XXX - Check the error bit? */
 
-			(*fn->wdata) (data[bytecount++], true, cookie); /* write the data */
+			(*fn->wdata) (data[bytecount++], TRUE, cookie); /* write the data */
 			CONFIG_FPGA_DELAY ();
-			(*fn->clk) (false, true, cookie);	/* Deassert the clock pin */
+			(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
 			CONFIG_FPGA_DELAY ();
-			(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 #ifdef CONFIG_SYS_FPGA_CHECK_BUSY
 			ts = get_timer (0);	/* get current time */
@@ -184,9 +201,9 @@ static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 				 * make sure we aren't busy forever... */
 
 				CONFIG_FPGA_DELAY ();
-				(*fn->clk) (false, true, cookie);	/* Deassert the clock pin */
+				(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
 				CONFIG_FPGA_DELAY ();
-				(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+				(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 				if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
 					puts ("** Timeout waiting for BUSY to clear.\n");
@@ -203,8 +220,8 @@ static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 		}
 
 		CONFIG_FPGA_DELAY ();
-		(*fn->cs) (false, true, cookie);	/* Deassert the chip select */
-		(*fn->wr) (false, true, cookie);	/* Deassert the write pin */
+		(*fn->cs) (FALSE, TRUE, cookie);	/* Deassert the chip select */
+		(*fn->wr) (FALSE, TRUE, cookie);	/* Deassert the write pin */
 
 #ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 		putc ('\n');			/* terminate the dotted line */
@@ -216,9 +233,9 @@ static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 		while ((*fn->done) (cookie) == FPGA_FAIL) {
 
 			CONFIG_FPGA_DELAY ();
-			(*fn->clk) (false, true, cookie);	/* Deassert the clock pin */
+			(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
 			CONFIG_FPGA_DELAY ();
-			(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 			if (get_timer (ts) > CONFIG_SYS_FPGA_WAIT) {	/* check the time */
 				puts ("** Timeout waiting for DONE to clear.\n");
@@ -248,7 +265,7 @@ static int Spartan2_sp_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 	return ret_val;
 }
 
-static int Spartan2_sp_dump(Xilinx_desc *desc, const void *buf, size_t bsize)
+static int Spartan2_sp_dump (Xilinx_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;	/* assume the worst */
 	Xilinx_Spartan2_Slave_Parallel_fns *fn = desc->iface_fns;
@@ -260,15 +277,15 @@ static int Spartan2_sp_dump(Xilinx_desc *desc, const void *buf, size_t bsize)
 
 		printf ("Starting Dump of FPGA Device %d...\n", cookie);
 
-		(*fn->cs) (true, true, cookie); /* Assert chip select, commit */
-		(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+		(*fn->cs) (TRUE, TRUE, cookie); /* Assert chip select, commit */
+		(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 		/* dump the data */
 		while (bytecount < bsize) {
 			/* XXX - do we check for an Ctrl-C press in here ??? */
 
-			(*fn->clk) (false, true, cookie);	/* Deassert the clock pin */
-			(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+			(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
+			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 			(*fn->rdata) (&(data[bytecount++]), cookie);	/* read the data */
 #ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 			if (bytecount % (bsize / 40) == 0)
@@ -276,9 +293,9 @@ static int Spartan2_sp_dump(Xilinx_desc *desc, const void *buf, size_t bsize)
 #endif
 		}
 
-		(*fn->cs) (false, false, cookie);	/* Deassert the chip select */
-		(*fn->clk) (false, true, cookie);	/* Deassert the clock pin */
-		(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+		(*fn->cs) (FALSE, FALSE, cookie);	/* Deassert the chip select */
+		(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
+		(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 #ifdef CONFIG_SYS_FPGA_PROG_FEEDBACK
 		putc ('\n');			/* terminate the dotted line */
@@ -296,7 +313,7 @@ static int Spartan2_sp_dump(Xilinx_desc *desc, const void *buf, size_t bsize)
 
 /* ------------------------------------------------------------------------- */
 
-static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize)
+static int Spartan2_ss_load (Xilinx_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;	/* assume the worst */
 	Xilinx_Spartan2_Slave_Serial_fns *fn = desc->iface_fns;
@@ -334,7 +351,7 @@ static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 		}
 
 		/* Establish the initial state */
-		(*fn->pgm) (true, true, cookie);	/* Assert the program, commit */
+		(*fn->pgm) (TRUE, TRUE, cookie);	/* Assert the program, commit */
 
 		/* Wait for INIT state (init low)                            */
 		ts = get_timer (0);		/* get current time */
@@ -348,7 +365,7 @@ static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 
 		/* Get ready for the burn */
 		CONFIG_FPGA_DELAY ();
-		(*fn->pgm) (false, true, cookie);	/* Deassert the program, commit */
+		(*fn->pgm) (FALSE, TRUE, cookie);	/* Deassert the program, commit */
 
 		ts = get_timer (0);		/* get current time */
 		/* Now wait for INIT to go high */
@@ -373,13 +390,13 @@ static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 			i = 8;
 			do {
 				/* Deassert the clock */
-				(*fn->clk) (false, true, cookie);
+				(*fn->clk) (FALSE, TRUE, cookie);
 				CONFIG_FPGA_DELAY ();
 				/* Write data */
-				(*fn->wr) ((val & 0x80), true, cookie);
+				(*fn->wr) ((val & 0x80), TRUE, cookie);
 				CONFIG_FPGA_DELAY ();
 				/* Assert the clock */
-				(*fn->clk) (true, true, cookie);
+				(*fn->clk) (TRUE, TRUE, cookie);
 				CONFIG_FPGA_DELAY ();
 				val <<= 1;
 				i --;
@@ -400,14 +417,14 @@ static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 		/* now check for done signal */
 		ts = get_timer (0);		/* get current time */
 		ret_val = FPGA_SUCCESS;
-		(*fn->wr) (true, true, cookie);
+		(*fn->wr) (TRUE, TRUE, cookie);
 
 		while (! (*fn->done) (cookie)) {
 
 			CONFIG_FPGA_DELAY ();
-			(*fn->clk) (false, true, cookie);	/* Deassert the clock pin */
+			(*fn->clk) (FALSE, TRUE, cookie);	/* Deassert the clock pin */
 			CONFIG_FPGA_DELAY ();
-			(*fn->clk) (true, true, cookie);	/* Assert the clock pin */
+			(*fn->clk) (TRUE, TRUE, cookie);	/* Assert the clock pin */
 
 			putc ('*');
 
@@ -439,7 +456,7 @@ static int Spartan2_ss_load(Xilinx_desc *desc, const void *buf, size_t bsize)
 	return ret_val;
 }
 
-static int Spartan2_ss_dump(Xilinx_desc *desc, const void *buf, size_t bsize)
+static int Spartan2_ss_dump (Xilinx_desc * desc, void *buf, size_t bsize)
 {
 	/* Readback is only available through the Slave Parallel and         */
 	/* boundary-scan interfaces.                                         */

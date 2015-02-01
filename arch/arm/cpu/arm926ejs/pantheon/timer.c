@@ -3,11 +3,26 @@
  * Marvell Semiconductor <www.marvell.com>
  * Written-by: Lei Wen <leiwen@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
-#include <asm/arch/cpu.h>
 #include <asm/arch/pantheon.h>
 
 /*
@@ -44,7 +59,7 @@ struct panthtmr_registers {
 #define	COUNT_RD_REQ		0x1
 
 DECLARE_GLOBAL_DATA_PTR;
-/* Using gd->arch.tbu from timestamp and gd->arch.tbl for lastdec */
+/* Using gd->tbu from timestamp and gd->tbl for lastdec */
 
 /*
  * For preventing risk of instability in reading counter value,
@@ -70,26 +85,43 @@ ulong read_timer(void)
 	return val;
 }
 
+void reset_timer_masked(void)
+{
+	/* reset time */
+	gd->tbl = read_timer();
+	gd->tbu = 0;
+}
+
 ulong get_timer_masked(void)
 {
 	ulong now = read_timer();
 
-	if (now >= gd->arch.tbl) {
+	if (now >= gd->tbl) {
 		/* normal mode */
-		gd->arch.tbu += now - gd->arch.tbl;
+		gd->tbu += now - gd->tbl;
 	} else {
 		/* we have an overflow ... */
-		gd->arch.tbu += now + TIMER_LOAD_VAL - gd->arch.tbl;
+		gd->tbu += now + TIMER_LOAD_VAL - gd->tbl;
 	}
-	gd->arch.tbl = now;
+	gd->tbl = now;
 
-	return gd->arch.tbu;
+	return gd->tbu;
+}
+
+void reset_timer(void)
+{
+	reset_timer_masked();
 }
 
 ulong get_timer(ulong base)
 {
 	return ((get_timer_masked() / (CONFIG_SYS_HZ_CLOCK / 1000)) -
 		base);
+}
+
+void set_timer(ulong t)
+{
+	gd->tbu = t;
 }
 
 void __udelay(unsigned long usec)
@@ -128,9 +160,8 @@ int timer_init(void)
 
 	/* Enable timer 0 */
 	writel(0x1, &panthtimers->cer);
-	/* init the gd->arch.tbu and gd->arch.tbl value */
-	gd->arch.tbl = read_timer();
-	gd->arch.tbu = 0;
+	/* init the gd->tbu and gd->tbl value */
+	reset_timer_masked();
 
 	return 0;
 }
@@ -180,22 +211,4 @@ void reset_cpu (unsigned long ignored)
 
 	/*enable functional WDT clock */
 	writel(APBC_APBCLK | APBC_FNCLK, &mpmu->wdtpcr);
-}
-
-/*
- * This function is derived from PowerPC code (read timebase as long long).
- * On ARM it just returns the timer value.
- */
-unsigned long long get_ticks(void)
-{
-	return get_timer(0);
-}
-
-/*
- * This function is derived from PowerPC code (timebase clock frequency).
- * On ARM it returns the number of timer ticks per second.
- */
-ulong get_tbclk (void)
-{
-	return (ulong)CONFIG_SYS_HZ;
 }

@@ -3,7 +3,24 @@
  * Heiko Schocher, hs@denx.de
  * Based on ACE1XK.c
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #include <common.h>		/* core U-Boot definitions */
@@ -30,13 +47,13 @@
 #define CONFIG_SYS_FPGA_WAIT CONFIG_SYS_HZ/10		/* 100 ms */
 #endif
 
-static int CYC2_ps_load(Altera_desc *desc, const void *buf, size_t bsize);
-static int CYC2_ps_dump(Altera_desc *desc, const void *buf, size_t bsize);
+static int CYC2_ps_load( Altera_desc *desc, void *buf, size_t bsize );
+static int CYC2_ps_dump( Altera_desc *desc, void *buf, size_t bsize );
 /* static int CYC2_ps_info( Altera_desc *desc ); */
 
 /* ------------------------------------------------------------------------- */
 /* CYCLON2 Generic Implementation */
-int CYC2_load(Altera_desc *desc, const void *buf, size_t bsize)
+int CYC2_load (Altera_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;
 
@@ -44,16 +61,6 @@ int CYC2_load(Altera_desc *desc, const void *buf, size_t bsize)
 	case passive_serial:
 		PRINTF ("%s: Launching Passive Serial Loader\n", __FUNCTION__);
 		ret_val = CYC2_ps_load (desc, buf, bsize);
-		break;
-
-	case fast_passive_parallel:
-		/* Fast Passive Parallel (FPP) and PS only differ in what is
-		 * done in the write() callback. Use the existing PS load
-		 * function for FPP, too.
-		 */
-		PRINTF ("%s: Launching Fast Passive Parallel Loader\n",
-		      __FUNCTION__);
-		ret_val = CYC2_ps_load(desc, buf, bsize);
 		break;
 
 		/* Add new interface types here */
@@ -66,7 +73,7 @@ int CYC2_load(Altera_desc *desc, const void *buf, size_t bsize)
 	return ret_val;
 }
 
-int CYC2_dump(Altera_desc *desc, const void *buf, size_t bsize)
+int CYC2_dump (Altera_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;
 
@@ -93,7 +100,7 @@ int CYC2_info( Altera_desc *desc )
 
 /* ------------------------------------------------------------------------- */
 /* CYCLON2 Passive Serial Generic Implementation                                  */
-static int CYC2_ps_load(Altera_desc *desc, const void *buf, size_t bsize)
+static int CYC2_ps_load (Altera_desc * desc, void *buf, size_t bsize)
 {
 	int ret_val = FPGA_FAIL;	/* assume the worst */
 	Altera_CYC2_Passive_Serial_fns *fn = desc->iface_fns;
@@ -127,9 +134,7 @@ static int CYC2_ps_load(Altera_desc *desc, const void *buf, size_t bsize)
 		}
 
 		/* Establish the initial state */
-		(*fn->config) (false, true, cookie);	/* De-assert nCONFIG */
-		udelay(100);
-		(*fn->config) (true, true, cookie);	/* Assert nCONFIG */
+		(*fn->config) (TRUE, TRUE, cookie);	/* Assert nCONFIG */
 
 		udelay(2);		/* T_cfg > 2us	*/
 
@@ -147,7 +152,7 @@ static int CYC2_ps_load(Altera_desc *desc, const void *buf, size_t bsize)
 		/* Get ready for the burn */
 		CONFIG_FPGA_DELAY ();
 
-		ret = (*fn->write) (buf, bsize, true, cookie);
+		ret = (*fn->write) (buf, bsize, TRUE, cookie);
 		if (ret) {
 			puts ("** Write failed.\n");
 			(*fn->abort) (cookie);
@@ -195,7 +200,7 @@ static int CYC2_ps_load(Altera_desc *desc, const void *buf, size_t bsize)
 	return ret_val;
 }
 
-static int CYC2_ps_dump(Altera_desc *desc, const void *buf, size_t bsize)
+static int CYC2_ps_dump (Altera_desc * desc, void *buf, size_t bsize)
 {
 	/* Readback is only available through the Slave Parallel and         */
 	/* boundary-scan interfaces.                                         */

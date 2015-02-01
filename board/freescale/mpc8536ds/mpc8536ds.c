@@ -1,7 +1,23 @@
 /*
- * Copyright 2008-2012 Freescale Semiconductor, Inc.
+ * Copyright 2008-2010 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -12,7 +28,7 @@
 #include <asm/cache.h>
 #include <asm/immap_85xx.h>
 #include <asm/fsl_pci.h>
-#include <fsl_ddr_sdram.h>
+#include <asm/fsl_ddr_sdram.h>
 #include <asm/io.h>
 #include <asm/fsl_serdes.h>
 #include <spd.h>
@@ -20,7 +36,6 @@
 #include <libfdt.h>
 #include <spd_sdram.h>
 #include <fdt_support.h>
-#include <fsl_mdio.h>
 #include <tsec.h>
 #include <netdev.h>
 #include <sata.h>
@@ -33,16 +48,10 @@ int board_early_init_f (void)
 	volatile ccsr_gur_t *gur = (void *)(CONFIG_SYS_MPC85xx_GUTS_ADDR);
 
 	setbits_be32(&gur->pmuxcr,
-			(MPC85xx_PMUXCR_SDHC_CD |
+			(MPC85xx_PMUXCR_SD_DATA |
+			 MPC85xx_PMUXCR_SDHC_CD |
 			 MPC85xx_PMUXCR_SDHC_WP));
 
-	/* The MPC8536DS board insert the SDHC_WP pin for erratum NMG_eSDHC118,
-	 * however, this erratum only applies to MPC8536 Rev1.0.
-	 * So set SDHC_WP to active-low when use MPC8536 Rev1.1 and greater.*/
-	if ((((SVR_MAJ(get_svr()) & 0x7) == 0x1) &&
-			(SVR_MIN(get_svr()) >= 0x1))
-			|| (SVR_MAJ(get_svr() & 0x7) > 0x1))
-		setbits_be32(&gur->gencfgr, MPC85xx_GENCFGR_SDHC_WP_INV);
 #endif
 	return 0;
 }
@@ -52,7 +61,12 @@ int checkboard (void)
 	u8 vboot;
 	u8 *pixis_base = (u8 *)PIXIS_BASE;
 
-	printf("Board: MPC8536DS Sys ID: 0x%02x, "
+	puts("Board: MPC8536DS ");
+#ifdef CONFIG_PHYS_64BIT
+	puts("(36-bit addrmap) ");
+#endif
+
+	printf ("Sys ID: 0x%02x, "
 		"Sys Ver: 0x%02x, FPGA Ver: 0x%02x, ",
 		in_8(pixis_base + PIXIS_ID), in_8(pixis_base + PIXIS_VER),
 		in_8(pixis_base + PIXIS_PVER));
@@ -90,7 +104,7 @@ int checkboard (void)
 phys_size_t fixed_sdram (void)
 {
 	volatile immap_t *immap = (immap_t *)CONFIG_SYS_IMMR;
-	struct ccsr_ddr __iomem *ddr = &immap->im_ddr;
+	volatile ccsr_ddr_t *ddr= &immap->im_ddr;
 	uint d_init;
 
 	ddr->cs0_bnds = CONFIG_SYS_DDR_CS0_BNDS;
@@ -220,7 +234,6 @@ int board_early_init_r(void)
 int board_eth_init(bd_t *bis)
 {
 #ifdef CONFIG_TSEC_ENET
-	struct fsl_pq_mdio_info mdio_info;
 	struct tsec_info_struct tsec_info[2];
 	int num = 0;
 
@@ -255,10 +268,6 @@ int board_eth_init(bd_t *bis)
 	}
 #endif
 
-	mdio_info.regs = (struct tsec_mii_mng *)CONFIG_SYS_MDIO_BASE_ADDR;
-	mdio_info.name = DEFAULT_MII_NAME;
-	fsl_pq_mdio_init(bis, &mdio_info);
-
 	tsec_eth_init(bis, tsec_info, num);
 #endif
 	return pci_eth_init(bis);
@@ -274,10 +283,5 @@ void ft_board_setup(void *blob, bd_t *bd)
 #ifdef CONFIG_FSL_SGMII_RISER
 	fsl_sgmii_riser_fdt_fixup(blob);
 #endif
-
-#ifdef CONFIG_HAS_FSL_MPH_USB
-	fdt_fixup_dr_usb(blob, bd);
-#endif
-
 }
 #endif

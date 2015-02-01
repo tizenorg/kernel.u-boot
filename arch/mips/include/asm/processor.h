@@ -11,6 +11,8 @@
 #ifndef _ASM_PROCESSOR_H
 #define _ASM_PROCESSOR_H
 
+#include <linux/config.h>
+
 #include <asm/isadep.h>
 
 #include <asm/cachectl.h>

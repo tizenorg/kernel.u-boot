@@ -16,7 +16,6 @@
 #include <linux/mii.h>
 
 #include <asm/blackfin.h>
-#include <asm/clock.h>
 #include <asm/portmux.h>
 #include <asm/mach-common/bits/dma.h>
 #include <asm/mach-common/bits/emac.h>
@@ -119,10 +118,13 @@ int bfin_EMAC_initialize(bd_t *bis)
 	return 0;
 }
 
-static int bfin_EMAC_send(struct eth_device *dev, void *packet, int length)
+static int bfin_EMAC_send(struct eth_device *dev, volatile void *packet,
+			  int length)
 {
 	int i;
 	int result = 0;
+	unsigned int *buf;
+	buf = (unsigned int *)packet;
 
 	if (length <= 0) {
 		printf("Ethernet: bad packet size: %d\n", length);
@@ -189,7 +191,8 @@ static int bfin_EMAC_recv(struct eth_device *dev)
 
 		debug("%s: len = %d\n", __func__, length - 4);
 
-		NetRxPackets[rxIdx] = rxbuf[rxIdx]->FrmData->Dest;
+		NetRxPackets[rxIdx] =
+		    (volatile uchar *)(rxbuf[rxIdx]->FrmData->Dest);
 		NetReceive(NetRxPackets[rxIdx], length - 4);
 		bfin_write_DMA1_IRQ_STATUS(DMA_DONE | DMA_ERR);
 		rxbuf[rxIdx]->StatusWord = 0x00000000;
@@ -260,8 +263,6 @@ static int bfin_miiphy_init(struct eth_device *dev, int *opmode)
 		*opmode = 0;
 
 	bfin_write_EMAC_MMC_CTL(RSTC | CROLL);
-	bfin_write_EMAC_VLAN1(EMAC_VLANX_DEF_VAL);
-	bfin_write_EMAC_VLAN2(EMAC_VLANX_DEF_VAL);
 
 	/* Initialize the TX DMA channel registers */
 	bfin_write_DMA2_X_COUNT(0);
@@ -470,7 +471,7 @@ int ether_post_test(int flags)
 	for (i = 0; i < 42; i++)
 		buf[i + 22] = i;
 	printf("--------Send 64 bytes......\n");
-	bfin_EMAC_send(NULL, buf, 64);
+	bfin_EMAC_send(NULL, (volatile void *)buf, 64);
 	for (i = 0; i < 100; i++) {
 		udelay(10000);
 		if ((rxbuf[rxIdx]->StatusWord & RX_COMP) != 0) {

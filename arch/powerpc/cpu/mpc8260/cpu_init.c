@@ -2,7 +2,23 @@
  * (C) Copyright 2000-2002
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -104,7 +120,7 @@ void cpu_init_f (volatile immap_t * immr)
 	memset ((void *) gd, 0, sizeof (gd_t));
 
 	/* RSR - Reset Status Register - clear all status (5-4) */
-	gd->arch.reset_status = immr->im_clkrst.car_rsr;
+	gd->reset_status = immr->im_clkrst.car_rsr;
 	immr->im_clkrst.car_rsr = RSR_ALLBITS;
 
 	/* RMR - Reset Mode Register - contains checkstop reset enable (5-5) */
@@ -166,7 +182,7 @@ void cpu_init_f (volatile immap_t * immr)
 #endif
 
 	/* now restrict to preliminary range */
-	/* the PS came from the HRCW, don't change it */
+	/* the PS came from the HRCW, don´t change it */
 	memctl->memc_br0 = SET_VAL_MASK(memctl->memc_br0 , CONFIG_SYS_BR0_PRELIM, BRx_PS_MSK);
 	memctl->memc_or0 = CONFIG_SYS_OR0_PRELIM;
 
@@ -258,7 +274,7 @@ int prt_8260_rsr (void)
 		RSR_EHRS, "External Hard"}
 	};
 	static int n = sizeof bits / sizeof bits[0];
-	ulong rsr = gd->arch.reset_status;
+	ulong rsr = gd->reset_status;
 	int i;
 	char *sep;
 

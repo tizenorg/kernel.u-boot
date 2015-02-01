@@ -34,6 +34,7 @@
 #ifndef __MUSB_HDRC_DEFS_H__
 #define __MUSB_HDRC_DEFS_H__
 
+#include <usb.h>
 #include <usb_defs.h>
 #include <asm/io.h>
 
@@ -144,7 +145,7 @@ struct musb_regs {
 		struct musb_epN_regs epN;
 	} ep[16];
 
-} __attribute__((packed));
+} __attribute__((packed, aligned(32)));
 #endif
 
 /*

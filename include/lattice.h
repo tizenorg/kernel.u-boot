@@ -8,7 +8,24 @@
  *
  * Lattice Semiconductor Corp. Copyright 2009
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #ifndef _VME_OPCODE_H
@@ -261,6 +278,9 @@ typedef struct {
 	char		*desc;	/* description string */
 } Lattice_desc;			/* end, typedef Altera_desc */
 
+/* Lattice Model Type */
+#define CONFIG_SYS_XP2		CONFIG_SYS_FPGA_DEV(0x1)
+
 /* Board specific implementation specific function types */
 typedef void (*Lattice_jtag_init)(void);
 typedef void (*Lattice_jtag_set_tdi)(int v);
@@ -282,8 +302,8 @@ void sclock(void);
 void ispVMDelay(unsigned short int a_usMicroSecondDelay);
 void calibration(void);
 
-int lattice_load(Lattice_desc *desc, const void *buf, size_t bsize);
-int lattice_dump(Lattice_desc *desc, const void *buf, size_t bsize);
+int lattice_load(Lattice_desc *desc, void *buf, size_t bsize);
+int lattice_dump(Lattice_desc *desc, void *buf, size_t bsize);
 int lattice_info(Lattice_desc *desc);
 
 void ispVMStart(void);

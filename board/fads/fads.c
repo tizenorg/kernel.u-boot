@@ -4,7 +4,23 @@
  *
  * Modified by, Yuli Barcohen, Arabella Software Ltd., yuli@arabellasw.com
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <config.h>
@@ -434,7 +450,7 @@ static int _initsdram(uint base, uint noMbytes)
 	*/
 
 	memctl->memc_mcr = 0x80808111;   /* run umpb cs4 1 count 1, addr 0x11 ??? (50MHz) */
-					 /* run umpb cs4 1 count 1, addr 0x11 precharge+MRS (100MHz) */
+	                                 /* run umpb cs4 1 count 1, addr 0x11 precharge+MRS (100MHz) */
 	udelay(200);
 
 	/* Run 8 refresh cycles */
@@ -567,7 +583,7 @@ static int initsdram(uint base, uint *noMbytes)
 
 	if(!_initsdram(base, m))
 	{
-		*noMbytes += m;
+	        *noMbytes += m;
 		return 0;
 	}
 	else
@@ -587,17 +603,15 @@ static int initsdram(uint base, uint *noMbytes)
 phys_size_t initdram (int board_type)
 {
 	uint sdramsz = 0;	/* size of sdram in Mbytes */
+	uint base = 0;		/* base of dram in bytes */
 	uint m = 0;		/* size of dram in Mbytes */
 #ifndef CONFIG_MPC885ADS
-	uint base = 0;		/* base of dram in bytes */
 	uint k, s;
 #endif
 
 #ifdef CONFIG_FADS
 	if (!initsdram (0x00000000, &sdramsz)) {
-#ifndef CONFIG_MPC885ADS
 		base = sdramsz << 20;
-#endif
 		printf ("(%u MB SDRAM) ", sdramsz);
 	}
 #endif

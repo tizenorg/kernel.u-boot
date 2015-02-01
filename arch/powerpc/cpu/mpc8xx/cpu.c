@@ -2,7 +2,23 @@
  * (C) Copyright 2000-2002
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -24,11 +40,10 @@
 #include <commproc.h>
 #include <netdev.h>
 #include <asm/cache.h>
-#include <linux/compiler.h>
-#include <asm/io.h>
 
 #if defined(CONFIG_OF_LIBFDT)
 #include <libfdt.h>
+#include <libfdt_env.h>
 #include <fdt_support.h>
 #endif
 
@@ -62,8 +77,7 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	if ((pvr >> 16) != 0x0050)
 		return -1;
 
-	k = (immr << 16) |
-		immap->im_cpm.cp_dparam16[PROFF_REVNUM / sizeof(u16)];
+	k = (immr << 16) | *((ushort *) & immap->im_cpm.cp_dparam[0xB0]);
 	m = 0;
 	suf = "";
 
@@ -136,8 +150,10 @@ static int check_CPU (long clock, uint pvr, uint immr)
 #else
 	printf (" at %s MHz: ", strmhz (buf, clock));
 #endif
-	print_size(checkicache(), " I-Cache ");
-	print_size(checkdcache(), " D-Cache");
+	printf ("%u kB I-Cache %u kB D-Cache",
+		checkicache () >> 10,
+		checkdcache () >> 10
+	);
 
 	/* do we have a FEC (860T/P or 852/859/866/885)? */
 
@@ -169,7 +185,7 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	uint k, m;
 	char buf[32];
 	char pre = 'X';
-	__maybe_unused char *mid = "xx";
+	char *mid = "xx";
 	char *suf;
 
 	/* the highest 16 bits should be 0x0050 for a 8xx */
@@ -177,8 +193,7 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	if ((pvr >> 16) != 0x0050)
 		return -1;
 
-	k = (immr << 16) |
-		immap->im_cpm.cp_dparam16[PROFF_REVNUM / sizeof(u16)];
+	k = (immr << 16) | *((ushort *) & immap->im_cpm.cp_dparam[0xB0]);
 	m = 0;
 
 	switch (k) {
@@ -202,10 +217,10 @@ static int check_CPU (long clock, uint pvr, uint immr)
 		printf ("unknown MPC857 (0x%08x)", k);
 #endif
 
-	printf(" at %s MHz: ", strmhz(buf, clock));
+	printf (" at %s MHz:", strmhz (buf, clock));
 
-	print_size(checkicache(), " I-Cache ");
-	print_size(checkdcache(), " D-Cache");
+	printf (" %u kB I-Cache", checkicache () >> 10);
+	printf (" %u kB D-Cache", checkdcache () >> 10);
 
 	/* lets check and see if we're running on a 862T (or P?) */
 
@@ -237,8 +252,7 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	if ((pvr >> 16) != 0x0050)
 		return -1;
 
-	k = (immr << 16) |
-		in_be16(&immap->im_cpm.cp_dparam16[PROFF_REVNUM / sizeof(u16)]);
+	k = (immr << 16) | *((ushort *) & immap->im_cpm.cp_dparam[0xB0]);
 	m = 0;
 
 	switch (k) {
@@ -263,10 +277,10 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	if (suf)
 		printf ("PPC823ZTnn%s", suf);
 
-	printf(" at %s MHz: ", strmhz(buf, clock));
+	printf (" at %s MHz:", strmhz (buf, clock));
 
-	print_size(checkicache(), " I-Cache ");
-	print_size(checkdcache(), " D-Cache");
+	printf (" %u kB I-Cache", checkicache () >> 10);
+	printf (" %u kB D-Cache", checkdcache () >> 10);
 
 	/* lets check and see if we're running on a 860T (or P?) */
 
@@ -297,8 +311,7 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	if ((pvr >> 16) != 0x0050)
 		return -1;
 
-	k = (immr << 16) |
-		immap->im_cpm.cp_dparam16[PROFF_REVNUM / sizeof(u16)];
+	k = (immr << 16) | *((ushort *) & immap->im_cpm.cp_dparam[0xB0]);
 	m = 0;
 
 	switch (k) {
@@ -319,10 +332,10 @@ static int check_CPU (long clock, uint pvr, uint immr)
 	default:
 		printf ("unknown MPC850 (0x%08x)", k);
 	}
-	printf(" at %s MHz: ", strmhz(buf, clock));
+	printf (" at %s MHz:", strmhz (buf, clock));
 
-	print_size(checkicache(), " I-Cache ");
-	print_size(checkdcache(), " D-Cache");
+	printf (" %u kB I-Cache", checkicache () >> 10);
+	printf (" %u kB D-Cache", checkdcache () >> 10);
 
 	/* lets check and see if we're running on a 850T (or P?) */
 

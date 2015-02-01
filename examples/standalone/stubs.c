@@ -1,11 +1,10 @@
-#include <common.h>
 #include <exports.h>
 
 #ifndef GCC_VERSION
 #define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
 #endif /* GCC_VERSION */
 
-#if defined(CONFIG_X86)
+#if defined(CONFIG_I386)
 /*
  * x86 does not have a dedicated register to store the pointer to
  * the global_data. Thus the jump table address is stored in a
@@ -39,32 +38,17 @@ gd_t *global_data;
 "	bctr\n"				\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r11");
 #elif defined(CONFIG_ARM)
-#ifdef CONFIG_ARM64
 /*
- * x18 holds the pointer to the global_data, x9 is a call-clobbered
+ * r8 holds the pointer to the global_data, ip is a call-clobbered
  * register
  */
 #define EXPORT_FUNC(x) \
 	asm volatile (			\
 "	.globl " #x "\n"		\
 #x ":\n"				\
-"	ldr	x9, [x18, %0]\n"		\
-"	ldr	x9, [x9, %1]\n"		\
-"	br	x9\n"		\
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "x9");
-#else
-/*
- * r9 holds the pointer to the global_data, ip is a call-clobbered
- * register
- */
-#define EXPORT_FUNC(x) \
-	asm volatile (			\
-"	.globl " #x "\n"		\
-#x ":\n"				\
-"	ldr	ip, [r9, %0]\n"		\
+"	ldr	ip, [r8, %0]\n"		\
 "	ldr	pc, [ip, %1]\n"		\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "ip");
-#endif
 #elif defined(CONFIG_MIPS)
 /*
  * k0 ($26) holds the pointer to the global_data; t9 ($25) is a call-
@@ -183,50 +167,8 @@ gd_t *global_data;
 "	jmp %%g1\n"					\
 "	nop\n"						\
 	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "g1" );
-#elif defined(CONFIG_NDS32)
-/*
- * r16 holds the pointer to the global_data. gp is call clobbered.
- * not support reduced register (16 GPR).
- */
-#define EXPORT_FUNC(x) \
-	asm volatile (			\
-"	.globl " #x "\n"		\
-#x ":\n"				\
-"	lwi	$r16, [$gp + (%0)]\n"	\
-"	lwi	$r16, [$r16 + (%1)]\n"	\
-"	jr	$r16\n"			\
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "$r16");
-#elif defined(CONFIG_OPENRISC)
-/*
- * r10 holds the pointer to the global_data, r13 is a call-clobbered
- * register
- */
-#define EXPORT_FUNC(x) \
-	asm volatile (			\
-"	.globl " #x "\n"		\
-#x ":\n"				\
-"	l.lwz	r13, %0(r10)\n"	\
-"	l.lwz	r13, %1(r13)\n"	\
-"	l.jr	r13\n"		\
-"	l.nop\n"				\
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r13");
-#elif defined(CONFIG_ARC)
-/*
- * r25 holds the pointer to the global_data. r10 is call clobbered.
-  */
-#define EXPORT_FUNC(x) \
-	asm volatile( \
-"	.align 4\n" \
-"	.globl " #x "\n" \
-#x ":\n" \
-"	ld	r10, [r25, %0]\n" \
-"	ld	r10, [r10, %1]\n" \
-"	j	[r10]\n" \
-	: : "i"(offsetof(gd_t, jt)), "i"(XF_ ## x * sizeof(void *)) : "r10");
-#else
-/*"	addi	$sp, $sp, -24\n"	\
-"	br	$r16\n"			\*/
 
+#else
 #error stubs definition missing for this architecture
 #endif
 
@@ -245,21 +187,25 @@ void __attribute__((unused)) dummy(void)
 #include <_exports.h>
 }
 
-#include <asm/sections.h>
+extern unsigned long __bss_start, _end;
 
 void app_startup(char * const *argv)
 {
-	char *cp = __bss_start;
+	unsigned char * cp = (unsigned char *) &__bss_start;
 
 	/* Zero out BSS */
-	while (cp < _end)
+	while (cp < (unsigned char *)&_end) {
 		*cp++ = 0;
+	}
 
-#if defined(CONFIG_X86)
+#if defined(CONFIG_I386)
 	/* x86 does not have a dedicated register for passing global_data */
 	global_data = (gd_t *)argv[-1];
 	jt = global_data->jt;
 #endif
 }
+
+void __aeabi_unwind_cpp_pr0(void) {}
+void __aeabi_unwind_cpp_pr1(void) {}
 
 #undef EXPORT_FUNC

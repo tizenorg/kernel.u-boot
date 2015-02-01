@@ -1,5 +1,18 @@
 /*
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  *
  * based on: cmd_jffs2.c
  *
@@ -30,13 +43,7 @@
 #endif
 
 #ifdef CONFIG_CRAMFS_CMDLINE
-#include <flash.h>
-
-#ifdef CONFIG_SYS_NO_FLASH
-# define OFFSET_ADJUSTMENT	0
-#else
-# define OFFSET_ADJUSTMENT	(flash_info[id.num].start[0])
-#endif
+flash_info_t flash_info[1];
 
 #ifndef CONFIG_CMD_JFFS2
 #include <linux/stat.h>
@@ -112,7 +119,7 @@ int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	dev.id = &id;
 	part.dev = &dev;
 	/* fake the address offset */
-	part.offset = addr - OFFSET_ADJUSTMENT;
+	part.offset = addr - flash_info[id.num].start[0];
 
 	/* pre-set Boot file name */
 	if ((filename = getenv("bootfile")) == NULL) {
@@ -133,9 +140,11 @@ int do_cramfs_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		size = cramfs_load ((char *) offset, &part, filename);
 
 	if (size > 0) {
+		char buf[10];
 		printf("### CRAMFS load complete: %d bytes loaded to 0x%lx\n",
 			size, offset);
-		setenv_hex("filesize", size);
+		sprintf(buf, "%x", size);
+		setenv("filesize", buf);
 	} else {
 		printf("### CRAMFS LOAD ERROR<%x> for %s!\n", size, filename);
 	}
@@ -173,7 +182,7 @@ int do_cramfs_ls(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	dev.id = &id;
 	part.dev = &dev;
 	/* fake the address offset */
-	part.offset = addr - OFFSET_ADJUSTMENT;
+	part.offset = addr - flash_info[id.num].start[0];
 
 	if (argc == 2)
 		filename = argv[1];

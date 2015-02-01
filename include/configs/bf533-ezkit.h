@@ -11,7 +11,6 @@
 /*
  * Processor Settings
  */
-#define CONFIG_BFIN_CPU             bf533-0.3
 #define CONFIG_BFIN_BOOT_MODE       BFIN_BOOT_BYPASS
 
 
@@ -65,6 +64,7 @@
  * Network Settings
  */
 #define ADI_CMDS_NETWORK	1
+#define CONFIG_NET_MULTI
 #define CONFIG_SMC91111	1
 #define CONFIG_SMC91111_BASE	0x20310300
 #define SMC91111_EEPROM_INIT() \
@@ -94,15 +94,10 @@
 /*
  * I2C Settings
  */
-#define CONFIG_SYS_I2C_SOFT
-#ifdef CONFIG_SYS_I2C_SOFT
-#define CONFIG_SYS_I2C
+#define CONFIG_SOFT_I2C
 #define CONFIG_SOFT_I2C_GPIO_SCL GPIO_PF0
 #define CONFIG_SOFT_I2C_GPIO_SDA GPIO_PF1
-#define CONFIG_SYS_I2C_SOFT_SPEED	50000
-#define CONFIG_SYS_I2C_SOFT_SLAVE	0
-#define I2C_DELAY              udelay(5)       /* 1/4 I2C clock duration */
-#endif
+
 
 /*
  * Misc Settings

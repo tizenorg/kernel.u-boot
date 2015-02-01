@@ -2,11 +2,24 @@
  * (C) Copyright 2010
  * Texas Instruments, <www.ti.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
-
-#ifndef TWL6030_H
-#define TWL6030_H
 
 #include <common.h>
 #include <i2c.h>
@@ -20,8 +33,11 @@
 #define TWL6030_CHIP_PWM	0x49
 
 /* Slave Address 0x48 */
-#define VMMC_CFG_STATE		0x9A
-#define VMMC_CFG_VOLTATE	0x9B
+#define STS_HW_CONDITIONS	0x21
+#define STS_PLUG_DET		(1 << 3)
+#define STS_USB_ID		(1 << 2)
+#define STS_PWRON		(1 << 0)
+
 #define VUSB_CFG_STATE		0xA2
 
 #define MISC1			0xE4
@@ -95,6 +111,7 @@
 #define CHRG_DET_N		(1 << 5)
 #define VAC_DET			(1 << 3)
 #define VBUS_DET		(1 << 2)
+#define BAT_REMOVED		(1 << 1)
 
 #define FG_REG_10	0xCA
 #define FG_REG_11	0xCB
@@ -110,57 +127,8 @@
 #define CTRL_P2_EOCP2	(1 << 1)
 #define CTRL_P2_BUSY	(1 << 0)
 
-#define TWL6032_CTRL_P1	0x36
-#define CTRL_P1_SP1	(1 << 3)
-
 #define GPCH0_LSB	0x57
 #define GPCH0_MSB	0x58
-
-#define TWL6032_GPCH0_LSB	0x3b
-
-#define TWL6032_GPSELECT_ISB	0x35
-
-#define USB_PRODUCT_ID_LSB	0x02
-
-#define TWL6030_GPADC_VBAT_CHNL	0x07
-#define TWL6032_GPADC_VBAT_CHNL	0x12
-
-#define TWL6030_GPADC_CTRL	0x2e
-#define TWL6032_GPADC_CTRL2	0x2f
-#define GPADC_CTRL2_CH18_SCALER_EN	(1 << 2)
-#define GPADC_CTRL_SCALER_DIV4		(1 << 3)
-
-#define TWL6030_VBAT_MULT	40 * 1000
-#define TWL6032_VBAT_MULT	25 * 1000
-
-#define TWL6030_VBAT_SHIFT	(10 + 3)
-#define TWL6032_VBAT_SHIFT	(12 + 2)
-
-enum twl603x_chip_type{
-	chip_TWL6030,
-	chip_TWL6032,
-	chip_TWL603X_cnt
-};
-
-struct twl6030_data{
-	u8 chip_type;
-	u8 adc_rbase;
-	u8 adc_ctrl;
-	u8 adc_enable;
-	int vbat_mult;
-	int vbat_shift;
-};
-
-/* Functions to read and write from TWL6030 */
-static inline int twl6030_i2c_write_u8(u8 chip_no, u8 reg, u8 val)
-{
-	return i2c_write(chip_no, reg, 1, &val, 1);
-}
-
-static inline int twl6030_i2c_read_u8(u8 chip_no, u8 reg, u8 *val)
-{
-	return i2c_read(chip_no, reg, 1, val, 1);
-}
 
 void twl6030_init_battery_charging(void);
 void twl6030_usb_device_settings(void);
@@ -168,6 +136,6 @@ void twl6030_start_usb_charging(void);
 void twl6030_stop_usb_charging(void);
 int twl6030_get_battery_voltage(void);
 int twl6030_get_battery_current(void);
-void twl6030_power_mmc_init(void);
+u8 twl6030_get_charger_stat(void);
+u8 twl6030_get_hw_status(void);
 
-#endif /* TWL6030_H */

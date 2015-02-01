@@ -5,12 +5,23 @@
  * Authors: Nick Spence <nick.spence@freescale.com>,
  *          Scott Wood <scottwood@freescale.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include <common.h>
 #include <malloc.h>
-#include <nand.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
@@ -46,6 +57,7 @@ struct fsl_elbc_ctrl;
 /* mtd information per set */
 
 struct fsl_elbc_mtd {
+	struct mtd_info mtd;
 	struct nand_chip chip;
 	struct fsl_elbc_ctrl *ctrl;
 
@@ -73,6 +85,7 @@ struct fsl_elbc_ctrl {
 	unsigned int mdr;        /* UPM/FCM Data Register value           */
 	unsigned int use_mdr;    /* Non zero if the MDR is to be set      */
 	unsigned int oob;        /* Non zero if operating on OOB data     */
+	uint8_t *oob_poi;        /* Place to write ECC after read back    */
 };
 
 /* These map to the positions used by the FCM hardware ECC generator */
@@ -328,21 +341,18 @@ static void fsl_elbc_cmdfunc(struct mtd_info *mtd, unsigned int command,
 
 	/* READID must read all 5 possible bytes while CEB is active */
 	case NAND_CMD_READID:
-	case NAND_CMD_PARAM:
-		vdbg("fsl_elbc_cmdfunc: NAND_CMD 0x%x.\n", command);
+		vdbg("fsl_elbc_cmdfunc: NAND_CMD_READID.\n");
 
 		out_be32(&lbc->fir, (FIR_OP_CW0 << FIR_OP0_SHIFT) |
 				    (FIR_OP_UA  << FIR_OP1_SHIFT) |
 				    (FIR_OP_RBW << FIR_OP2_SHIFT));
-		out_be32(&lbc->fcr, command << FCR_CMD0_SHIFT);
-		/*
-		 * although currently it's 8 bytes for READID, we always read
-		 * the maximum 256 bytes(for PARAM)
-		 */
-		out_be32(&lbc->fbcr, 256);
-		ctrl->read_bytes = 256;
+		out_be32(&lbc->fcr, NAND_CMD_READID << FCR_CMD0_SHIFT);
+		/* 5 bytes for manuf, device and exts */
+		out_be32(&lbc->fbcr, 5);
+		ctrl->read_bytes = 5;
 		ctrl->use_mdr = 1;
-		ctrl->mdr = column;
+		ctrl->mdr = 0;
+
 		set_addr(mtd, 0, 0, 0);
 		fsl_elbc_run_command(mtd);
 		return;
@@ -426,6 +436,7 @@ static void fsl_elbc_cmdfunc(struct mtd_info *mtd, unsigned int command,
 
 	/* PAGEPROG reuses all of the setup from SEQIN and adds the length */
 	case NAND_CMD_PAGEPROG: {
+		int full_page;
 		vdbg("fsl_elbc_cmdfunc: NAND_CMD_PAGEPROG "
 		     "writing %d bytes.\n", ctrl->index);
 
@@ -434,13 +445,34 @@ static void fsl_elbc_cmdfunc(struct mtd_info *mtd, unsigned int command,
 		 * write so the HW generates the ECC.
 		 */
 		if (ctrl->oob || ctrl->column != 0 ||
-		    ctrl->index != mtd->writesize + mtd->oobsize)
+		    ctrl->index != mtd->writesize + mtd->oobsize) {
 			out_be32(&lbc->fbcr, ctrl->index);
-		else
+			full_page = 0;
+		} else {
 			out_be32(&lbc->fbcr, 0);
+			full_page = 1;
+		}
 
 		fsl_elbc_run_command(mtd);
 
+		/* Read back the page in order to fill in the ECC for the
+		 * caller.  Is this really needed?
+		 */
+		if (full_page && ctrl->oob_poi) {
+			out_be32(&lbc->fbcr, 3);
+			set_addr(mtd, 6, page_addr, 1);
+
+			ctrl->read_bytes = mtd->writesize + 9;
+
+			fsl_elbc_do_read(chip, 1);
+			fsl_elbc_run_command(mtd);
+
+			memcpy_fromio(ctrl->oob_poi + 6,
+				      &ctrl->addr[ctrl->index], 3);
+			ctrl->index += 3;
+		}
+
+		ctrl->oob_poi = NULL;
 		return;
 	}
 
@@ -628,8 +660,9 @@ static int fsl_elbc_wait(struct mtd_info *mtd, struct nand_chip *chip)
 	return fsl_elbc_read_byte(mtd);
 }
 
-static int fsl_elbc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
-			      uint8_t *buf, int oob_required, int page)
+static int fsl_elbc_read_page(struct mtd_info *mtd,
+			      struct nand_chip *chip,
+			      uint8_t *buf, int page)
 {
 	fsl_elbc_read_buf(mtd, buf, mtd->writesize);
 	fsl_elbc_read_buf(mtd, chip->oob_poi, mtd->oobsize);
@@ -643,13 +676,17 @@ static int fsl_elbc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 /* ECC will be calculated automatically, and errors will be detected in
  * waitfunc.
  */
-static int fsl_elbc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
-				const uint8_t *buf, int oob_required)
+static void fsl_elbc_write_page(struct mtd_info *mtd,
+				struct nand_chip *chip,
+				const uint8_t *buf)
 {
+	struct fsl_elbc_mtd *priv = chip->priv;
+	struct fsl_elbc_ctrl *ctrl = priv->ctrl;
+
 	fsl_elbc_write_buf(mtd, buf, mtd->writesize);
 	fsl_elbc_write_buf(mtd, chip->oob_poi, mtd->oobsize);
 
-	return 0;
+	ctrl->oob_poi = chip->oob_poi;
 }
 
 static struct fsl_elbc_ctrl *elbc_ctrl;
@@ -674,13 +711,10 @@ static void fsl_elbc_ctrl_init(void)
 	elbc_ctrl->addr = NULL;
 }
 
-static int fsl_elbc_chip_init(int devnum, u8 *addr)
+int board_nand_init(struct nand_chip *nand)
 {
-	struct mtd_info *mtd = &nand_info[devnum];
-	struct nand_chip *nand;
 	struct fsl_elbc_mtd *priv;
 	uint32_t br = 0, or = 0;
-	int ret;
 
 	if (!elbc_ctrl) {
 		fsl_elbc_ctrl_init();
@@ -693,19 +727,19 @@ static int fsl_elbc_chip_init(int devnum, u8 *addr)
 		return -ENOMEM;
 
 	priv->ctrl = elbc_ctrl;
-	priv->vbase = addr;
+	priv->vbase = nand->IO_ADDR_R;
 
 	/* Find which chip select it is connected to.  It'd be nice
 	 * if we could pass more than one datum to the NAND driver...
 	 */
 	for (priv->bank = 0; priv->bank < MAX_BANKS; priv->bank++) {
-		phys_addr_t phys_addr = virt_to_phys(addr);
+		phys_addr_t base_addr = virt_to_phys(nand->IO_ADDR_R);
 
 		br = in_be32(&elbc_ctrl->regs->bank[priv->bank].br);
 		or = in_be32(&elbc_ctrl->regs->bank[priv->bank].or);
 
 		if ((br & BR_V) && (br & BR_MSEL) == BR_MS_FCM &&
-		    (br & or & BR_BA) == BR_PHYS_ADDR(phys_addr))
+		    (br & or & BR_BA) == BR_PHYS_ADDR(base_addr))
 			break;
 	}
 
@@ -714,9 +748,6 @@ static int fsl_elbc_chip_init(int devnum, u8 *addr)
 		       "chip selects\n");
 		return -ENODEV;
 	}
-
-	nand = &priv->chip;
-	mtd->priv = nand;
 
 	elbc_ctrl->chips[priv->bank] = priv;
 
@@ -735,8 +766,8 @@ static int fsl_elbc_chip_init(int devnum, u8 *addr)
 	nand->bbt_md = &bbt_mirror_descr;
 
   	/* set up nand options */
-	nand->options = NAND_NO_SUBPAGE_WRITE;
-	nand->bbt_options = NAND_BBT_USE_FLASH;
+	nand->options = NAND_NO_READRDY | NAND_NO_AUTOINCR |
+			NAND_USE_FLASH_BBT;
 
 	nand->controller = &elbc_ctrl->controller;
 	nand->priv = priv;
@@ -744,7 +775,19 @@ static int fsl_elbc_chip_init(int devnum, u8 *addr)
 	nand->ecc.read_page = fsl_elbc_read_page;
 	nand->ecc.write_page = fsl_elbc_write_page;
 
+#ifdef CONFIG_FSL_ELBC_FMR
+	priv->fmr = CONFIG_FSL_ELBC_FMR;
+#else
 	priv->fmr = (15 << FMR_CWTO_SHIFT) | (2 << FMR_AL_SHIFT);
+
+	/*
+	 * Hardware expects small page has ECCM0, large page has ECCM1
+	 * when booting from NAND.  Board config can override if not
+	 * booting from NAND.
+	 */
+	if (or & OR_FCM_PGS)
+		priv->fmr |= FMR_ECCM;
+#endif
 
 	/* If CS Base Register selects full hardware ECC then use it */
 	if ((br & BR_DECC) == BR_DECC_CHK_GEN) {
@@ -757,35 +800,15 @@ static int fsl_elbc_chip_init(int devnum, u8 *addr)
 		nand->ecc.size = 512;
 		nand->ecc.bytes = 3;
 		nand->ecc.steps = 1;
-		nand->ecc.strength = 1;
 	} else {
-		/* otherwise fall back to software ECC */
-#if defined(CONFIG_NAND_ECC_BCH)
-		nand->ecc.mode = NAND_ECC_SOFT_BCH;
-#else
+		/* otherwise fall back to default software ECC */
 		nand->ecc.mode = NAND_ECC_SOFT;
-#endif
 	}
 
-	ret = nand_scan_ident(mtd, 1, NULL);
-	if (ret)
-		return ret;
-
 	/* Large-page-specific setup */
-	if (mtd->writesize == 2048) {
-		setbits_be32(&elbc_ctrl->regs->bank[priv->bank].or,
-			     OR_FCM_PGS);
-		in_be32(&elbc_ctrl->regs->bank[priv->bank].or);
-
+	if (or & OR_FCM_PGS) {
 		priv->page_size = 1;
 		nand->badblock_pattern = &largepage_memorybased;
-
-		/*
-		 * Hardware expects small page has ECCM0, large page has
-		 * ECCM1 when booting from NAND, and we follow that even
-		 * when not booting from NAND.
-		 */
-		priv->fmr |= FMR_ECCM;
 
 		/* adjust ecc setup if needed */
 		if ((br & BR_DECC) == BR_DECC_CHK_GEN) {
@@ -794,36 +817,7 @@ static int fsl_elbc_chip_init(int devnum, u8 *addr)
 					   &fsl_elbc_oob_lp_eccm1 :
 					   &fsl_elbc_oob_lp_eccm0;
 		}
-	} else if (mtd->writesize == 512) {
-		clrbits_be32(&elbc_ctrl->regs->bank[priv->bank].or,
-			     OR_FCM_PGS);
-		in_be32(&elbc_ctrl->regs->bank[priv->bank].or);
-	} else {
-		return -ENODEV;
 	}
 
-	ret = nand_scan_tail(mtd);
-	if (ret)
-		return ret;
-
-	ret = nand_register(devnum);
-	if (ret)
-		return ret;
-
 	return 0;
-}
-
-#ifndef CONFIG_SYS_NAND_BASE_LIST
-#define CONFIG_SYS_NAND_BASE_LIST { CONFIG_SYS_NAND_BASE }
-#endif
-
-static unsigned long base_address[CONFIG_SYS_MAX_NAND_DEVICE] =
-	CONFIG_SYS_NAND_BASE_LIST;
-
-void board_nand_init(void)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_SYS_MAX_NAND_DEVICE; i++)
-		fsl_elbc_chip_init(i, (u8 *)base_address[i]);
 }
