@@ -45,9 +45,7 @@ struct uart_port {
 	defined(CONFIG_CPU_SH7721) || \
 	defined(CONFIG_ARCH_SH7367) || \
 	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_SH73A0) || \
-	defined(CONFIG_R8A7740)
+	defined(CONFIG_ARCH_SH7372)
 # define SCSCR_INIT(port)  0x0030 /* TIE=0,RIE=0,TE=1,RE=1 */
 # define PORT_PTCR	   0xA405011EUL
 # define PORT_PVCR	   0xA4050122UL
@@ -114,15 +112,6 @@ struct uart_port {
 # define SCSCR_INIT(port) ((port)->type == PORT_SCIFA ? \
 	0x30 /* TIE=0,RIE=0,TE=1,RE=1 */ : \
 	0x38 /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */)
-#elif defined(CONFIG_CPU_SH7734)
-# define SCSPTR0 0xFFE40020
-# define SCSPTR1 0xFFE41020
-# define SCSPTR2 0xFFE42020
-# define SCSPTR3 0xFFE43020
-# define SCSPTR4 0xFFE44020
-# define SCSPTR5 0xFFE45020
-# define SCIF_ORER 0x0001  /* overrun error bit */
-# define SCSCR_INIT(port) 0x0038  /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
 #elif defined(CONFIG_CPU_SH4_202)
 # define SCSPTR2 0xffe80020 /* 16 bit SCIF */
 # define SCIF_ORER 0x0001   /* overrun error bit */
@@ -143,9 +132,7 @@ struct uart_port {
 #elif defined(CONFIG_H8S2678)
 # define SCSCR_INIT(port)          0x30 /* TIE=0,RIE=0,TE=1,RE=1 */
 # define H8300_SCI_DR(ch) (*(volatile char *)(P1DR + h8300_sci_pins[ch].port))
-#elif defined(CONFIG_CPU_SH7757) || \
-	defined(CONFIG_CPU_SH7752) || \
-	defined(CONFIG_CPU_SH7753)
+#elif defined(CONFIG_CPU_SH7757)
 # define SCSPTR0 0xfe4b0020
 # define SCSPTR1 0xfe4b0020
 # define SCSPTR2 0xfe4b0020
@@ -190,8 +177,7 @@ struct uart_port {
 #elif defined(CONFIG_CPU_SH7201) || \
 	defined(CONFIG_CPU_SH7203) || \
 	defined(CONFIG_CPU_SH7206) || \
-	defined(CONFIG_CPU_SH7263) || \
-	defined(CONFIG_CPU_SH7264)
+	defined(CONFIG_CPU_SH7263)
 # define SCSPTR0 0xfffe8020 /* 16 bit SCIF */
 # define SCSPTR1 0xfffe8820 /* 16 bit SCIF */
 # define SCSPTR2 0xfffe9020 /* 16 bit SCIF */
@@ -202,16 +188,6 @@ struct uart_port {
 #  define SCSPTR6 0xfffeB020 /* 16 bit SCIF */
 #  define SCSPTR7 0xfffeB820 /* 16 bit SCIF */
 # endif
-# define SCSCR_INIT(port)	0x38 /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-#elif defined(CONFIG_CPU_SH7269)
-# define SCSPTR0 0xe8007020 /* 16 bit SCIF */
-# define SCSPTR1 0xe8007820 /* 16 bit SCIF */
-# define SCSPTR2 0xe8008020 /* 16 bit SCIF */
-# define SCSPTR3 0xe8008820 /* 16 bit SCIF */
-# define SCSPTR4 0xe8009020 /* 16 bit SCIF */
-# define SCSPTR5 0xe8009820 /* 16 bit SCIF */
-# define SCSPTR6 0xe800a020 /* 16 bit SCIF */
-# define SCSPTR7 0xe800a820 /* 16 bit SCIF */
 # define SCSCR_INIT(port)	0x38 /* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
 #elif defined(CONFIG_CPU_SH7619)
 # define SCSPTR0 0xf8400020 /* 16 bit SCIF */
@@ -226,9 +202,6 @@ struct uart_port {
 # define SCSPTR3 0xffc60020		/* 16 bit SCIF */
 # define SCIF_ORER 0x0001		/* Overrun error bit */
 # define SCSCR_INIT(port)	0x38	/* TIE=0,RIE=0,TE=1,RE=1,REIE=1 */
-#elif defined(CONFIG_R8A7790) || defined(CONFIG_R8A7791)
-# define SCIF_ORER	0x0001
-# define SCSCR_INIT(port)	0x32	/* TIE=0,RIE=0,TE=1,RE=1,REIE=0, */
 #else
 # error CPU subtype not defined
 #endif
@@ -242,7 +215,6 @@ struct uart_port {
 	defined(CONFIG_CPU_SH7091)  || \
 	defined(CONFIG_CPU_SH7750R) || \
 	defined(CONFIG_CPU_SH7722)  || \
-	defined(CONFIG_CPU_SH7734)  || \
 	defined(CONFIG_CPU_SH7750S) || \
 	defined(CONFIG_CPU_SH7751)  || \
 	defined(CONFIG_CPU_SH7751R) || \
@@ -289,9 +261,7 @@ struct uart_port {
 	defined(CONFIG_CPU_SH7721) || \
 	defined(CONFIG_ARCH_SH7367) || \
 	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_SH73A0) || \
-	defined(CONFIG_R8A7740)
+	defined(CONFIG_ARCH_SH7372)
 # define SCIF_ORER    0x0200
 # define SCIF_ERRORS (SCIF_PER | SCIF_FER | SCIF_ER | SCIF_BRK | SCIF_ORER)
 # define SCIF_RFDC_MASK 0x007f
@@ -303,9 +273,6 @@ struct uart_port {
 /* SH7763 SCIF2 support */
 # define SCIF2_RFDC_MASK 0x001f
 # define SCIF2_TXROOM_MAX 16
-#elif defined(CONFIG_R8A7790) || defined(CONFIG_R8A7791)
-# define SCIF_ERRORS (SCIF_PER | SCIF_FER | SCIF_ER | SCIF_BRK)
-# define SCIF_RFDC_MASK	0x003f
 #else
 # define SCIF_ERRORS (SCIF_PER | SCIF_FER | SCIF_ER | SCIF_BRK)
 # define SCIF_RFDC_MASK 0x001f
@@ -338,9 +305,7 @@ struct uart_port {
 	defined(CONFIG_CPU_SH7721) || \
 	defined(CONFIG_ARCH_SH7367) || \
 	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_SH73A0) || \
-	defined(CONFIG_R8A7740)
+	defined(CONFIG_ARCH_SH7372)
 # define SCxSR_RDxF_CLEAR(port)	 (sci_in(port, SCxSR) & 0xfffc)
 # define SCxSR_ERROR_CLEAR(port) (sci_in(port, SCxSR) & 0xfd73)
 # define SCxSR_TDxE_CLEAR(port)	 (sci_in(port, SCxSR) & 0xffdf)
@@ -434,9 +399,7 @@ static inline void sci_##name##_out(struct uart_port *port,\
 #if defined(CONFIG_SH3) || \
 	defined(CONFIG_ARCH_SH7367) || \
 	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_SH73A0) || \
-	defined(CONFIG_R8A7740)
+	defined(CONFIG_ARCH_SH7372)
 #if defined(CONFIG_CPU_SH7710) || defined(CONFIG_CPU_SH7712)
 #define SCIx_FNS(name, sh3_sci_offset, sh3_sci_size,\
 				sh4_sci_offset, sh4_sci_size, \
@@ -452,12 +415,10 @@ static inline void sci_##name##_out(struct uart_port *port,\
 	defined(CONFIG_CPU_SH7720) || \
 	defined(CONFIG_CPU_SH7721) || \
 	defined(CONFIG_ARCH_SH7367) || \
-	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_SH73A0)
+	defined(CONFIG_ARCH_SH7377)
 #define SCIF_FNS(name, scif_offset, scif_size) \
 	CPU_SCIF_FNS(name, scif_offset, scif_size)
-#elif defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_R8A7740)
+#elif defined(CONFIG_ARCH_SH7372)
 #define SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size,\
 				sh4_scifb_offset, sh4_scifb_size) \
 	CPU_SCIx_FNS(name, sh4_scifa_offset, sh4_scifa_size,\
@@ -510,8 +471,7 @@ static inline void sci_##name##_out(struct uart_port *port,\
 	defined(CONFIG_CPU_SH7720) || \
 	defined(CONFIG_CPU_SH7721) || \
 	defined(CONFIG_ARCH_SH7367) || \
-	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_SH73A0)
+	defined(CONFIG_ARCH_SH7377)
 
 SCIF_FNS(SCSMR,  0x00, 16)
 SCIF_FNS(SCBRR,  0x04,  8)
@@ -524,8 +484,7 @@ SCIF_FNS(SCFDR,  0x1c, 16)
 SCIF_FNS(SCxTDR, 0x20,  8)
 SCIF_FNS(SCxRDR, 0x24,  8)
 SCIF_FNS(SCLSR,  0x00,  0)
-#elif defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_R8A7740)
+#elif defined(CONFIG_ARCH_SH7372)
 SCIF_FNS(SCSMR,  0x00, 16)
 SCIF_FNS(SCBRR,  0x04,  8)
 SCIF_FNS(SCSCR,  0x08, 16)
@@ -586,10 +545,6 @@ SCIF_FNS(SCFDR,                      0x0e, 16, 0x1C, 16)
 SCIF_FNS(SCSPTR,                        0,  0, 0, 0)
 #else
 SCIF_FNS(SCSPTR,                        0,  0, 0x20, 16)
-#endif
-#if defined(CONFIG_R8A7790) || defined(CONFIG_R8A7791)
-SCIF_FNS(DL,				0,  0, 0x30, 16)
-SCIF_FNS(CKS,				0,  0, 0x34, 16)
 #endif
 SCIF_FNS(SCLSR,                         0,  0, 0x24, 16)
 #endif
@@ -716,9 +671,7 @@ static inline int sci_rxd_in(struct uart_port *port)
 	defined(CONFIG_CPU_SH7721) || \
 	defined(CONFIG_ARCH_SH7367) || \
 	defined(CONFIG_ARCH_SH7377) || \
-	defined(CONFIG_ARCH_SH7372) || \
-	defined(CONFIG_SH73A0) || \
-	defined(CONFIG_R8A7740)
+	defined(CONFIG_ARCH_SH7372)
 #define SCBRR_VALUE(bps, clk) (((clk*2)+16*bps)/(32*bps)-1)
 #elif defined(CONFIG_CPU_SH7723) ||\
 	defined(CONFIG_CPU_SH7724)
@@ -732,9 +685,6 @@ static inline int scbrr_calc(struct uart_port port, int bps, int clk)
 #define SCBRR_VALUE(bps, clk) scbrr_calc(sh_sci, bps, clk)
 #elif defined(__H8300H__) || defined(__H8300S__)
 #define SCBRR_VALUE(bps, clk) (((clk*1000/32)/bps)-1)
-#elif defined(CONFIG_R8A7790) || defined(CONFIG_R8A7791)
-#define SCBRR DL
-#define SCBRR_VALUE(bps, clk) (clk / bps / 16)
 #else /* Generic SH */
 #define SCBRR_VALUE(bps, clk) ((clk+16*bps)/(32*bps)-1)
 #endif

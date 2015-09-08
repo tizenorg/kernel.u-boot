@@ -2,7 +2,23 @@
  * (C) Copyright 2000
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -123,7 +139,7 @@ int flash_sect_roundb (ulong *addr)
 		} /* bank */
 	}
 	if (!found) {
-		/* error, address not in flash */
+		/* error, addres not in flash */
 		printf("Error: end address (0x%08lx) not in flash!\n", *addr);
 		return 1;
 	}
@@ -273,7 +289,7 @@ flash_fill_sect_ranges (ulong addr_first, ulong addr_last,
 }
 #endif /* CONFIG_SYS_NO_FLASH */
 
-static int do_flinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+int do_flinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifndef CONFIG_SYS_NO_FLASH
 	ulong bank;
@@ -305,12 +321,12 @@ static int do_flinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return 0;
 }
 
-static int do_flerase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+int do_flerase (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifndef CONFIG_SYS_NO_FLASH
-	flash_info_t *info = NULL;
+	flash_info_t *info;
 	ulong bank, addr_first, addr_last;
-	int n, sect_first = 0, sect_last = 0;
+	int n, sect_first, sect_last;
 #if defined(CONFIG_CMD_MTDPARTS)
 	struct mtd_device *dev;
 	struct part_info *part;
@@ -319,7 +335,7 @@ static int do_flerase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	int rcode = 0;
 
 	if (argc < 2)
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 
 	if (strcmp(argv[1], "all") == 0) {
 		for (bank=1; bank<=CONFIG_SYS_MAX_FLASH_BANKS; ++bank) {
@@ -368,7 +384,7 @@ static int do_flerase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 
 	if (argc != 3)
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 
 	if (strcmp(argv[1], "bank") == 0) {
 		bank = simple_strtoul(argv[2], NULL, 16);
@@ -389,7 +405,7 @@ static int do_flerase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (addr_first >= addr_last)
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 
 	rcode = flash_sect_erase(addr_first, addr_last);
 	return rcode;
@@ -427,8 +443,7 @@ int flash_sect_erase (ulong addr_first, ulong addr_last)
 				rcode = flash_erase (info, s_first[bank], s_last[bank]);
 			}
 		}
-		if (rcode == 0)
-			printf("Erased %d sectors\n", erased);
+		printf ("Erased %d sectors\n", erased);
 	} else if (rcode == 0) {
 		puts ("Error: start and/or end address"
 			" not on sector boundary\n");
@@ -438,38 +453,36 @@ int flash_sect_erase (ulong addr_first, ulong addr_last)
 }
 #endif /* CONFIG_SYS_NO_FLASH */
 
-static int do_protect(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	int rcode = 0;
 #ifndef CONFIG_SYS_NO_FLASH
-	flash_info_t *info = NULL;
+	flash_info_t *info;
 	ulong bank;
-	int i, n, sect_first = 0, sect_last = 0;
+	int i, n, sect_first, sect_last;
 #if defined(CONFIG_CMD_MTDPARTS)
 	struct mtd_device *dev;
 	struct part_info *part;
 	u8 dev_type, dev_num, pnum;
 #endif
 #endif /* CONFIG_SYS_NO_FLASH */
+#if !defined(CONFIG_SYS_NO_FLASH) || defined(CONFIG_HAS_DATAFLASH)
+	ulong addr_first, addr_last;
+#endif
 #ifdef CONFIG_HAS_DATAFLASH
 	int status;
 #endif
-#if !defined(CONFIG_SYS_NO_FLASH) || defined(CONFIG_HAS_DATAFLASH)
 	int p;
-	ulong addr_first, addr_last;
-#endif
+	int rcode = 0;
 
 	if (argc < 3)
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 
-#if !defined(CONFIG_SYS_NO_FLASH) || defined(CONFIG_HAS_DATAFLASH)
 	if (strcmp(argv[1], "off") == 0)
 		p = 0;
 	else if (strcmp(argv[1], "on") == 0)
 		p = 1;
 	else
-		return CMD_RET_USAGE;
-#endif
+		return cmd_usage(cmdtp);
 
 #ifdef CONFIG_HAS_DATAFLASH
 	if ((strcmp(argv[2], "all") != 0) && (strcmp(argv[2], "bank") != 0)) {
@@ -568,7 +581,7 @@ static int do_protect(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 
 	if (argc != 4)
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 
 	if (strcmp(argv[2], "bank") == 0) {
 		bank = simple_strtoul(argv[3], NULL, 16);
@@ -608,7 +621,7 @@ static int do_protect(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (addr_first >= addr_last)
-		return CMD_RET_USAGE;
+		return cmd_usage(cmdtp);
 
 	rcode = flash_sect_protect (p, addr_first, addr_last);
 #endif /* CONFIG_SYS_NO_FLASH */

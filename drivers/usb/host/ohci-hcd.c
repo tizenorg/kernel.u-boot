@@ -17,7 +17,24 @@
  * Modified for the MP2USB by (C) Copyright 2005 Eric Benard
  * ebenard@eukrea.com - based on s3c24x0's driver
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 /*
  * IMPORTANT NOTES
@@ -49,6 +66,7 @@
 
 #if defined(CONFIG_ARM920T) || \
     defined(CONFIG_S3C24X0) || \
+    defined(CONFIG_S3C6400) || \
     defined(CONFIG_440EP) || \
     defined(CONFIG_PCI_OHCI) || \
     defined(CONFIG_MPC5200) || \
@@ -785,7 +803,7 @@ static ed_t *ep_add_ed(struct usb_device *usb_dev, unsigned long pipe,
 			| (usb_pipeisoc(pipe)? 0x8000: 0)
 			| (usb_pipecontrol(pipe)? 0: \
 					   (usb_pipeout(pipe)? 0x800: 0x1000))
-			| (usb_dev->speed == USB_SPEED_LOW) << 13
+			| usb_pipeslow(pipe) << 13
 			| usb_maxpacket(usb_dev, pipe) << 16);
 
 	if (ed->type == PIPE_INTERRUPT && ed->state == ED_UNLINK) {
@@ -947,9 +965,10 @@ static void td_submit_job(struct usb_device *dev, unsigned long pipe,
 
 static void dl_transfer_length(td_t *td)
 {
-	__u32 tdBE, tdCBP;
+	__u32 tdINFO, tdBE, tdCBP;
 	urb_priv_t *lurb_priv = td->ed->purb;
 
+	tdINFO = m32_swap(td->hwINFO);
 	tdBE   = m32_swap(td->hwBE);
 	tdCBP  = m32_swap(td->hwCBP);
 
@@ -1243,17 +1262,18 @@ static int ohci_submit_rh_msg(struct usb_device *dev, unsigned long pipe,
 	int leni = transfer_len;
 	int len = 0;
 	int stat = 0;
+	__u32 datab[4];
+	__u8 *data_buf = (__u8 *)datab;
 	__u16 bmRType_bReq;
 	__u16 wValue;
 	__u16 wIndex;
 	__u16 wLength;
-	ALLOC_ALIGN_BUFFER(__u8, databuf, 16, sizeof(u32));
 
 #ifdef DEBUG
 pkt_print(NULL, dev, pipe, buffer, transfer_len,
 	  cmd, "SUB(rh)", usb_pipein(pipe));
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 	if (usb_pipeint(pipe)) {
 		info("Root-Hub submit IRQ: NOT implemented");
@@ -1278,20 +1298,20 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 	*/
 
 	case RH_GET_STATUS:
-		*(u16 *)databuf = cpu_to_le16(1);
+		*(__u16 *) data_buf = cpu_to_le16(1);
 		OK(2);
 	case RH_GET_STATUS | RH_INTERFACE:
-		*(u16 *)databuf = cpu_to_le16(0);
+		*(__u16 *) data_buf = cpu_to_le16(0);
 		OK(2);
 	case RH_GET_STATUS | RH_ENDPOINT:
-		*(u16 *)databuf = cpu_to_le16(0);
+		*(__u16 *) data_buf = cpu_to_le16(0);
 		OK(2);
 	case RH_GET_STATUS | RH_CLASS:
-		*(u32 *)databuf = cpu_to_le32(
+		*(__u32 *) data_buf = cpu_to_le32(
 				RD_RH_STAT & ~(RH_HS_CRWE | RH_HS_DRWE));
 		OK(4);
 	case RH_GET_STATUS | RH_OTHER | RH_CLASS:
-		*(u32 *)databuf = cpu_to_le32(RD_RH_PORTSTAT);
+		*(__u32 *) data_buf = cpu_to_le32(RD_RH_PORTSTAT);
 		OK(4);
 
 	case RH_CLEAR_FEATURE | RH_ENDPOINT:
@@ -1334,7 +1354,7 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 			OK(0);
 		case (RH_PORT_POWER):
 			WR_RH_PORTSTAT(RH_PS_PPS);
-			mdelay(100);
+			wait_ms(100);
 			OK(0);
 		case (RH_PORT_ENABLE): /* BUG IN HUP CODE *********/
 			if (RD_RH_PORTSTAT & RH_PS_CCS)
@@ -1355,14 +1375,14 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 					min_t(unsigned int,
 					sizeof(root_hub_dev_des),
 					wLength));
-			databuf = root_hub_dev_des; OK(len);
+			data_buf = root_hub_dev_des; OK(len);
 		case (0x02): /* configuration descriptor */
 			len = min_t(unsigned int,
 					leni,
 					min_t(unsigned int,
 					sizeof(root_hub_config_des),
 					wLength));
-			databuf = root_hub_config_des; OK(len);
+			data_buf = root_hub_config_des; OK(len);
 		case (0x03): /* string descriptors */
 			if (wValue == 0x0300) {
 				len = min_t(unsigned int,
@@ -1370,7 +1390,7 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 						min_t(unsigned int,
 						sizeof(root_hub_str_index0),
 						wLength));
-				databuf = root_hub_str_index0;
+				data_buf = root_hub_str_index0;
 				OK(len);
 			}
 			if (wValue == 0x0301) {
@@ -1379,7 +1399,7 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 						min_t(unsigned int,
 						sizeof(root_hub_str_index1),
 						wLength));
-				databuf = root_hub_str_index1;
+				data_buf = root_hub_str_index1;
 				OK(len);
 		}
 		default:
@@ -1391,45 +1411,41 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 	{
 		__u32 temp = roothub_a(&gohci);
 
-		databuf[0] = 9;		/* min length; */
-		databuf[1] = 0x29;
-		databuf[2] = temp & RH_A_NDP;
+		data_buf [0] = 9;		/* min length; */
+		data_buf [1] = 0x29;
+		data_buf [2] = temp & RH_A_NDP;
 #ifdef CONFIG_AT91C_PQFP_UHPBUG
-		databuf[2] = (databuf[2] == 2) ? 1 : 0;
+		data_buf [2] = (data_buf [2] == 2) ? 1:0;
 #endif
-		databuf[3] = 0;
+		data_buf [3] = 0;
 		if (temp & RH_A_PSM)	/* per-port power switching? */
-			databuf[3] |= 0x1;
+			data_buf [3] |= 0x1;
 		if (temp & RH_A_NOCP)	/* no overcurrent reporting? */
-			databuf[3] |= 0x10;
+			data_buf [3] |= 0x10;
 		else if (temp & RH_A_OCPM)/* per-port overcurrent reporting? */
-			databuf[3] |= 0x8;
+			data_buf [3] |= 0x8;
 
-		databuf[4] = 0;
-		databuf[5] = (temp & RH_A_POTPGT) >> 24;
-		databuf[6] = 0;
+		/* corresponds to data_buf[4-7] */
+		datab [1] = 0;
+		data_buf [5] = (temp & RH_A_POTPGT) >> 24;
 		temp = roothub_b(&gohci);
-		databuf[7] = temp & RH_B_DR;
-		if (databuf[2] < 7) {
-			databuf[8] = 0xff;
+		data_buf [7] = temp & RH_B_DR;
+		if (data_buf [2] < 7) {
+			data_buf [8] = 0xff;
 		} else {
-			databuf[0] += 2;
-			databuf[8] = (temp & RH_B_DR) >> 8;
-			databuf[10] = databuf[9] = 0xff;
+			data_buf [0] += 2;
+			data_buf [8] = (temp & RH_B_DR) >> 8;
+			data_buf [10] = data_buf [9] = 0xff;
 		}
 
 		len = min_t(unsigned int, leni,
-			    min_t(unsigned int, databuf[0], wLength));
+			    min_t(unsigned int, data_buf [0], wLength));
 		OK(len);
 	}
 
-	case RH_GET_CONFIGURATION:
-		databuf[0] = 0x01;
-		OK(1);
+	case RH_GET_CONFIGURATION:	*(__u8 *) data_buf = 0x01; OK(1);
 
-	case RH_SET_CONFIGURATION:
-		WR_RH_STAT(0x10000);
-		OK(0);
+	case RH_SET_CONFIGURATION:	WR_RH_STAT(0x10000); OK(0);
 
 	default:
 		dbg("unsupported root hub command");
@@ -1439,12 +1455,12 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 #ifdef	DEBUG
 	ohci_dump_roothub(&gohci, 1);
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 
 	len = min_t(int, len, leni);
-	if (data != databuf)
-		memcpy(data, databuf, len);
+	if (data != data_buf)
+	    memcpy(data, data_buf, len);
 	dev->act_len = len;
 	dev->status = stat;
 
@@ -1452,7 +1468,7 @@ pkt_print(NULL, dev, pipe, buffer, transfer_len,
 	pkt_print(NULL, dev, pipe, buffer,
 		  transfer_len, cmd, "RET(rh)", 0/*usb_pipein(pipe)*/);
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 
 	return stat;
@@ -1490,7 +1506,7 @@ int submit_common_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 	pkt_print(urb, dev, pipe, buffer, transfer_len,
 		  setup, "SUB", usb_pipein(pipe));
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 	if (!maxsize) {
 		err("submit_common_message: pipesize for pipe %lx is zero",
@@ -1504,7 +1520,7 @@ int submit_common_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 	}
 
 #if 0
-	mdelay(10);
+	wait_ms(10);
 	/* ohci_dump_status(&gohci); */
 #endif
 
@@ -1534,7 +1550,7 @@ int submit_common_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 		}
 
 		if (--timeout) {
-			mdelay(1);
+			wait_ms(1);
 			if (!urb->finished)
 				dbg("*");
 
@@ -1548,13 +1564,13 @@ int submit_common_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 	}
 
 	dev->status = stat;
-	dev->act_len = urb->actual_length;
+	dev->act_len = transfer_len;
 
 #ifdef DEBUG
 	pkt_print(urb, dev, pipe, buffer, transfer_len,
 		  setup, "RET(ctlr)", usb_pipein(pipe));
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 
 	/* free TDs in urb_priv */
@@ -1581,7 +1597,7 @@ int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 	pkt_print(NULL, dev, pipe, buffer, transfer_len,
 		  setup, "SUB", usb_pipein(pipe));
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 	if (!maxsize) {
 		err("submit_control_message: pipesize for pipe %lx is zero",
@@ -1651,7 +1667,7 @@ static int hc_reset(ohci_t *ohci)
 		ohci_writel(OHCI_OCR, &ohci->regs->cmdstatus);
 		info("USB HC TakeOver from SMM");
 		while (ohci_readl(&ohci->regs->control) & OHCI_CTRL_IR) {
-			mdelay(10);
+			wait_ms(10);
 			if (--smm_timeout == 0) {
 				err("USB HC TakeOver failed!");
 				return -1;
@@ -1734,6 +1750,7 @@ static int hc_start(ohci_t *ohci)
 	ohci_writel(RH_HS_LPSC, &ohci->regs->roothub.status);
 #endif	/* OHCI_USE_NPS */
 
+#define mdelay(n) ({unsigned long msec = (n); while (msec--) udelay(1000); })
 	/* POTPGT delay is bits 24-31, in 2 ms units. */
 	mdelay((roothub_a(ohci) >> 23) & 0x1fe);
 
@@ -1744,6 +1761,12 @@ static int hc_start(ohci_t *ohci)
 }
 
 /*-------------------------------------------------------------------------*/
+
+/* Poll USB interrupt. */
+void usb_event_poll(void)
+{
+	hc_interrupt();
+}
 
 /* an interrupt happens */
 
@@ -1787,7 +1810,7 @@ static int hc_interrupt(void)
 #ifdef	DEBUG
 		ohci_dump(ohci, 1);
 #else
-		mdelay(1);
+		wait_ms(1);
 #endif
 		/* FIXME: be optimistic, hope that bug won't repeat often. */
 		/* Make some non-interrupt context restart the controller. */
@@ -1798,7 +1821,7 @@ static int hc_interrupt(void)
 	}
 
 	if (ints & OHCI_INTR_WDH) {
-		mdelay(1);
+		wait_ms(1);
 		ohci_writel(OHCI_INTR_WDH, &regs->intrdisable);
 		(void)ohci_readl(&regs->intrdisable); /* flush */
 		stat = dl_done_list(&gohci);
@@ -1815,7 +1838,7 @@ static int hc_interrupt(void)
 	/* FIXME:  this assumes SOF (1/ms) interrupts don't get lost... */
 	if (ints & OHCI_INTR_SF) {
 		unsigned int frame = m16_swap(ohci->hcca->frame_no) & 1;
-		mdelay(1);
+		wait_ms(1);
 		ohci_writel(OHCI_INTR_SF, &regs->intrdisable);
 		if (ohci->ed_rm_list[frame] != NULL)
 			ohci_writel(OHCI_INTR_SF, &regs->intrenable);
@@ -1847,7 +1870,7 @@ static void hc_release_ohci(ohci_t *ohci)
  */
 static char ohci_inited = 0;
 
-int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
+int usb_lowlevel_init(void)
 {
 #ifdef CONFIG_PCI_OHCI
 	pci_dev_t pdev;
@@ -1861,7 +1884,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 
 #ifdef CONFIG_SYS_USB_OHCI_BOARD_INIT
 	/*  board dependant init */
-	if (board_usb_init(index, USB_INIT_HOST))
+	if (usb_board_init())
 		return -1;
 #endif
 	memset(&gohci, 0, sizeof(ohci_t));
@@ -1918,7 +1941,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 		err ("can't reset usb-%s", gohci.slot_name);
 #ifdef CONFIG_SYS_USB_OHCI_BOARD_INIT
 		/* board dependant cleanup */
-		board_usb_cleanup(index, USB_INIT_HOST);
+		usb_board_init_fail();
 #endif
 
 #ifdef CONFIG_SYS_USB_OHCI_CPU_INIT
@@ -1947,13 +1970,13 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 #ifdef	DEBUG
 	ohci_dump(&gohci, 1);
 #else
-	mdelay(1);
+	wait_ms(1);
 #endif
 	ohci_inited = 1;
 	return 0;
 }
 
-int usb_lowlevel_stop(int index)
+int usb_lowlevel_stop(void)
 {
 	/* this gets called really early - before the controller has */
 	/* even been initialized! */

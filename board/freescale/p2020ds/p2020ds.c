@@ -1,7 +1,23 @@
 /*
- * Copyright 2007-2012 Freescale Semiconductor, Inc.
+ * Copyright 2007-2010 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -12,15 +28,15 @@
 #include <asm/cache.h>
 #include <asm/immap_85xx.h>
 #include <asm/fsl_pci.h>
-#include <fsl_ddr_sdram.h>
+#include <asm/fsl_ddr_sdram.h>
 #include <asm/io.h>
 #include <asm/fsl_serdes.h>
 #include <miiphy.h>
 #include <libfdt.h>
 #include <fdt_support.h>
-#include <fsl_mdio.h>
 #include <tsec.h>
 #include <asm/fsl_law.h>
+#include <asm/mp.h>
 #include <netdev.h>
 
 #include "../common/ngpixis.h"
@@ -28,25 +44,16 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-int board_early_init_f(void)
-{
-#ifdef CONFIG_MMC
-	ccsr_gur_t *gur = (ccsr_gur_t *)(CONFIG_SYS_MPC85xx_GUTS_ADDR);
-
-	setbits_be32(&gur->pmuxcr,
-			 (MPC85xx_PMUXCR_SDHC_CD |
-			 MPC85xx_PMUXCR_SDHC_WP));
-#endif
-
-	return 0;
-}
-
 int checkboard(void)
 {
 	u8 sw;
 
-	printf("Board: P2020DS Sys ID: 0x%02x, "
-	       "Sys Ver: 0x%02x, FPGA Ver: 0x%02x, ",
+	puts("Board: P2020DS ");
+#ifdef CONFIG_PHYS_64BIT
+	puts("(36-bit addrmap) ");
+#endif
+
+	printf("Sys ID: 0x%02x, Sys Ver: 0x%02x, FPGA Ver: 0x%02x, ",
 		in_8(&pixis->id), in_8(&pixis->arch), in_8(&pixis->scver));
 
 	sw = in_8(&PIXIS_SW(PIXIS_LBMAP_SWITCH));
@@ -68,8 +75,7 @@ int checkboard(void)
 
 phys_size_t fixed_sdram(void)
 {
-	struct ccsr_ddr __iomem *ddr =
-		(struct ccsr_ddr __iomem *)CONFIG_SYS_FSL_DDR_ADDR;
+	volatile ccsr_ddr_t *ddr = (ccsr_ddr_t *)CONFIG_SYS_MPC85xx_DDR_ADDR;
 	uint d_init;
 
 	ddr->cs0_config = CONFIG_SYS_DDR_CS0_CONFIG;
@@ -183,7 +189,6 @@ int board_early_init_r(void)
 #ifdef CONFIG_TSEC_ENET
 int board_eth_init(bd_t *bis)
 {
-	struct fsl_pq_mdio_info mdio_info;
 	struct tsec_info_struct tsec_info[4];
 	int num = 0;
 
@@ -218,11 +223,6 @@ int board_eth_init(bd_t *bis)
 	fsl_sgmii_riser_init(tsec_info, num);
 #endif
 
-	mdio_info.regs = (struct tsec_mii_mng *)CONFIG_SYS_MDIO_BASE_ADDR;
-	mdio_info.name = DEFAULT_MII_NAME;
-
-	fsl_pq_mdio_init(bis, &mdio_info);
-
 	tsec_eth_init(bis, tsec_info, num);
 
 	return pci_eth_init(bis);
@@ -242,14 +242,17 @@ void ft_board_setup(void *blob, bd_t *bd)
 
 	fdt_fixup_memory(blob, (u64)base, (u64)size);
 
-#ifdef CONFIG_HAS_FSL_DR_USB
-	fdt_fixup_dr_usb(blob, bd);
-#endif
-
 	FT_FSL_PCI_SETUP;
 
 #ifdef CONFIG_FSL_SGMII_RISER
 	fsl_sgmii_riser_fdt_fixup(blob);
 #endif
+}
+#endif
+
+#ifdef CONFIG_MP
+void board_lmb_reserve(struct lmb *lmb)
+{
+	cpu_mp_lmb_reserve(lmb);
 }
 #endif

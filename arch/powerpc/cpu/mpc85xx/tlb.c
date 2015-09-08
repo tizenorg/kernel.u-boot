@@ -1,10 +1,26 @@
 /*
- * Copyright 2008-2011 Freescale Semiconductor, Inc.
+ * Copyright 2008-2009 Freescale Semiconductor, Inc.
  *
  * (C) Copyright 2000
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -39,8 +55,6 @@ void init_tlbs(void)
 	return ;
 }
 
-#if !defined(CONFIG_NAND_SPL) && \
-	(!defined(CONFIG_SPL_BUILD) || !defined(CONFIG_SPL_INIT_MINIMAL))
 void read_tlbcam_entry(int idx, u32 *valid, u32 *tsize, unsigned long *epn,
 		       phys_addr_t *rpn)
 {
@@ -51,7 +65,7 @@ void read_tlbcam_entry(int idx, u32 *valid, u32 *tsize, unsigned long *epn,
 	_mas1 = mfspr(MAS1);
 
 	*valid = (_mas1 & MAS1_VALID);
-	*tsize = (_mas1 >> 7) & 0x1f;
+	*tsize = (_mas1 >> 8) & 0xf;
 	*epn = mfspr(MAS2) & MAS2_EPN;
 	*rpn = mfspr(MAS3) & MAS3_RPN;
 #ifdef CONFIG_ENABLE_36BIT_PHYS
@@ -59,6 +73,7 @@ void read_tlbcam_entry(int idx, u32 *valid, u32 *tsize, unsigned long *epn,
 #endif
 }
 
+#ifndef CONFIG_NAND_SPL
 void print_tlbcam(void)
 {
 	int i;
@@ -84,7 +99,7 @@ static inline void use_tlb_cam(u8 idx)
 	int i = idx / 32;
 	int bit = idx % 32;
 
-	gd->arch.used_tlb_cams[i] |= (1 << bit);
+	gd->used_tlb_cams[i] |= (1 << bit);
 }
 
 static inline void free_tlb_cam(u8 idx)
@@ -92,7 +107,7 @@ static inline void free_tlb_cam(u8 idx)
 	int i = idx / 32;
 	int bit = idx % 32;
 
-	gd->arch.used_tlb_cams[i] &= ~(1 << bit);
+	gd->used_tlb_cams[i] &= ~(1 << bit);
 }
 
 void init_used_tlb_cams(void)
@@ -101,7 +116,7 @@ void init_used_tlb_cams(void)
 	unsigned int num_cam = mfspr(SPRN_TLB1CFG) & 0xfff;
 
 	for (i = 0; i < ((CONFIG_SYS_NUM_TLBCAMS+31)/32); i++)
-		gd->arch.used_tlb_cams[i] = 0;
+		gd->used_tlb_cams[i] = 0;
 
 	/* walk all the entries */
 	for (i = 0; i < num_cam; i++) {
@@ -118,7 +133,7 @@ int find_free_tlbcam(void)
 	u32 idx;
 
 	for (i = 0; i < ((CONFIG_SYS_NUM_TLBCAMS+31)/32); i++) {
-		idx = ffz(gd->arch.used_tlb_cams[i]);
+		idx = ffz(gd->used_tlb_cams[i]);
 
 		if (idx != 32)
 			break;
@@ -141,13 +156,6 @@ void set_tlb(u8 tlb, u32 epn, u64 rpn,
 	if (tlb == 1)
 		use_tlb_cam(esel);
 
-	if ((mfspr(SPRN_MMUCFG) & MMUCFG_MAVN) == MMUCFG_MAVN_V1 &&
-	    tsize & 1) {
-		printf("%s: bad tsize %d on entry %d at 0x%08x\n",
-			__func__, tsize, tlb, epn);
-		return;
-	}
-
 	_mas0 = FSL_BOOKE_MAS0(tlb, esel, 0);
 	_mas1 = FSL_BOOKE_MAS1(1, iprot, 0, ts, tsize);
 	_mas2 = FSL_BOOKE_MAS2(epn, wimge);
@@ -164,7 +172,7 @@ void set_tlb(u8 tlb, u32 epn, u64 rpn,
 
 void disable_tlb(u8 esel)
 {
-	u32 _mas0, _mas1, _mas2, _mas3;
+	u32 _mas0, _mas1, _mas2, _mas3, _mas7;
 
 	free_tlb_cam(esel);
 
@@ -172,13 +180,14 @@ void disable_tlb(u8 esel)
 	_mas1 = 0;
 	_mas2 = 0;
 	_mas3 = 0;
+	_mas7 = 0;
 
 	mtspr(MAS0, _mas0);
 	mtspr(MAS1, _mas1);
 	mtspr(MAS2, _mas2);
 	mtspr(MAS3, _mas3);
 #ifdef CONFIG_ENABLE_36BIT_PHYS
-	mtspr(MAS7, 0);
+	mtspr(MAS7, _mas7);
 #endif
 	asm volatile("isync;msync;tlbwe;isync");
 
@@ -241,29 +250,23 @@ setup_ddr_tlbs_phys(phys_addr_t p_addr, unsigned int memsize_in_meg)
 {
 	int i;
 	unsigned int tlb_size;
-	unsigned int wimge = MAS2_M;
+	unsigned int wimge = 0;
 	unsigned int ram_tlb_address = (unsigned int)CONFIG_SYS_DDR_SDRAM_BASE;
-	unsigned int max_cam, tsize_mask;
+	unsigned int max_cam = (mfspr(SPRN_TLB1CFG) >> 16) & 0xf;
 	u64 size, memsize = (u64)memsize_in_meg << 20;
 
 #ifdef CONFIG_SYS_PPC_DDR_WIMGE
 	wimge = CONFIG_SYS_PPC_DDR_WIMGE;
 #endif
 	size = min(memsize, CONFIG_MAX_MEM_MAPPED);
-	if ((mfspr(SPRN_MMUCFG) & MMUCFG_MAVN) == MMUCFG_MAVN_V1) {
-		/* Convert (4^max) kB to (2^max) bytes */
-		max_cam = ((mfspr(SPRN_TLB1CFG) >> 16) & 0xf) * 2 + 10;
-		tsize_mask = ~1U;
-	} else {
-		/* Convert (2^max) kB to (2^max) bytes */
-		max_cam = __ilog2(mfspr(SPRN_TLB1PS)) + 10;
-		tsize_mask = ~0U;
-	}
+
+	/* Convert (4^max) kB to (2^max) bytes */
+	max_cam = max_cam * 2 + 10;
 
 	for (i = 0; size && i < 8; i++) {
 		int ram_tlb_index = find_free_tlbcam();
-		u32 camsize = __ilog2_u64(size) & tsize_mask;
-		u32 align = __ilog2(ram_tlb_address) & tsize_mask;
+		u32 camsize = __ilog2_u64(size) & ~1U;
+		u32 align = __ilog2(ram_tlb_address) & ~1U;
 
 		if (ram_tlb_index == -1)
 			break;
@@ -275,7 +278,7 @@ setup_ddr_tlbs_phys(phys_addr_t p_addr, unsigned int memsize_in_meg)
 		if (camsize > max_cam)
 			camsize = max_cam;
 
-		tlb_size = camsize - 10;
+		tlb_size = (camsize - 10) / 2;
 
 		set_tlb(1, ram_tlb_address, p_addr,
 			MAS3_SX|MAS3_SW|MAS3_SR, wimge,
@@ -297,33 +300,4 @@ unsigned int setup_ddr_tlbs(unsigned int memsize_in_meg)
 	return
 		setup_ddr_tlbs_phys(CONFIG_SYS_DDR_SDRAM_BASE, memsize_in_meg);
 }
-
-/* Invalidate the DDR TLBs for the requested size */
-void clear_ddr_tlbs_phys(phys_addr_t p_addr, unsigned int memsize_in_meg)
-{
-	u32 vstart = CONFIG_SYS_DDR_SDRAM_BASE;
-	unsigned long epn;
-	u32 tsize, valid, ptr;
-	phys_addr_t rpn = 0;
-	int ddr_esel;
-	u64 memsize = (u64)memsize_in_meg << 20;
-
-	ptr = vstart;
-
-	while (ptr < (vstart + memsize)) {
-		ddr_esel = find_tlb_idx((void *)ptr, 1);
-		if (ddr_esel != -1) {
-			read_tlbcam_entry(ddr_esel, &valid, &tsize, &epn, &rpn);
-			disable_tlb(ddr_esel);
-		}
-		ptr += TSIZE_TO_BYTES(tsize);
-	}
-}
-
-void clear_ddr_tlbs(unsigned int memsize_in_meg)
-{
-	clear_ddr_tlbs_phys(CONFIG_SYS_DDR_SDRAM_BASE, memsize_in_meg);
-}
-
-
-#endif /* not SPL */
+#endif /* !CONFIG_NAND_SPL */

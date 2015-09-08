@@ -20,11 +20,29 @@
  *
  * Adapted for U-Boot:
  * (C) Copyright 2001 Denis Peter, MPL AG Switzerland
- * (C) Copyright 2008, Daniel HellstrÃ¶m, daniel@gaisler.com
+ * (C) Copyright 2008, Daniel Hellström, daniel@gaisler.com
  *     Added AMBA Plug&Play detection of GRUSB, modified interrupt handler.
  *     Added cache flushes where needed.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
+ *
  */
 
 /**********************************************************************
@@ -52,7 +70,7 @@
  *
  * Interrupt Transfers.
  * --------------------
- * For Interrupt transfers USB_MAX_TEMP_INT_TD Transfer descriptor are available. They
+ * For Interupt transfers USB_MAX_TEMP_INT_TD Transfer descriptor are available. They
  * will be inserted after the appropriate (depending the interval setting) skeleton TD.
  * If an interrupt has been detected the dev->irqhandler is called. The status and number
  * of transfered bytes is stored in dev->irq_status resp. dev->irq_act_len. If the
@@ -497,9 +515,9 @@ void reset_hc(void)
 	out16r(usb_base_addr + USBCMD, USBCMD_GRESET | USBCMD_RS);
 	/* Turn off all interrupts */
 	out16r(usb_base_addr + USBINTR, 0);
-	mdelay(50);
+	wait_ms(50);
 	out16r(usb_base_addr + USBCMD, 0);
-	mdelay(10);
+	wait_ms(10);
 }
 
 void start_hc(void)
@@ -688,7 +706,7 @@ void handle_usb_interrupt(void)
 
 /* init uhci
  */
-int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
+int usb_lowlevel_init(void)
 {
 	unsigned char temp;
 	ambapp_ahbdev ahbdev;
@@ -727,7 +745,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 
 /* stop uhci
  */
-int usb_lowlevel_stop(int index)
+int usb_lowlevel_stop(void)
 {
 	if (grusb_irq == -1)
 		return 1;
@@ -1026,7 +1044,7 @@ int uhci_submit_rh_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 			status = (status & 0xfff5) | USBPORTSC_PR;
 			out16r(usb_base_addr + USBPORTSC1 + 2 * (wIndex - 1),
 			       status);
-			mdelay(10);
+			wait_ms(10);
 			status = (status & 0xfff5) & ~USBPORTSC_PR;
 			out16r(usb_base_addr + USBPORTSC1 + 2 * (wIndex - 1),
 			       status);
@@ -1034,7 +1052,7 @@ int uhci_submit_rh_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 			status = (status & 0xfff5) | USBPORTSC_PE;
 			out16r(usb_base_addr + USBPORTSC1 + 2 * (wIndex - 1),
 			       status);
-			mdelay(10);
+			wait_ms(10);
 			status = (status & 0xfff5) | 0xa;
 			out16r(usb_base_addr + USBPORTSC1 + 2 * (wIndex - 1),
 			       status);

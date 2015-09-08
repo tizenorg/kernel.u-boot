@@ -440,9 +440,8 @@ static int mpc5xxx_fec_init_phy(struct eth_device *dev, bd_t * bis)
 		/*
 		 * Set MII_SPEED = (1/(mii_speed * 2)) * System Clock
 		 * and do not drop the Preamble.
-		 * No MII for 7-wire mode
 		 */
-		fec->eth->mii_speed = (((gd->arch.ipb_clk >> 20) / 5) << 1);
+		fec->eth->mii_speed = (((gd->ipb_clk >> 20) / 5) << 1);	/* No MII for 7-wire mode */
 	}
 
 	if (fec->xcv_type != SEVENWIRE) {
@@ -645,9 +644,8 @@ static void mpc5xxx_fec_halt(struct eth_device *dev)
 		/*
 		 * Set MII_SPEED = (1/(mii_speed * 2)) * System Clock
 		 * and do not drop the Preamble.
-		 * No MII for 7-wire mode
 		 */
-		fec->eth->mii_speed = (((gd->arch.ipb_clk >> 20) / 5) << 1);
+		fec->eth->mii_speed = (((gd->ipb_clk >> 20) / 5) << 1); /* No MII for 7-wire mode */
 	}
 
 #if (DEBUG & 0x3)
@@ -709,7 +707,7 @@ static void rfifo_print(char *devname, mpc5xxx_fec_priv *fec)
 
 /********************************************************************/
 
-static int mpc5xxx_fec_send(struct eth_device *dev, void *eth_data,
+static int mpc5xxx_fec_send(struct eth_device *dev, volatile void *eth_data,
 		int data_length)
 {
 	/*
@@ -911,9 +909,8 @@ int mpc5xxx_fec_initialize(bd_t * bis)
 		/*
 		 * Set MII_SPEED = (1/(mii_speed * 2)) * System Clock
 		 * and do not drop the Preamble.
-		 * No MII for 7-wire mode
 		 */
-		fec->eth->mii_speed = (((gd->arch.ipb_clk >> 20) / 5) << 1);
+		fec->eth->mii_speed = (((gd->ipb_clk >> 20) / 5) << 1); /* No MII for 7-wire mode */
 	}
 
 	dev->priv = (void *)fec;

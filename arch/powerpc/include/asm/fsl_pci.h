@@ -1,7 +1,21 @@
 /*
- * Copyright 2007,2009-2012 Freescale Semiconductor, Inc.
+ * Copyright 2007,2009-2010 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #ifndef __FSL_PCI_H_
@@ -10,19 +24,6 @@
 #include <asm/fsl_law.h>
 #include <asm/fsl_serdes.h>
 #include <pci.h>
-
-#define PEX_IP_BLK_REV_2_2	0x02080202
-#define PEX_IP_BLK_REV_2_3	0x02080203
-#define PEX_IP_BLK_REV_3_0	0x02080300
-
-/* Freescale-specific PCI config registers */
-#define FSL_PCI_PBFR		0x44
-
-#define FSL_PCIE_CFG_RDY	0x4b0
-#define FSL_PROG_IF_AGENT	0x1
-
-#define PCI_LTSSM	0x404   /* PCIe Link Training, Status State Machine */
-#define  PCI_LTSSM_L0	0x16    /* L0 state */
 
 int fsl_setup_hose(struct pci_controller *hose, unsigned long addr);
 int fsl_is_pci_agent(struct pci_controller *hose);
@@ -72,8 +73,7 @@ typedef struct ccsr_pci {
 	u32	out_comp_to;	/* 0x00C - PCI Outbound Completion Timeout Register */
 	u32	out_conf_to;	/* 0x010 - PCI Configuration Timeout Register */
 	u32	config;		/* 0x014 - PCIE CONFIG Register */
-	u32	int_status;	/* 0x018 - PCIE interrupt status register */
-	char	res2[4];
+	char	res2[8];
 	u32	pme_msg_det;	/* 0x020 - PCIE PME & message detect register */
 	u32	pme_msg_dis;	/* 0x024 - PCIE PME & message disable register */
 	u32	pme_msg_int_en;	/* 0x028 - PCIE PME & message interrupt enable register */
@@ -83,11 +83,8 @@ typedef struct ccsr_pci {
 	u32	block_rev2;	/* 0xbfc - PCIE Block Revision register 2 */
 
 	pot_t	pot[5];		/* 0xc00 - 0xc9f Outbound ATMU's 0, 1, 2, 3, and 4 */
-	u32	res5[24];
-	pit_t	pmit;		/* 0xd00 - 0xd9c Inbound ATMU's MSI */
-	u32	res6[24];
-	pit_t	pit[4];		/* 0xd80 - 0xdff Inbound ATMU's 3, 2, 1 and 0 */
-
+	u32	res5[64];
+	pit_t	pit[3];		/* 0xda0 - 0xdff Inbound ATMU's 3, 2, and 1 */
 #define PIT3 0
 #define PIT2 1
 #define PIT1 2
@@ -159,16 +156,8 @@ typedef struct ccsr_pci {
 	u32	perr_cap3;	/* 0xe34 - PCIE Error Capture Register 3 */
 	char	res23[200];
 	u32	pdb_stat;	/* 0xf00 - PCIE Debug Status */
-	char	res24[16];
-	u32	pex_csr0;	/* 0xf14 - PEX Control/Status register 0*/
-	u32	pex_csr1;	/* 0xf18 - PEX Control/Status register 1*/
-	char	res25[228];
+	char	res24[252];
 } ccsr_fsl_pci_t;
-#define PCIE_CONFIG_PC	0x00020000
-#define PCIE_CONFIG_OB_CK	0x00002000
-#define PCIE_CONFIG_SAC	0x00000010
-#define PCIE_CONFIG_SP	0x80000002
-#define PCIE_CONFIG_SCC	0x80000001
 
 struct fsl_pci_info {
 	unsigned long regs;
@@ -229,10 +218,8 @@ int fsl_pcie_init_board(int busno);
 #define FT_FSL_PCIE3_SETUP __FT_FSL_PCIE_SETUP(blob, FSL_PCIE_COMPAT, 3)
 #define FT_FSL_PCIE4_SETUP __FT_FSL_PCIE_SETUP(blob, FSL_PCIE_COMPAT, 4)
 
-#if !defined(CONFIG_PCI)
-#define FT_FSL_PCI_SETUP
-#elif defined(CONFIG_FSL_CORENET)
-#define FSL_PCIE_COMPAT	CONFIG_SYS_FSL_PCIE_COMPAT
+#if defined(CONFIG_FSL_CORENET)
+#define FSL_PCIE_COMPAT	"fsl,p4080-pcie"
 #define FT_FSL_PCI_SETUP \
 	FT_FSL_PCIE1_SETUP; \
 	FT_FSL_PCIE2_SETUP; \
@@ -241,11 +228,7 @@ int fsl_pcie_init_board(int busno);
 #define FT_FSL_PCIE_SETUP FT_FSL_PCI_SETUP
 #elif defined(CONFIG_MPC85xx)
 #define FSL_PCI_COMPAT	"fsl,mpc8540-pci"
-#ifdef CONFIG_SYS_FSL_PCIE_COMPAT
-#define FSL_PCIE_COMPAT	CONFIG_SYS_FSL_PCIE_COMPAT
-#else
 #define FSL_PCIE_COMPAT	"fsl,mpc8548-pcie"
-#endif
 #define FT_FSL_PCI_SETUP \
 	FT_FSL_PCI1_SETUP; \
 	FT_FSL_PCI2_SETUP; \

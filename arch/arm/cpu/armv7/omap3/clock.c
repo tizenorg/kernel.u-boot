@@ -9,12 +9,25 @@
  *      Richard Woodruff <r-woodruff2@ti.com>
  *      Syed Mohammed Khasim <khasim@ti.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/arch/clock.h>
+#include <asm/arch/clocks.h>
 #include <asm/arch/clocks_omap3.h>
 #include <asm/arch/mem.h>
 #include <asm/arch/sys_proto.h>
@@ -183,7 +196,8 @@ static void dpll3_init_34xx(u32 sil_index, u32 clk_index)
 		 * if running from flash, jump to small relocated code
 		 * area in SRAM.
 		 */
-		f_lock_pll = (void *) (SRAM_CLK_CODE);
+		f_lock_pll = (void *) ((u32) &_end_vect - (u32) &_start +
+				SRAM_VECT_CODE);
 
 		p0 = readl(&prcm_base->clken_pll);
 		sr32(&p0, 0, 3, PLL_FAST_RELOCK_BYPASS);
@@ -262,25 +276,6 @@ static void dpll4_init_34xx(u32 sil_index, u32 clk_index)
 	/* LOCK MODE (EN_PERIPH_DPLL): CM_CLKEN_PLL[16:18] */
 	sr32(&prcm_base->clken_pll, 16, 3, PLL_LOCK);
 	wait_on_value(ST_PERIPH_CLK, 2, &prcm_base->idlest_ckgen, LDELAY);
-}
-
-static void dpll5_init_34xx(u32 sil_index, u32 clk_index)
-{
-	struct prcm *prcm_base = (struct prcm *)PRCM_BASE;
-	dpll_param *ptr = (dpll_param *) get_per2_dpll_param();
-
-	/* Moving it to the right sysclk base */
-	ptr = ptr + clk_index;
-
-	/* PER2 DPLL (DPLL5) */
-	sr32(&prcm_base->clken2_pll, 0, 3, PLL_STOP);
-	wait_on_value(1, 0, &prcm_base->idlest2_ckgen, LDELAY);
-	sr32(&prcm_base->clksel5_pll, 0, 5, ptr->m2); /* set M2 (usbtll_fck) */
-	sr32(&prcm_base->clksel4_pll, 8, 11, ptr->m); /* set m (11-bit multiplier) */
-	sr32(&prcm_base->clksel4_pll, 0, 7, ptr->n); /* set n (7-bit divider)*/
-	sr32(&prcm_base->clken_pll, 4, 4, ptr->fsel);   /* FREQSEL */
-	sr32(&prcm_base->clken2_pll, 0, 3, PLL_LOCK);   /* lock mode */
-	wait_on_value(1, 1, &prcm_base->idlest2_ckgen, LDELAY);
 }
 
 static void mpu_init_34xx(u32 sil_index, u32 clk_index)
@@ -385,7 +380,7 @@ static void dpll3_init_36xx(u32 sil_index, u32 clk_index)
 		/* L3 */
 		sr32(&prcm_base->clksel_core, 0, 2, CORE_L3_DIV);
 		/* GFX */
-		sr32(&prcm_base->clksel_gfx,  0, 3, GFX_DIV_36X);
+		sr32(&prcm_base->clksel_gfx,  0, 3, GFX_DIV);
 		/* RESET MGR */
 		sr32(&prcm_base->clksel_wkup, 1, 2, WKUP_RSM);
 		/* FREQSEL (CORE_DPLL_FREQSEL): CM_CLKEN_PLL[4:7] */
@@ -400,7 +395,8 @@ static void dpll3_init_36xx(u32 sil_index, u32 clk_index)
 		 * if running from flash, jump to small relocated code
 		 * area in SRAM.
 		 */
-		f_lock_pll = (void *) (SRAM_CLK_CODE);
+		f_lock_pll = (void *) ((u32) &_end_vect - (u32) &_start +
+				SRAM_VECT_CODE);
 
 		p0 = readl(&prcm_base->clken_pll);
 		sr32(&p0, 0, 3, PLL_FAST_RELOCK_BYPASS);
@@ -474,24 +470,6 @@ static void dpll4_init_36xx(u32 sil_index, u32 clk_index)
 	/* LOCK MODE (EN_PERIPH_DPLL): CM_CLKEN_PLL[16:18] */
 	sr32(&prcm_base->clken_pll, 16, 3, PLL_LOCK);
 	wait_on_value(ST_PERIPH_CLK, 2, &prcm_base->idlest_ckgen, LDELAY);
-}
-
-static void dpll5_init_36xx(u32 sil_index, u32 clk_index)
-{
-	struct prcm *prcm_base = (struct prcm *)PRCM_BASE;
-	dpll_param *ptr = (dpll_param *) get_36x_per2_dpll_param();
-
-	/* Moving it to the right sysclk base */
-	ptr = ptr + clk_index;
-
-	/* PER2 DPLL (DPLL5) */
-	sr32(&prcm_base->clken2_pll, 0, 3, PLL_STOP);
-	wait_on_value(1, 0, &prcm_base->idlest2_ckgen, LDELAY);
-	sr32(&prcm_base->clksel5_pll, 0, 5, ptr->m2); /* set M2 (usbtll_fck) */
-	sr32(&prcm_base->clksel4_pll, 8, 11, ptr->m); /* set m (11-bit multiplier) */
-	sr32(&prcm_base->clksel4_pll, 0, 7, ptr->n); /* set n (7-bit divider)*/
-	sr32(&prcm_base->clken2_pll, 0, 3, PLL_LOCK);   /* lock mode */
-	wait_on_value(1, 1, &prcm_base->idlest2_ckgen, LDELAY);
 }
 
 static void mpu_init_36xx(u32 sil_index, u32 clk_index)
@@ -575,22 +553,6 @@ void prcm_init(void)
 	}
 
 	if (get_cpu_family() == CPU_OMAP36XX) {
-		/*
-		 * In warm reset conditions on OMAP36xx/AM/DM37xx
-		 * the rom code incorrectly sets the DPLL4 clock
-		 * input divider to /6.5. Section 3.5.3.3.3.2.1 of
-		 * the AM/DM37x TRM explains that the /6.5 divider
-		 * is used only when the input clock is 13MHz.
-		 *
-		 * If the part is in this cpu family *and* the input
-		 * clock *is not* 13 MHz, then reset the DPLL4 clock
-		 * input divider to /1 as it should never set to /6.5
-		 * in this case.
-		 */
-		if (sys_clkin_sel != 1) /* 13 MHz */
-			/* Bit 8: DPLL4_CLKINP_DIV */
-			sr32(&prm_base->clksrc_ctrl, 8, 1, 0);
-
 		/* Unlock MPU DPLL (slows things down, and needed later) */
 		sr32(&prcm_base->clken_pll_mpu, 0, 3, PLL_LOW_POWER_BYPASS);
 		wait_on_value(ST_MPU_CLK, 0, &prcm_base->idlest_pll_mpu,
@@ -598,7 +560,6 @@ void prcm_init(void)
 
 		dpll3_init_36xx(0, clk_index);
 		dpll4_init_36xx(0, clk_index);
-		dpll5_init_36xx(0, clk_index);
 		iva_init_36xx(0, clk_index);
 		mpu_init_36xx(0, clk_index);
 
@@ -626,10 +587,7 @@ void prcm_init(void)
 
 		dpll3_init_34xx(sil_index, clk_index);
 		dpll4_init_34xx(sil_index, clk_index);
-		dpll5_init_34xx(sil_index, clk_index);
-		if (get_cpu_family() != CPU_AM35XX)
-			iva_init_34xx(sil_index, clk_index);
-
+		iva_init_34xx(sil_index, clk_index);
 		mpu_init_34xx(sil_index, clk_index);
 
 		/* Lock MPU DPLL to set frequency */
@@ -643,26 +601,6 @@ void prcm_init(void)
 	sr32(&prcm_base->clksel_wkup, 0, 1, 1);
 
 	sdelay(5000);
-}
-
-/*
- * Enable usb ehci uhh, tll clocks
- */
-void ehci_clocks_enable(void)
-{
-	struct prcm *prcm_base = (struct prcm *)PRCM_BASE;
-
-	/* Enable USBHOST_L3_ICLK (USBHOST_MICLK) */
-	sr32(&prcm_base->iclken_usbhost, 0, 1, 1);
-	/*
-	 * Enable USBHOST_48M_FCLK (USBHOST_FCLK1)
-	 * and USBHOST_120M_FCLK (USBHOST_FCLK2)
-	 */
-	sr32(&prcm_base->fclken_usbhost, 0, 2, 3);
-	/* Enable USBTTL_ICLK */
-	sr32(&prcm_base->iclken3_core, 2, 1, 1);
-	/* Enable USBTTL_FCLK */
-	sr32(&prcm_base->fclken3_core, 2, 1, 1);
 }
 
 /******************************************************************************
@@ -708,7 +646,7 @@ void per_clocks_enable(void)
 	sr32(&prcm_base->iclken_per, 17, 1, 1);
 #endif
 
-#ifdef CONFIG_SYS_I2C_OMAP34XX
+#ifdef CONFIG_DRIVER_OMAP34XX_I2C
 	/* Turn on all 3 I2C clocks */
 	sr32(&prcm_base->fclken1_core, 15, 3, 0x7);
 	sr32(&prcm_base->iclken1_core, 15, 3, 0x7);	/* I2C1,2,3 = on */
@@ -716,9 +654,7 @@ void per_clocks_enable(void)
 	/* Enable the ICLK for 32K Sync Timer as its used in udelay */
 	sr32(&prcm_base->iclken_wkup, 2, 1, 0x1);
 
-	if (get_cpu_family() != CPU_AM35XX)
-		sr32(&prcm_base->fclken_iva2, 0, 32, FCK_IVA2_ON);
-
+	sr32(&prcm_base->fclken_iva2, 0, 32, FCK_IVA2_ON);
 	sr32(&prcm_base->fclken1_core, 0, 32, FCK_CORE1_ON);
 	sr32(&prcm_base->iclken1_core, 0, 32, ICK_CORE1_ON);
 	sr32(&prcm_base->iclken2_core, 0, 32, ICK_CORE2_ON);
@@ -726,10 +662,10 @@ void per_clocks_enable(void)
 	sr32(&prcm_base->iclken_wkup, 0, 32, ICK_WKUP_ON);
 	sr32(&prcm_base->fclken_dss, 0, 32, FCK_DSS_ON);
 	sr32(&prcm_base->iclken_dss, 0, 32, ICK_DSS_ON);
-	if (get_cpu_family() != CPU_AM35XX) {
-		sr32(&prcm_base->fclken_cam, 0, 32, FCK_CAM_ON);
-		sr32(&prcm_base->iclken_cam, 0, 32, ICK_CAM_ON);
-	}
+	sr32(&prcm_base->fclken_cam, 0, 32, FCK_CAM_ON);
+	sr32(&prcm_base->iclken_cam, 0, 32, ICK_CAM_ON);
+	sr32(&prcm_base->fclken_per, 0, 32, FCK_PER_ON);
+	sr32(&prcm_base->iclken_per, 0, 32, ICK_PER_ON);
 
 	sdelay(1000);
 }

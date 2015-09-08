@@ -2,7 +2,23 @@
  * (C) Copyright 2010
  * Vipin Kumar, ST Micoelectronics, vipin.kumar@st.com.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef _DW_ETH_H
@@ -16,6 +32,8 @@
 
 #define CONFIG_MACRESET_TIMEOUT	(3 * CONFIG_SYS_HZ)
 #define CONFIG_MDIO_TIMEOUT	(3 * CONFIG_SYS_HZ)
+#define CONFIG_PHYRESET_TIMEOUT	(3 * CONFIG_SYS_HZ)
+#define CONFIG_AUTONEG_TIMEOUT	(5 * CONFIG_SYS_HZ)
 
 struct eth_mac_regs {
 	u32 conf;		/* 0x00 */
@@ -103,14 +121,14 @@ struct eth_dma_regs {
 #define RXSTART			(1 << 1)
 
 /* Descriptior related definitions */
-#define MAC_MAX_FRAME_SZ	(1600)
+#define MAC_MAX_FRAME_SZ	(2048)
 
 struct dmamacdescr {
 	u32 txrx_status;
 	u32 dmamac_cntl;
 	void *dmamac_addr;
 	struct dmamacdescr *dmamac_next;
-} __aligned(16);
+};
 
 /*
  * txrx_status definitions
@@ -215,9 +233,12 @@ struct dmamacdescr {
 #endif
 
 struct dw_eth_dev {
-	u32 interface;
+	u32 address;
+	u32 speed;
+	u32 duplex;
 	u32 tx_currdescnum;
 	u32 rx_currdescnum;
+	u32 padding;
 
 	struct dmamacdescr tx_mac_descrtable[CONFIG_TX_DESCR_NUM];
 	struct dmamacdescr rx_mac_descrtable[CONFIG_RX_DESCR_NUM];
@@ -229,8 +250,15 @@ struct dw_eth_dev {
 	struct eth_dma_regs *dma_regs_p;
 
 	struct eth_device *dev;
-	struct phy_device *phydev;
-	struct mii_dev *bus;
-};
+} __attribute__ ((aligned(8)));
+
+/* Speed specific definitions */
+#define SPEED_10M		1
+#define SPEED_100M		2
+#define SPEED_1000M		3
+
+/* Duplex mode specific definitions */
+#define HALF_DUPLEX		1
+#define FULL_DUPLEX		2
 
 #endif

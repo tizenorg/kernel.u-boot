@@ -10,7 +10,23 @@
  * (C) Copyright 2002
  * Gary Jennejohn, DENX Software Engineering, <garyj@denx.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -27,9 +43,7 @@ int timer_init (void)
 	TPRER1 = get_PERCLK1() / 1000000; /* 1 MHz */
 	TCTL1 |= TCTL_FRR | (1<<1); /* Freerun Mode, PERCLK1 input */
 
-	/* Reset the timer */
-	TCTL1 &= ~TCTL_TEN;
-	TCTL1 |= TCTL_TEN; /* Enable timer */
+	reset_timer_masked();
 
 	return (0);
 }
@@ -37,9 +51,26 @@ int timer_init (void)
 /*
  * timer without interrupts
  */
+
+void reset_timer (void)
+{
+	reset_timer_masked ();
+}
+
 ulong get_timer (ulong base)
 {
 	return get_timer_masked() - base;
+}
+
+void set_timer (ulong t)
+{
+	/* nop */
+}
+
+void reset_timer_masked (void)
+{
+	TCTL1 &= ~TCTL_TEN;
+	TCTL1 |= TCTL_TEN; /* Enable timer */
 }
 
 ulong get_timer_masked (void)

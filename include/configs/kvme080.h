@@ -2,12 +2,29 @@
  * (C) Copyright 2005
  * Sangmoon Kim, dogoil@etinsys.com.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#define CONFIG_MPC824X		1
 #define CONFIG_MPC8245		1
 #define CONFIG_KVME080		1
 
@@ -85,6 +102,7 @@
 #define CONFIG_NETCONSOLE
 
 #define CONFIG_SYS_LONGHELP
+#define CONFIG_SYS_PROMPT		"=> "
 #define CONFIG_SYS_CBSIZE		256
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)
 #define CONFIG_SYS_MAXARGS		16
@@ -94,6 +112,9 @@
 #define CONFIG_SYS_MEMTEST_END		0x07C00000
 
 #define CONFIG_SYS_LOAD_ADDR		0x00100000
+#define CONFIG_SYS_HZ			1000
+
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 #define CONFIG_SYS_INIT_RAM_ADDR	0x40000000
 #define CONFIG_SYS_INIT_RAM_SIZE	0x1000
@@ -150,9 +171,9 @@
 #define CONFIG_SYS_NS16550_CLK		14745600
 
 #define CONFIG_PCI
-#define CONFIG_PCI_INDIRECT_BRIDGE
 #define CONFIG_PCI_PNP
 
+#define CONFIG_NET_MULTI
 #define CONFIG_EEPRO100
 #define CONFIG_EEPRO100_SROM_WRITE
 

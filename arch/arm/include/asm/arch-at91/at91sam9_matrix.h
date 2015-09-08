@@ -1,7 +1,11 @@
 /*
  * Copyright (C) 2009 Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jrosoft.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  */
 
 #ifndef __ASM_ARCH_AT91SAM9_MATRIX_H
@@ -19,8 +23,6 @@
 #include <asm/arch/at91cap9_matrix.h>
 #elif defined(CONFIG_AT91SAM9G45) || defined(CONFIG_AT91SAM9M10G45)
 #include <asm/arch/at91sam9g45_matrix.h>
-#elif defined(CONFIG_AT91SAM9N12) || defined(CONFIG_AT91SAM9X5)
-#include <asm/arch/at91sam9x5_matrix.h>
 #else
 #error "Unsupported AT91SAM9/CAP9 processor"
 #endif

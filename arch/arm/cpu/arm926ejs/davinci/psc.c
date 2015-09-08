@@ -5,7 +5,22 @@
  * Copyright (C) 2008 Lyrtech <www.lyrtech.com>
  * Copyright (C) 2004 Texas Instruments.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include <common.h>
@@ -31,7 +46,7 @@
  */
 
 /* Works on Always On power domain only (no PD argument) */
-static void lpsc_transition(unsigned int id, unsigned int state)
+void lpsc_on(unsigned int id)
 {
 	dv_reg_p mdstat, mdctl, ptstat, ptcmd;
 #ifdef CONFIG_SOC_DA8XX
@@ -68,10 +83,10 @@ static void lpsc_transition(unsigned int id, unsigned int state)
 	while (readl(ptstat) & 0x01)
 		continue;
 
-	if ((readl(mdstat) & PSC_MDSTAT_STATE) == state)
-		return; /* Already in that state */
+	if ((readl(mdstat) & 0x1f) == 0x03)
+		return; /* Already on and enabled */
 
-	writel((readl(mdctl) & ~PSC_MDCTL_NEXT) | state, mdctl);
+	writel(readl(mdctl) | 0x03, mdctl);
 
 	switch (id) {
 #ifdef CONFIG_SOC_DM644X
@@ -99,23 +114,8 @@ static void lpsc_transition(unsigned int id, unsigned int state)
 
 	while (readl(ptstat) & 0x01)
 		continue;
-	while ((readl(mdstat) & PSC_MDSTAT_STATE) != state)
+	while ((readl(mdstat) & 0x1f) != 0x03)
 		continue;
-}
-
-void lpsc_on(unsigned int id)
-{
-	lpsc_transition(id, 0x03);
-}
-
-void lpsc_syncreset(unsigned int id)
-{
-	lpsc_transition(id, 0x01);
-}
-
-void lpsc_disable(unsigned int id)
-{
-	lpsc_transition(id, 0x0);
 }
 
 /* Not all DaVinci chips have a DSP power domain. */

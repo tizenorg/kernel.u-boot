@@ -3,12 +3,15 @@
  *
  * Copyright (C) 1998 Gabriel Paubert.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
  */
 
 #include <common.h>
 
-#if !defined(__I386__)
+#if (!defined(__I386__) && !defined(CONFIG_IXDP425))
 
 #include <asm/processor.h>
 #include <asm/io.h>
@@ -16,6 +19,15 @@
 
 #define cfg_read(val, addr, type, op)	*val = op((type)(addr))
 #define cfg_write(val, addr, type, op)	op((type *)(addr), (val))
+
+#ifdef CONFIG_IXP425
+extern unsigned char	in_8 (volatile unsigned *addr);
+extern unsigned short	in_le16 (volatile unsigned *addr);
+extern unsigned		in_le32 (volatile unsigned *addr);
+extern void		out_8 (volatile unsigned *addr, char val);
+extern void		out_le16 (volatile unsigned *addr, unsigned short val);
+extern void		out_le32 (volatile unsigned *addr, unsigned int val);
+#endif	/* CONFIG_IXP425 */
 
 #if defined(CONFIG_MPC8260)
 #define INDIRECT_PCI_OP(rw, size, type, op, mask)			 \
@@ -122,4 +134,4 @@ void pci_setup_indirect(struct pci_controller* hose, u32 cfg_addr, u32 cfg_data)
 	hose->cfg_data = (unsigned char *) cfg_data;
 }
 
-#endif	/* !__I386__ */
+#endif	/* !__I386__ && !CONFIG_IXDP425 */

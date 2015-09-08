@@ -4,7 +4,23 @@
  *
  * Configuation settings for the jadecpu board
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -12,16 +28,10 @@
 
 #define CONFIG_MB86R0x
 #define CONFIG_MB86R0x_IOCLK	get_bus_freq(0)
-#define CONFIG_SYS_TEXT_BASE	0x10000000
+#define CONFIG_SYS_HZ		1000
 
 #define CONFIG_ARM926EJS	1	/* This is an ARM926EJS Core	*/
-
-#define CONFIG_USE_ARCH_MEMCPY
-#define CONFIG_USE_ARCH_MEMSET
-
-#define MACH_TYPE_JADECPU	2636
-
-#define CONFIG_MACH_TYPE MACH_TYPE_JADECPU
+#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff	*/
 
 /*
  * Environment settings
@@ -29,7 +39,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"gs_fast_boot=setenv bootdelay 5\0" \
 	"gs_slow_boot=setenv bootdelay 10\0" \
-	"bootcmd=dcache off; mw.l 0x40000000 0 1024; usb start;" \
+	"bootcmd=mw.l 0x40000000 0 1024; usb start;" \
 		"fatls usb 0; fatload usb 0 0x40000000 jadecpu-init.bin;" \
 		"bootelf 0x40000000\0" \
 	""
@@ -37,7 +47,7 @@
 #define CONFIG_CMDLINE_TAG	1	/* enable passing of ATAGs	*/
 #define CONFIG_SETUP_MEMORY_TAGS 1
 #define CONFIG_INITRD_TAG	1
-#define CONFIG_BOARD_LATE_INIT
+#define BOARD_LATE_INIT		1
 
 /*
  * Compressions
@@ -51,6 +61,7 @@
 /*
  * Serial
  */
+#define CONFIG_SERIAL_MULTI
 #define CONFIG_SYS_NS16550
 #define CONFIG_SYS_NS16550_SERIAL
 #define CONFIG_SYS_NS16550_REG_SIZE		(-4)
@@ -65,6 +76,7 @@
 /*
  * Ethernet
  */
+#define CONFIG_NET_MULTI
 #define CONFIG_SMC911X
 #define CONFIG_SMC911X_BASE	0x02000000
 #define CONFIG_SMC911X_16_BIT
@@ -110,15 +122,16 @@
 #undef CONFIG_CMD_NFS
 #undef CONFIG_CMD_XIMG
 
-#define CONFIG_CMD_BMP
-#define CONFIG_CMD_DHCP
-#define CONFIG_CMD_ELF
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_PING
-#define CONFIG_CMD_USB
-#define CONFIG_CMD_CACHE
+#define CONFIG_CMD_BMP		1
+#define CONFIG_CMD_CAN		1
+#define CONFIG_CMD_DHCP		1
+#define CONFIG_CMD_ELF		1
+#define CONFIG_CMD_FAT		1
+#define CONFIG_CMD_PING		1
+#define CONFIG_CMD_USB		1
 
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 
 /* USB */
 #define CONFIG_USB_OHCI_NEW
@@ -162,6 +175,7 @@
 #define CONFIG_SYS_MEMTEST_END		(PHYS_SDRAM + PHYS_SDRAM_SIZE)
 
 #define CONFIG_BAUDRATE		115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{115200, 19200, 38400, 57600, 9600 }
 
 #define CONFIG_SYS_PROMPT	"jade> "
 #define CONFIG_SYS_CBSIZE	256
@@ -182,8 +196,9 @@
 /*
  * Size of malloc() pool
  */
-#define CONFIG_SYS_MALLOC_LEN	(10 << 20)
-#define CONFIG_SYS_MEM_TOP_HIDE	(4 << 20)
+#define CONFIG_SYS_MALLOC_LEN	(0x400000 - 0x8000)
+
+#define CONFIG_STACKSIZE	(32*1024)	/* regular stack */
 
 /*
  * Clock reset generator init
@@ -270,5 +285,9 @@
 /* EMR(1) command */
 #define CONFIG_SYS_DDR2_INIT_DRIC1_10	0x0005
 #define CONFIG_SYS_DDR2_INIT_DRIC2_10	0x0002
+
+#ifdef CONFIG_USE_IRQ
+#error CONFIG_USE_IRQ not supported
+#endif
 
 #endif	/* __CONFIG_H */

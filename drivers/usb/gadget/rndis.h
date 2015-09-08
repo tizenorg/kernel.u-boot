@@ -1,6 +1,8 @@
 /*
  * RNDIS	Definitions for Remote NDIS
  *
+ * Version:	$Id: rndis.h,v 1.15 2004/03/25 21:33:46 robert Exp $
+ *
  * Authors:	Benedikt Spranger, Pengutronix
  *		Robert Schwebel, Pengutronix
  *
@@ -12,18 +14,17 @@
  *		Microsoft's Remote NDIS Specification License Agreement.
  */
 
-#ifndef _USBGADGET_RNDIS_H
-#define _USBGADGET_RNDIS_H
+#ifndef _LINUX_RNDIS_H
+#define _LINUX_RNDIS_H
+
+#include <common.h>
+#include <asm/errno.h>
+#include <linux/usb/ch9.h>
+/* #include <linux/usb/cdc.h> */
+#include <linux/usb/gadget.h>
+#include <net.h>
 
 #include "ndis.h"
-
-/*
- * By default rndis_signal_disconnect does not send status message about
- * RNDIS disconnection to USB host (indicated as cable disconnected).
- * Define RNDIS_COMPLETE_SIGNAL_DISCONNECT to send it.
- * However, this will cause 1 sec delay on Ethernet device halt.
- * Usually you do not need to define it. Mostly usable for debugging.
- */
 
 #define RNDIS_MAXIMUM_FRAME_SIZE	1518
 #define RNDIS_MAX_TOTAL_SIZE		1558
@@ -39,8 +40,7 @@
 #define RNDIS_STATUS_NOT_SUPPORTED	0xC00000BBU	/* Unsupported request */
 #define RNDIS_STATUS_MEDIA_CONNECT	0x4001000BU	/* Device connected  */
 #define RNDIS_STATUS_MEDIA_DISCONNECT	0x4001000CU	/* Device disconnected */
-/*
- * For all not specified status messages:
+/* For all not specified status messages:
  * RNDIS_STATUS_Xxx -> NDIS_STATUS_Xxx
  */
 
@@ -76,7 +76,8 @@
 #define OID_PNP_ENABLE_WAKE_UP			0xFD010106
 
 
-typedef struct rndis_init_msg_type {
+typedef struct rndis_init_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
@@ -85,7 +86,8 @@ typedef struct rndis_init_msg_type {
 	__le32	MaxTransferSize;
 } rndis_init_msg_type;
 
-typedef struct rndis_init_cmplt_type {
+typedef struct rndis_init_cmplt_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
@@ -101,13 +103,15 @@ typedef struct rndis_init_cmplt_type {
 	__le32	AFListSize;
 } rndis_init_cmplt_type;
 
-typedef struct rndis_halt_msg_type {
+typedef struct rndis_halt_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
 } rndis_halt_msg_type;
 
-typedef struct rndis_query_msg_type {
+typedef struct rndis_query_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
@@ -117,7 +121,8 @@ typedef struct rndis_query_msg_type {
 	__le32	DeviceVcHandle;
 } rndis_query_msg_type;
 
-typedef struct rndis_query_cmplt_type {
+typedef struct rndis_query_cmplt_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
@@ -126,7 +131,8 @@ typedef struct rndis_query_cmplt_type {
 	__le32	InformationBufferOffset;
 } rndis_query_cmplt_type;
 
-typedef struct rndis_set_msg_type {
+typedef struct rndis_set_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
@@ -136,27 +142,31 @@ typedef struct rndis_set_msg_type {
 	__le32	DeviceVcHandle;
 } rndis_set_msg_type;
 
-typedef struct rndis_set_cmplt_type {
+typedef struct rndis_set_cmplt_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
 	__le32	Status;
 } rndis_set_cmplt_type;
 
-typedef struct rndis_reset_msg_type {
+typedef struct rndis_reset_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	Reserved;
 } rndis_reset_msg_type;
 
-typedef struct rndis_reset_cmplt_type {
+typedef struct rndis_reset_cmplt_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	Status;
 	__le32	AddressingReset;
 } rndis_reset_cmplt_type;
 
-typedef struct rndis_indicate_status_msg_type {
+typedef struct rndis_indicate_status_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	Status;
@@ -164,20 +174,23 @@ typedef struct rndis_indicate_status_msg_type {
 	__le32	StatusBufferOffset;
 } rndis_indicate_status_msg_type;
 
-typedef struct rndis_keepalive_msg_type {
+typedef struct rndis_keepalive_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
 } rndis_keepalive_msg_type;
 
-typedef struct rndis_keepalive_cmplt_type {
+typedef struct rndis_keepalive_cmplt_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	RequestID;
 	__le32	Status;
 } rndis_keepalive_cmplt_type;
 
-struct rndis_packet_msg_type {
+struct rndis_packet_msg_type
+{
 	__le32	MessageType;
 	__le32	MessageLength;
 	__le32	DataOffset;
@@ -191,7 +204,8 @@ struct rndis_packet_msg_type {
 	__le32	Reserved;
 } __attribute__ ((packed));
 
-struct rndis_config_parameter {
+struct rndis_config_parameter
+{
 	__le32	ParameterNameOffset;
 	__le32	ParameterNameLength;
 	__le32	ParameterType;
@@ -200,20 +214,23 @@ struct rndis_config_parameter {
 };
 
 /* implementation specific */
-enum rndis_state {
+enum rndis_state
+{
 	RNDIS_UNINITIALIZED,
 	RNDIS_INITIALIZED,
 	RNDIS_DATA_INITIALIZED,
 };
 
-typedef struct rndis_resp_t {
+typedef struct rndis_resp_t
+{
 	struct list_head	list;
 	u8			*buf;
 	u32			length;
 	int			send;
 } rndis_resp_t;
 
-typedef struct rndis_params {
+typedef struct rndis_params
+{
 	u8			confignr;
 	u8			used;
 	u16			saved_filter;
@@ -225,36 +242,50 @@ typedef struct rndis_params {
 	const u8		*host_mac;
 	u16			*filter;
 	struct eth_device	*dev;
-	struct net_device_stats *stats;
-	int			mtu;
+	struct eth_device_stats *stats;
 
 	u32			vendorID;
 	const char		*vendorDescr;
-	int			(*ack)(struct eth_device *);
+	int			(*ack) (struct eth_device *);
 	struct list_head	resp_queue;
 } rndis_params;
 
+#define RNDIS_MAX_PACKET_SIZE PKTSIZE
+typedef struct rndis_packet_buffer {
+	u8 data[RNDIS_MAX_PACKET_SIZE];
+	int len;
+	int in_use;
+} rndis_packet_buffer;
+
+rndis_packet_buffer *rndis_packet_create(void *data, int len);
+void rndis_packet_free(rndis_packet_buffer *b);
+
 /* RNDIS Message parser and other useless functions */
-int  rndis_msg_parser(u8 configNr, u8 *buf);
-enum rndis_state rndis_get_state(int configNr);
-int  rndis_register(int (*rndis_control_ack)(struct eth_device *));
-void rndis_deregister(int configNr);
-int  rndis_set_param_dev(u8 configNr, struct eth_device *dev, int mtu,
-			struct net_device_stats *stats, u16 *cdc_filter);
-int  rndis_set_param_vendor(u8 configNr, u32 vendorID,
+int  rndis_msg_parser (u8 configNr, u8 *buf);
+int  rndis_register (int (*rndis_control_ack) (struct eth_device *));
+void rndis_deregister (int configNr);
+int  rndis_set_param_dev (u8 configNr, struct eth_device *dev,
+			 struct eth_device_stats *stats,
+			 u16 *cdc_filter);
+int  rndis_set_param_vendor (u8 configNr, u32 vendorID,
 			    const char *vendorDescr);
-int  rndis_set_param_medium(u8 configNr, u32 medium, u32 speed);
-void rndis_add_hdr(void *bug, int length);
-int rndis_rm_hdr(void *bug, int length);
-u8   *rndis_get_next_response(int configNr, u32 *length);
-void rndis_free_response(int configNr, u8 *buf);
+int  rndis_set_param_medium (u8 configNr, u32 medium, u32 speed);
+#if 0
+void rndis_add_hdr (struct sk_buff *skb);
+int rndis_rm_hdr (struct sk_buff *skb);
+#endif
+int rndis_rm_hdr(void *data, int *len);
 
-void rndis_uninit(int configNr);
-int  rndis_signal_connect(int configNr);
-int  rndis_signal_disconnect(int configNr);
-extern void rndis_set_host_mac(int configNr, const u8 *addr);
+u8   *rndis_get_next_response (int configNr, u32 *length);
+void rndis_free_response (int configNr, u8 *buf);
 
-int rndis_init(void);
-void rndis_exit(void);
+void rndis_uninit (int configNr);
+int  rndis_signal_connect (int configNr);
+int  rndis_signal_disconnect (int configNr);
+int  rndis_state (int configNr);
+extern void rndis_set_host_mac (int configNr, const u8 *addr);
 
-#endif  /* _USBGADGET_RNDIS_H */
+int  rndis_init (void);
+void rndis_exit (void);
+
+#endif  /* _LINUX_RNDIS_H */

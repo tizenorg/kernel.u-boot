@@ -2,7 +2,23 @@
  * (C) Copyright 2001
  * Josh Huber <huber@mclx.com>, Mission Critical Linux, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -124,6 +140,7 @@ if we use PCI it has its own MAC addr */
 /*#define CONFIG_SYS_HUSH_PARSER */
 #undef CONFIG_SYS_HUSH_PARSER
 
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 /*
  * The following defines let you select what serial you want to use
@@ -141,6 +158,7 @@ if we use PCI it has its own MAC addr */
 #define CONFIG_MPSC_PORT	0
 
 /* to change the default ethernet port, use this define (options: 0, 1, 2) */
+#define CONFIG_NET_MULTI
 #define MV_ETH_DEVS 2
 
 /* #undef CONFIG_ETHER_PORT_MII	 */
@@ -184,7 +202,7 @@ ip=${ipaddr}:${serverip}${bootargs_end}; bootm 0x400000;\0"
 
 #define CONFIG_SERIAL		"No. 1"
 #define CONFIG_SERVERIP		10.2.1.126
-#define CONFIG_ROOTPATH		"/mnt/yellow_dog_mini"
+#define CONFIG_ROOTPATH /mnt/yellow_dog_mini
 
 
 #define CONFIG_TESTDRAMDATA	y
@@ -255,6 +273,7 @@ ip=${ipaddr}:${serverip}${bootargs_end}; bootm 0x400000;\0"
 
 /* #define CONFIG_SYS_GT_DUAL_CPU	 also for JTAG even with one cpu */
 #define CONFIG_SYS_LONGHELP			/* undef to save memory		*/
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt	*/
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size	*/
 #else
@@ -299,6 +318,7 @@ ip=${ipaddr}:${serverip}${bootargs_end}; bootm 0x400000;\0"
 
 #define CONFIG_SYS_LOAD_ADDR		0x00400000	/* default load address */
 
+#define CONFIG_SYS_HZ			1000		/* decr freq: 1ms ticks */
 /*ronen - this the Sys clock (cpu bus,internal dram and SDRAM) */
 #define CONFIG_SYS_BUS_CLK		133000000	/* 133 MHz (CPU = 5*Bus = 666MHz)		*/
 

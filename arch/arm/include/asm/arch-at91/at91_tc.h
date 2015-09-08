@@ -1,7 +1,23 @@
 /*
  * Copyright (C) 2009 Jens Scharsig (js_at_ng@scharsoft.de)
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef AT91_TC_H
@@ -20,7 +36,7 @@ typedef struct at91_tcc {
 	u32		idr;	/* 0x28 Interrupt Disable Register */
 	u32		imr;	/* 0x2C Interrupt Mask Register */
 	u32		reserved3[4];
-} at91_tcc_t;
+} __attribute__ ((packed)) at91_tcc_t;
 
 #define AT91_TC_CCR_CLKEN		0x00000001
 #define AT91_TC_CCR_CLKDIS		0x00000002
@@ -41,7 +57,7 @@ typedef struct at91_tc {
 	at91_tcc_t	tc[3];	/* 0x00 TC Channel 0-2 */
 	u32		bcr;	/* 0xC0 TC Block Control Register */
 	u32		bmr;	/* 0xC4 TC Block Mode Register */
-} at91_tc_t;
+} __attribute__ ((packed)) at91_tc_t;
 
 #define AT91_TC_BMR_TC0XC0S_TCLK0	0x00000000
 #define AT91_TC_BMR_TC0XC0S_NONE	0x00000001

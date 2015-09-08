@@ -5,7 +5,23 @@
  * Michal  SIMEK <monstr@monstr.eu>
  * Yasushi SHOJI <yashi@atmark-techno.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <asm-offsets.h>
@@ -14,19 +30,7 @@
 	.text
 	.global _start
 _start:
-	/*
-	 * reserve registers:
-	 * r10: Stores little/big endian offset for vectors
-	 * r2: Stores imm opcode
-	 * r3: Stores brai opcode
-	 */
-
 	mts	rmsr, r0	/* disable cache */
-
-#if defined(CONFIG_SPL_BUILD)
-	addi	r1, r0, CONFIG_SPL_STACK_ADDR
-	addi	r1, r1, -4	/* Decrement SP to top of memory */
-#else
 	addi	r1, r0, CONFIG_SYS_INIT_SP_OFFSET
 	addi	r1, r1, -4	/* Decrement SP to top of memory */
 
@@ -40,34 +44,52 @@ _start:
 	 * 4b) BIG endian - r10 contains 0x0 because 0x2 offset is on addr 0x3
 	 */
 	addik	r6, r0, 0x2 /* BIG/LITTLE endian offset */
-	lwi	r7, r0, 0x28
-	swi	r6, r0, 0x28 /* used first unused MB vector */
-	lbui	r10, r0, 0x28 /* used first unused MB vector */
-	swi	r7, r0, 0x28
+	swi	r6, r0, 0
+	lbui	r10, r0, 0
+	swi	r6, r0, 0x40
+	swi	r10, r0, 0x50
 
-	/* add opcode instruction for 32bit jump - 2 instruction imm & brai */
-	addi	r2, r0, 0xb0000000	/* hex b000 opcode imm */
-	addi	r3, r0, 0xb8080000	/* hew b808 opcode brai */
+	/* add opcode instruction for 32bit jump - 2 instruction imm & brai*/
+	addi	r6, r0, 0xb0000000	/* hex b000 opcode imm */
+	swi	r6, r0, 0x0	/* reset address */
+	swi	r6, r0, 0x8	/* user vector exception */
+	swi	r6, r0, 0x10	/* interrupt */
+	swi	r6, r0, 0x20	/* hardware exception */
+
+	addi	r6, r0, 0xb8080000	/* hew b808 opcode brai*/
+	swi	r6, r0, 0x4	/* reset address */
+	swi	r6, r0, 0xC	/* user vector exception */
+	swi	r6, r0, 0x14	/* interrupt */
+	swi	r6, r0, 0x24	/* hardware exception */
 
 #ifdef CONFIG_SYS_RESET_ADDRESS
 	/* reset address */
-	swi	r2, r0, 0x0	/* reset address - imm opcode */
-	swi	r3, r0, 0x4	/* reset address - brai opcode */
-
 	addik	r6, r0, CONFIG_SYS_RESET_ADDRESS
 	sw	r6, r1, r0
-	lhu	r7, r1, r10
-	rsubi	r8, r10, 0x2
-	sh	r7, r0, r8
-	rsubi	r8, r10, 0x6
-	sh	r6, r0, r8
+	lhu	r7, r1, r0
+	shi	r7, r0, 0x2
+	shi	r6, r0, 0x6
+/*
+ * Copy U-Boot code to CONFIG_SYS_TEXT_BASE
+ * solve problem with sbrk_base
+ */
+#if (CONFIG_SYS_RESET_ADDRESS != CONFIG_SYS_TEXT_BASE)
+	addi	r4, r0, __end
+	addi	r5, r0, __text_start
+	rsub	r4, r5, r4	/* size = __end - __text_start */
+	addi	r6, r0, CONFIG_SYS_RESET_ADDRESS	/* source address */
+	addi	r7, r0, 0	/* counter */
+4:
+	lw	r8, r6, r7
+	sw	r8, r5, r7
+	addi	r7, r7, 0x4
+	cmp	r8, r4, r7
+	blti	r8, 4b
+#endif
 #endif
 
 #ifdef CONFIG_SYS_USR_EXCEP
 	/* user_vector_exception */
-	swi	r2, r0, 0x8	/* user vector exception - imm opcode */
-	swi	r3, r0, 0xC	/* user vector exception - brai opcode */
-
 	addik	r6, r0, _exception_handler
 	sw	r6, r1, r0
 	/*
@@ -97,10 +119,8 @@ _start:
 	sh	r6, r0, r8
 #endif
 
+#ifdef CONFIG_SYS_INTC_0
 	/* interrupt_handler */
-	swi	r2, r0, 0x10	/* interrupt - imm opcode */
-	swi	r3, r0, 0x14	/* interrupt - brai opcode */
-
 	addik	r6, r0, _interrupt_handler
 	sw	r6, r1, r0
 	lhu	r7, r1, r10
@@ -108,11 +128,9 @@ _start:
 	sh	r7, r0, r8
 	rsubi	r8, r10, 0x16
 	sh	r6, r0, r8
+#endif
 
 	/* hardware exception */
-	swi	r2, r0, 0x20	/* hardware exception - imm opcode */
-	swi	r3, r0, 0x24	/* hardware exception - brai opcode */
-
 	addik	r6, r0, _hw_exception_handler
 	sw	r6, r1, r0
 	lhu	r7, r1, r10
@@ -120,13 +138,6 @@ _start:
 	sh	r7, r0, r8
 	rsubi	r8, r10, 0x26
 	sh	r6, r0, r8
-#endif /* BUILD_SPL */
-
-	/* Flush cache before enable cache */
-	addik	r5, r0, 0
-	addik	r6, r0, XILINX_DCACHE_BYTE_SIZE
-flush:	bralid r15, flush_cache
-	nop
 
 	/* enable instruction and data cache */
 	mfs	r12, rmsr
@@ -145,14 +156,9 @@ clear_bss:
 	cmp     r6, r5, r4 /* check if we have reach the end */
 	bnei    r6, 2b
 3:	/* jumping to board_init */
-#ifndef CONFIG_SPL_BUILD
-	brai	board_init_f
-#else
-	brai	board_init_r
-#endif
+	brai	board_init
 1:	bri	1b
 
-#ifndef CONFIG_SPL_BUILD
 /*
  * Read 16bit little endian
  */
@@ -185,4 +191,3 @@ out16:	bslli	r3, r6, 8
 	rtsd	r15, 8
 	or	r0, r0, r0
 	.end	out16
-#endif

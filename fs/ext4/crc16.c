@@ -5,9 +5,11 @@
  * Version 2. See the file COPYING for more details.
  */
 
+#include "util.h"
 #include <common.h>
 #include <asm/byteorder.h>
 #include <linux/stat.h>
+
 #include "crc16.h"
 
 /** CRC table for the CRC-16. The poly is 0x8005 (x16 + x15 + x2 + 1) */
@@ -48,15 +50,40 @@ static __u16 const crc16_table[256] = {
 
 /**
  * Compute the CRC-16 for the data buffer
-*/
+ *
+ * @param crc     previous CRC value
+ * @param buffer  data pointer
+ * @param len     number of bytes in the buffer
+ * @return        the updated CRC value
+ */
 
-unsigned int ext2fs_crc16(unsigned int crc,
-	const void *buffer, unsigned int len)
+#if 1
+crc16_t ext2fs_crc16(crc16_t crc, const void *buffer, unsigned int len)
 {
 	const unsigned char *cp = buffer;
 
 	while (len--)
+		/*
+		 * for an unknown reason, PPC treats __u16 as signed
+		 * and keeps doing sign extension on the value.
+		 * Instead, use only the low 16 bits of an unsigned
+		 * int for holding the CRC value to avoid this.
+		 */
 		crc = (((crc >> 8) & 0xffU) ^
 		       crc16_table[(crc ^ *cp++) & 0xffU]) & 0x0000ffffU;
 	return crc;
 }
+#else
+static inline u16 crc16_byte(u16 crc, const u8 data)
+{
+	return (crc >> 8) ^ crc16_table[(crc ^ data) & 0xff];
+}
+
+u16 ext2fs_crc16(u16 crc, u8 const *buffer, size_t len)
+{
+	while (len--)
+		crc = crc16_byte(crc, *buffer++);
+	return crc;
+}
+#endif
+

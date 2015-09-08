@@ -1,17 +1,33 @@
 /*
- * Copyright (C) 2010 Albert ARIBAUD <albert.u.boot@aribaud.net>
+ * Copyright (C) 2010 Albert ARIBAUD <albert.aribaud@free.fr>
  *
  * Based on original Kirkwood support which is
  * (C) Copyright 2009
  * Marvell Semiconductor <www.marvell.com>
  * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
 #include <config.h>
-#include <asm/arch/cpu.h>
+#include <asm/arch/orion5x.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -22,7 +38,7 @@ u32 orion5x_sdram_bar(enum memory_bank bank)
 {
 	struct orion5x_ddr_addr_decode_registers *winregs =
 		(struct orion5x_ddr_addr_decode_registers *)
-		ORION5X_DRAM_BASE;
+		ORION5X_CPU_WIN_BASE;
 
 	u32 result = 0;
 	u32 enable = 0x01 & winregs[bank].size;
@@ -37,7 +53,7 @@ int dram_init (void)
 {
 	/* dram_init must store complete ramsize in gd->ram_size */
 	gd->ram_size = get_ram_size(
-			(long *) orion5x_sdram_bar(0),
+			(volatile long *) orion5x_sdram_bar(0),
 			CONFIG_MAX_RAM_BANK_SIZE);
 	return 0;
 }
@@ -49,7 +65,7 @@ void dram_init_banksize (void)
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		gd->bd->bi_dram[i].start = orion5x_sdram_bar(i);
 		gd->bd->bi_dram[i].size = get_ram_size(
-			(long *) (gd->bd->bi_dram[i].start),
+			(volatile long *) (gd->bd->bi_dram[i].start),
 			CONFIG_MAX_RAM_BANK_SIZE);
 	}
 }

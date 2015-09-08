@@ -4,7 +4,20 @@
  *
  * Configuration settings for the OMAP3 Pandora.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -13,11 +26,11 @@
 /*
  * High Level Configuration Options
  */
+#define CONFIG_ARMV7		1	/* This is an ARM V7 CPU core */
 #define CONFIG_OMAP		1	/* in a TI OMAP core */
 #define CONFIG_OMAP34XX		1	/* which is a 34XX */
+#define CONFIG_OMAP3430		1	/* which is in a 3430 */
 #define CONFIG_OMAP3_PANDORA	1	/* working with pandora */
-#define CONFIG_OMAP_GPIO
-#define CONFIG_OMAP_COMMON
 
 #define CONFIG_SDRC	/* The chip has SDRC controller */
 
@@ -34,14 +47,13 @@
 #define V_OSCK			26000000	/* Clock output from T2 */
 #define V_SCLK			(V_OSCK >> 1)
 
+#undef CONFIG_USE_IRQ		/* no support for IRQs */
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_CMDLINE_TAG		1	/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS	1
 #define CONFIG_INITRD_TAG		1
 #define CONFIG_REVISION_TAG		1
-
-#define CONFIG_OF_LIBFDT		1
 
 /*
  * Size of malloc() pool
@@ -87,10 +99,12 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{4800, 9600, 19200, 38400, 57600, \
 					115200}
-#define CONFIG_GENERIC_MMC		1
 #define CONFIG_MMC			1
-#define CONFIG_OMAP_HSMMC		1
+#define CONFIG_OMAP3_MMC		1
 #define CONFIG_DOS_PARTITION		1
+
+/* DDR - I use Micron DDR */
+#define CONFIG_OMAP3_MICRON_DDR		1
 
 /* commands to include */
 #include <config_cmd_default.h>
@@ -111,10 +125,12 @@
 #undef CONFIG_CMD_NFS		/* NFS support			*/
 
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_OMAP24_I2C_SPEED	100000
-#define CONFIG_SYS_OMAP24_I2C_SLAVE	1
-#define CONFIG_SYS_I2C_OMAP34XX
+#define CONFIG_HARD_I2C			1
+#define CONFIG_SYS_I2C_SPEED		100000
+#define CONFIG_SYS_I2C_SLAVE		1
+#define CONFIG_SYS_I2C_BUS		0
+#define CONFIG_SYS_I2C_BUS_SELECT	1
+#define CONFIG_DRIVER_OMAP34XX_I2C	1
 
 /*
  * TWL4030
@@ -160,16 +176,16 @@
 	"usbtty=cdc_acm\0" \
 	"loadaddr=0x82000000\0" \
 	"bootargs=ubi.mtd=4 ubi.mtd=3 root=ubi0:rootfs rootfstype=ubifs " \
-		"rw rootflags=bulk_read vram=6272K omapfb.vram=0:3000K\0" \
+	"rw rootflags=bulk_read console=ttyS0,115200n8 " \
+	"vram=6272K omapfb.vram=0:3000K\0" \
 	"mtdparts=" MTDPARTS_DEFAULT "\0" \
 
 #define CONFIG_BOOTCOMMAND \
-	"if mmc rescan && fatload mmc1 0 ${loadaddr} autoboot.scr || " \
+	"if mmc init && fatload mmc1 0 ${loadaddr} autoboot.scr || " \
 			"ext2load mmc1 0 ${loadaddr} autoboot.scr; then " \
 		"source ${loadaddr}; " \
 	"fi; " \
-	"ubi part boot && ubifsmount ubi:boot && " \
-		"ubifsload ${loadaddr} uImage && bootm ${loadaddr}"
+	"ubi part boot && ubifsmount boot && ubifsload ${loadaddr} uImage && bootm ${loadaddr}"
 
 #define CONFIG_AUTO_COMPLETE	1
 /*
@@ -177,8 +193,9 @@
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"Pandora # "
-#define CONFIG_SYS_CBSIZE		512	/* Console I/O Buffer Size */
+#define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
 					sizeof(CONFIG_SYS_PROMPT) + 16)
@@ -201,13 +218,29 @@
  */
 #define CONFIG_SYS_TIMERBASE		OMAP34XX_GPT2
 #define CONFIG_SYS_PTV			2	/* Divisor: 2^(PTV+1) => 8 */
+#define CONFIG_SYS_HZ			1000
+
+/*-----------------------------------------------------------------------
+ * Stack sizes
+ *
+ * The stack sizes are set up in start.S using the settings below
+ */
+#define CONFIG_STACKSIZE	(128 << 10)	/* regular stack 128 KiB */
+#ifdef CONFIG_USE_IRQ
+#define CONFIG_STACKSIZE_IRQ	(4 << 10)	/* IRQ stack 4 KiB */
+#define CONFIG_STACKSIZE_FIQ	(4 << 10)	/* FIQ stack 4 KiB */
+#endif
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map
  */
 #define CONFIG_NR_DRAM_BANKS	2	/* CS1 may or may not be populated */
 #define PHYS_SDRAM_1		OMAP34XX_SDRC_CS0
+#define PHYS_SDRAM_1_SIZE	(32 << 20)	/* at least 32 MiB */
 #define PHYS_SDRAM_2		OMAP34XX_SDRC_CS1
+
+/* SDRAM Bank Allocation method */
+#define SDRC_R_B_C		1
 
 #define CONFIG_SYS_TEXT_BASE		0x80008000
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1
@@ -229,9 +262,7 @@
 
 #define CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 2 sectors */
 
-#if defined(CONFIG_CMD_NAND)
-#define CONFIG_SYS_FLASH_BASE		PISMO1_NAND_BASE
-#endif
+#define CONFIG_SYS_FLASH_BASE		boot_flash_base
 
 /* Monitor at start of flash */
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
@@ -239,10 +270,16 @@
 #define CONFIG_ENV_IS_IN_NAND		1
 #define SMNAND_ENV_OFFSET		0x260000 /* environment starts here */
 
-#define CONFIG_SYS_ENV_SECT_SIZE	(128 << 10)	/* 128 KiB */
-#define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
+#define CONFIG_SYS_ENV_SECT_SIZE	boot_flash_sec
+#define CONFIG_ENV_OFFSET		boot_flash_off
 #define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
 
-#define CONFIG_SYS_CACHELINE_SIZE	64
+#ifndef __ASSEMBLY__
+extern unsigned int boot_flash_base;
+extern volatile unsigned int boot_flash_env_addr;
+extern unsigned int boot_flash_off;
+extern unsigned int boot_flash_sec;
+extern unsigned int boot_flash_type;
+#endif
 
 #endif				/* __CONFIG_H */

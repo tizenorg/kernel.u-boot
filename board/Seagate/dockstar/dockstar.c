@@ -6,15 +6,29 @@
  * (C) Copyright 2009
  * Marvell Semiconductor <www.marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
 #include <miiphy.h>
 #include <asm/arch/kirkwood.h>
 #include <asm/arch/mpp.h>
-#include <asm/arch/cpu.h>
-#include <asm/io.h>
 #include "dockstar.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -31,7 +45,7 @@ int board_early_init_f(void)
 			DOCKSTAR_OE_LOW, DOCKSTAR_OE_HIGH);
 
 	/* Multi-Purpose Pins Functionality configuration */
-	static const u32 kwmpp_config[] = {
+	u32 kwmpp_config[] = {
 		MPP0_NF_IO2,
 		MPP1_NF_IO3,
 		MPP2_NF_IO4,
@@ -84,7 +98,7 @@ int board_early_init_f(void)
 		MPP49_GPIO,
 		0
 	};
-	kirkwood_mpp_conf(kwmpp_config, NULL);
+	kirkwood_mpp_conf(kwmpp_config);
 	return 0;
 }
 
@@ -153,10 +167,10 @@ static void set_leds(u32 leds, u32 blinking)
 void show_boot_progress(int val)
 {
 	switch (val) {
-	case BOOTSTAGE_ID_RUN_OS:		/* booting Linux */
+	case 15:		/* booting Linux */
 		set_leds(BOTH_LEDS, NEITHER_LED);
 		break;
-	case BOOTSTAGE_ID_NET_ETH_START:	/* Ethernet initialization */
+	case 64:		/* Ethernet initialization */
 		set_leds(GREEN_LED, GREEN_LED);
 		break;
 	default:

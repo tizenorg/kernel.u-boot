@@ -8,7 +8,23 @@
  * (C) Copyright 2002
  * Gary Jennejohn, DENX Software Engineering, <garyj@denx.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -19,52 +35,49 @@
 #include <command.h>
 #include <asm/system.h>
 #include <asm/cache.h>
-#include <asm/armv7.h>
-#include <linux/compiler.h>
+#ifndef CONFIG_L2_OFF
+#include <asm/arch/sys_proto.h>
+#endif
 
-void __weak cpu_cache_initialization(void){}
+void cache_flush(void);
 
 int cleanup_before_linux(void)
 {
+	unsigned int i;
+
 	/*
 	 * this function is called just before we call linux
 	 * it prepares the processor for linux
 	 *
 	 * we turn off caches etc ...
 	 */
-#ifndef CONFIG_SPL_BUILD
 	disable_interrupts();
+
+	/* turn off I/D-cache */
+	icache_disable();
+	dcache_disable();
+
+	/* invalidate I-cache */
+	cache_flush();
+
+#ifndef CONFIG_L2_OFF
+	/* turn off L2 cache */
+	l2_cache_disable();
+	/* invalidate L2 cache also */
+	invalidate_dcache(get_device_type());
+#endif
+	i = 0;
+	/* mem barrier to sync up things */
+	asm("mcr p15, 0, %0, c7, c10, 4": :"r"(i));
+
+#ifndef CONFIG_L2_OFF
+	l2_cache_enable();
 #endif
 
-	/*
-	 * Turn off I-cache and invalidate it
-	 */
-	icache_disable();
-	invalidate_icache_all();
-
-	/*
-	 * turn off D-cache
-	 * dcache_disable() in turn flushes the d-cache and disables MMU
-	 */
-	dcache_disable();
-	v7_outer_cache_disable();
-
-	/*
-	 * After D-cache is flushed and before it is disabled there may
-	 * be some new valid entries brought into the cache. We are sure
-	 * that these lines are not dirty and will not affect our execution.
-	 * (because unwinding the call-stack and setting a bit in CP15 SCTRL
-	 * is all we did during this. We have not pushed anything on to the
-	 * stack. Neither have we affected any static data)
-	 * So just invalidate the entire d-cache again to avoid coherency
-	 * problems for kernel
-	 */
-	invalidate_dcache_all();
-
-	/*
-	 * Some CPU need more cache attention before starting the kernel.
-	 */
-	cpu_cache_initialization();
-
 	return 0;
+}
+
+void cache_flush(void)
+{
+	asm ("mcr p15, 0, %0, c7, c5, 0": :"r" (0));
 }

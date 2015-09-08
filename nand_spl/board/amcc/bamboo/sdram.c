@@ -2,7 +2,23 @@
  * (C) Copyright 2007
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -63,7 +79,7 @@ phys_size_t initdram(int board_type)
 	mtsdram(SDRAM0_B0CR, 0x00082001);
 	mtsdram(SDRAM0_TR0, 0x41094012);
 	mtsdram(SDRAM0_TR1, 0x8080083d);	/* SS=T2 SL=STAGE 3 CD=1 CT=0x00*/
-	mtsdram(SDRAM0_RTR, 0x04100000);	/* Interval 7.8Âµs @ 133MHz PLB	*/
+	mtsdram(SDRAM0_RTR, 0x04100000);	/* Interval 7.8µs @ 133MHz PLB	*/
 	mtsdram(SDRAM0_CFG1, 0x00000000);	/* Self-refresh exit, disable PM*/
 
 	/*

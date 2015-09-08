@@ -4,7 +4,10 @@
  * Copyright (C) 2007 MontaVista Software, Inc.
  *                    Anton Vorontsov <avorontsov@ru.mvista.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
  */
 
 #include <config.h>
@@ -54,7 +57,7 @@ static void fun_wait(struct fsl_upm_nand *fun)
 			debug("unexpected busy state\n");
 	} else {
 		/*
-		 * If the R/B pin is not connected,
+		 * If the R/B pin is not connected, like on the TQM8548,
 		 * a short delay is necessary.
 		 */
 		udelay(1);
@@ -112,23 +115,23 @@ static void fun_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
 	fsl_upm_run_pattern(&fun->upm, fun->width, io_addr, mar);
 
 	/*
-	 * Some boards/chips needs this.  At least the MPC8360E-RDK
-	 * needs it.  Probably weird chip, because I don't see any
-	 * need for this on MPC8555E + Samsung K9F1G08U0A.  Usually
+	 * Some boards/chips needs this. At least the MPC8360E-RDK and
+	 * TQM8548 need it. Probably weird chip, because I don't see
+	 * any need for this on MPC8555E + Samsung K9F1G08U0A. Usually
 	 * here are 0-2 unexpected busy states per block read.
 	 */
 	if (fun->wait_flags & FSL_UPM_WAIT_RUN_PATTERN)
 		fun_wait(fun);
 }
 
-static u8 upm_nand_read_byte(struct mtd_info *mtd)
+static u8 nand_read_byte(struct mtd_info *mtd)
 {
 	struct nand_chip *chip = mtd->priv;
 
 	return in_8(chip->IO_ADDR_R);
 }
 
-static void upm_nand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
+static void nand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
 {
 	int i;
 	struct nand_chip *chip = mtd->priv;
@@ -144,7 +147,7 @@ static void upm_nand_write_buf(struct mtd_info *mtd, const u_char *buf, int len)
 		fun_wait(fun);
 }
 
-static void upm_nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
+static void nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
 {
 	int i;
 	struct nand_chip *chip = mtd->priv;
@@ -153,7 +156,7 @@ static void upm_nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
 		buf[i] = in_8(chip->IO_ADDR_R);
 }
 
-static int upm_nand_verify_buf(struct mtd_info *mtd, const u_char *buf, int len)
+static int nand_verify_buf(struct mtd_info *mtd, const u_char *buf, int len)
 {
 	int i;
 	struct nand_chip *chip = mtd->priv;
@@ -188,10 +191,10 @@ int fsl_upm_nand_init(struct nand_chip *chip, struct fsl_upm_nand *fun)
 #if CONFIG_SYS_NAND_MAX_CHIPS > 1
 	chip->select_chip = fun_select_chip;
 #endif
-	chip->read_byte = upm_nand_read_byte;
-	chip->read_buf = upm_nand_read_buf;
-	chip->write_buf = upm_nand_write_buf;
-	chip->verify_buf = upm_nand_verify_buf;
+	chip->read_byte = nand_read_byte;
+	chip->read_buf = nand_read_buf;
+	chip->write_buf = nand_write_buf;
+	chip->verify_buf = nand_verify_buf;
 	if (fun->dev_ready)
 		chip->dev_ready = nand_dev_ready;
 

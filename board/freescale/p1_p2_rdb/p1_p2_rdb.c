@@ -1,7 +1,23 @@
 /*
  * Copyright 2009-2011 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -15,13 +31,10 @@
 #include <miiphy.h>
 #include <libfdt.h>
 #include <fdt_support.h>
-#include <fsl_mdio.h>
 #include <tsec.h>
 #include <vsc7385.h>
 #include <netdev.h>
 #include <rtc.h>
-#include <i2c.h>
-#include <hwconfig.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -32,7 +45,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RGMII_PHY_RST_SET	0x02000000
 
 #define USB_RST_CLR		0x04000000
-#define USB2_PORT_OUT_EN        0x01000000
 
 #define GPIO_DIR		0x060f0000
 
@@ -42,25 +54,38 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define SYSCLK_MASK	0x00200000
 #define BOARDREV_MASK	0x10100000
+#define BOARDREV_B	0x10100000
 #define BOARDREV_C	0x00100000
 #define BOARDREV_D	0x00000000
 
 #define SYSCLK_66	66666666
+#define SYSCLK_50	50000000
 #define SYSCLK_100	100000000
 
 unsigned long get_board_sys_clk(ulong dummy)
 {
 	volatile ccsr_gpio_t *pgpio = (void *)(CONFIG_SYS_MPC85xx_GPIO_ADDR);
-	u32 val_gpdat, sysclk_gpio;
+	u32 val_gpdat, sysclk_gpio, board_rev_gpio;
 
 	val_gpdat = in_be32(&pgpio->gpdat);
 	sysclk_gpio = val_gpdat & SYSCLK_MASK;
-
-	if(sysclk_gpio == 0)
-		return SYSCLK_66;
-	else
-		return SYSCLK_100;
-
+	board_rev_gpio = val_gpdat & BOARDREV_MASK;
+	if (board_rev_gpio == BOARDREV_C) {
+		if(sysclk_gpio == 0)
+			return SYSCLK_66;
+		else
+			return SYSCLK_100;
+	} else if (board_rev_gpio == BOARDREV_B) {
+		if(sysclk_gpio == 0)
+			return SYSCLK_66;
+		else
+			return SYSCLK_50;
+	} else if (board_rev_gpio == BOARDREV_D) {
+		if(sysclk_gpio == 0)
+			return SYSCLK_66;
+		else
+			return SYSCLK_100;
+	}
 	return 0;
 }
 
@@ -87,14 +112,15 @@ int checkboard (void)
 	board_rev_gpio = val_gpdat & BOARDREV_MASK;
 	if (board_rev_gpio == BOARDREV_C)
 		board_rev = 'C';
+	else if (board_rev_gpio == BOARDREV_B)
+		board_rev = 'B';
 	else if (board_rev_gpio == BOARDREV_D)
 		board_rev = 'D';
 	else
 		panic ("Unexpected Board REV %x detected!!\n", board_rev_gpio);
 
-	cpu = gd->arch.cpu;
+	cpu = gd->cpu;
 	printf ("Board: %sRDB Rev%c\n", cpu->name, board_rev);
-
 	setbits_be32(&pgpio->gpdir, GPIO_DIR);
 
 /*
@@ -112,47 +138,10 @@ int checkboard (void)
 	return 0;
 }
 
-int misc_init_r(void)
-{
-#if defined(CONFIG_SDCARD) || defined(CONFIG_SPIFLASH)
-	ccsr_gur_t *gur = (void *)CONFIG_SYS_MPC85xx_GUTS_ADDR;
-	ccsr_gpio_t *gpio = (void *)CONFIG_SYS_MPC85xx_GPIO_ADDR;
-
-	setbits_be32(&gpio->gpdir, USB2_PORT_OUT_EN);
-	setbits_be32(&gpio->gpdat, USB2_PORT_OUT_EN);
-	setbits_be32(&gur->pmuxcr, MPC85xx_PMUXCR_ELBC_OFF_USB2_ON);
-#endif
-	return 0;
-}
-
 int board_early_init_r(void)
 {
 	const unsigned int flashbase = CONFIG_SYS_FLASH_BASE;
 	const u8 flash_esel = find_tlb_idx((void *)flashbase, 1);
-	volatile ccsr_gur_t *gur = (void *)(CONFIG_SYS_MPC85xx_GUTS_ADDR);
-	unsigned int orig_bus = i2c_get_bus_num();
-	u8 i2c_data;
-
-	i2c_set_bus_num(1);
-	if (i2c_read(CONFIG_SYS_I2C_PCA9557_ADDR, 0,
-		1, &i2c_data, sizeof(i2c_data)) == 0) {
-		if (i2c_data & 0x2)
-			puts("NOR Flash Bank : Secondary\n");
-		else
-			puts("NOR Flash Bank : Primary\n");
-
-		if (i2c_data & 0x1) {
-			setbits_be32(&gur->pmuxcr, MPC85xx_PMUXCR_SD_DATA);
-			puts("SD/MMC : 8-bit Mode\n");
-			puts("eSPI : Disabled\n");
-		} else {
-			puts("SD/MMC : 4-bit Mode\n");
-			puts("eSPI : Enabled\n");
-		}
-	} else {
-		puts("Failed reading I2C Chip 0x18 on bus 1\n");
-	}
-	i2c_set_bus_num(orig_bus);
 
 	/*
 	 * Remap Boot flash region to caching-inhibited
@@ -177,7 +166,6 @@ int board_early_init_r(void)
 #ifdef CONFIG_TSEC_ENET
 int board_eth_init(bd_t *bis)
 {
-	struct fsl_pq_mdio_info mdio_info;
 	struct tsec_info_struct tsec_info[4];
 	int num = 0;
 	char *tmp;
@@ -215,10 +203,6 @@ int board_eth_init(bd_t *bis)
 		puts("No address specified for VSC7385 microcode.\n");
 #endif
 
-	mdio_info.regs = (struct tsec_mii_mng *)CONFIG_SYS_MDIO_BASE_ADDR;
-	mdio_info.name = DEFAULT_MII_NAME;
-	fsl_pq_mdio_init(bis, &mdio_info);
-
 	tsec_eth_init(bis, tsec_info, num);
 
 	return pci_eth_init(bis);
@@ -230,8 +214,6 @@ extern void ft_pci_board_setup(void *blob);
 
 void ft_board_setup(void *blob, bd_t *bd)
 {
-	const char *soc_usb_compat = "fsl-usb2-dr";
-	int err, usb1_off, usb2_off;
 	phys_addr_t base;
 	phys_size_t size;
 
@@ -245,51 +227,14 @@ void ft_board_setup(void *blob, bd_t *bd)
 #endif /* #if defined(CONFIG_PCI) */
 
 	fdt_fixup_memory(blob, (u64)base, (u64)size);
-
-#if defined(CONFIG_HAS_FSL_DR_USB)
-	fdt_fixup_dr_usb(blob, bd);
+}
 #endif
 
-#if defined(CONFIG_SDCARD) || defined(CONFIG_SPIFLASH)
-	/* Delete eLBC node as it is muxed with USB2 controller */
-	if (hwconfig("usb2")) {
-		const char *soc_elbc_compat = "fsl,p1020-elbc";
-		int off = fdt_node_offset_by_compatible(blob, -1,
-			soc_elbc_compat);
-		if (off < 0) {
-			printf("WARNING: could not find compatible node"
-				" %s: %s.\n", soc_elbc_compat,
-				fdt_strerror(off));
-				return;
-		}
-		err = fdt_del_node(blob, off);
-		if (err < 0) {
-			printf("WARNING: could not remove %s: %s.\n",
-				soc_elbc_compat, fdt_strerror(err));
-		}
-		return;
-	}
-#endif
-	/* Delete USB2 node as it is muxed with eLBC */
-	usb1_off = fdt_node_offset_by_compatible(blob, -1,
-		soc_usb_compat);
-	if (usb1_off < 0) {
-		printf("WARNING: could not find compatible node"
-			" %s: %s.\n", soc_usb_compat,
-			fdt_strerror(usb1_off));
-		return;
-	}
-	usb2_off = fdt_node_offset_by_compatible(blob, usb1_off,
-			soc_usb_compat);
-	if (usb2_off < 0) {
-		printf("WARNING: could not find compatible node"
-			" %s: %s.\n", soc_usb_compat,
-			fdt_strerror(usb2_off));
-		return;
-	}
-	err = fdt_del_node(blob, usb2_off);
-	if (err < 0)
-		printf("WARNING: could not remove %s: %s.\n",
-			soc_usb_compat, fdt_strerror(err));
+#ifdef CONFIG_MP
+extern void cpu_mp_lmb_reserve(struct lmb *lmb);
+
+void board_lmb_reserve(struct lmb *lmb)
+{
+	cpu_mp_lmb_reserve(lmb);
 }
 #endif

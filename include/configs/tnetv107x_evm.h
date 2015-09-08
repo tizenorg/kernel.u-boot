@@ -5,7 +5,20 @@
  *
  * Copyright (C) 2007 Sergey Kubushyn <ksi@koi8.net>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -19,7 +32,6 @@
 #define CONFIG_ARM1176
 #define CONFIG_TNETV107X
 #define CONFIG_TNETV107X_EVM
-#define CONFIG_TNETV107X_WATCHDOG
 #define CONFIG_ARCH_CPU_INIT
 #define CONFIG_SYS_UBOOT_BASE		CONFIG_SYS_TEXT_BASE
 #define CONFIG_DISABLE_TCM
@@ -30,6 +42,7 @@
 
 #define CONFIG_SYS_TIMERBASE		TNETV107X_TIMER0_BASE
 #define CONFIG_SYS_HZ_CLOCK		clk_get_rate(TNETV107X_LPSC_TIMER0)
+#define CONFIG_SYS_HZ			1000
 
 #define CONFIG_PLL_SYS_EXT_FREQ		25000000
 #define CONFIG_PLL_TDM_EXT_FREQ		19200000
@@ -42,12 +55,7 @@
 #define CONFIG_SYS_MEMTEST_START	PHYS_SDRAM_1
 #define CONFIG_SYS_MEMTEST_END		(PHYS_SDRAM_1 + 16*1024*1024)
 #define CONFIG_NR_DRAM_BANKS		1
-
-#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1
-#define CONFIG_SYS_INIT_RAM_SIZE	0x1000
-#define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_SDRAM_BASE + \
-					 CONFIG_SYS_INIT_RAM_SIZE - \
-					 GENERATED_GBL_DATA_SIZE)
+#define CONFIG_STACKSIZE		(256*1024)
 
 /* Serial Driver Info */
 #define CONFIG_SYS_NS16550
@@ -57,6 +65,7 @@
 #define CONFIG_SYS_NS16550_CLK		clk_get_rate(TNETV107X_LPSC_UART1)
 #define CONFIG_CONS_INDEX		1
 #define CONFIG_BAUDRATE			115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /* Flash and environment info */
 #define CONFIG_SYS_NO_FLASH
@@ -68,13 +77,14 @@
 #define CONFIG_SYS_NAND_CS		2
 #define CONFIG_SYS_NAND_USE_FLASH_BBT
 #define CONFIG_SYS_NAND_BASE		TNETV107X_ASYNC_EMIF_DATA_CE0_BASE
-#define CONFIG_SYS_NAND_MASK_CLE		0x10
-#define CONFIG_SYS_NAND_MASK_ALE		0x8
+#define CONFIG_SYS_CLE_MASK		0x10
+#define CONFIG_SYS_ALE_MASK		0x8
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_DEVICE
 #define CONFIG_JFFS2_NAND
+#define NAND_MAX_CHIPS			1
 #define CONFIG_ENV_OFFSET		0x180000
 
 /*
@@ -100,6 +110,7 @@
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_LONGHELP
 #define CONFIG_CRC32_VERIFY

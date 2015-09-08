@@ -11,12 +11,28 @@
  * Sysgo Real-Time Solutions, GmbH <www.elinos.com>
  * Alex Zuepke <azu@sysgo.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 
-#include <asm/io.h>
+#include <asm/arch/io.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/at91_tc.h>
 #include <asm/arch/at91_pmc.h>
@@ -28,11 +44,11 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int timer_init(void)
 {
-	at91_tc_t *tc = (at91_tc_t *) ATMEL_BASE_TC;
-	at91_pmc_t *pmc = (at91_pmc_t *) ATMEL_BASE_PMC;
+	at91_tc_t *tc = (at91_tc_t *) AT91_TC_BASE;
+	at91_pmc_t *pmc = (at91_pmc_t *) AT91_PMC_BASE;
 
 	/* enables TC1.0 clock */
-	writel(1 << ATMEL_ID_TC0, &pmc->pcer);	/* enable clock */
+	writel(1 << AT91_ID_TC0, &pmc->pcer);	/* enable clock */
 
 	writel(0, &tc->bcr);
 	writel(AT91_TC_BMR_TC0XC0S_NONE | AT91_TC_BMR_TC1XC1S_NONE |
@@ -43,12 +59,12 @@ int timer_init(void)
 	when the value in TC_RC is reached */
 	writel(AT91_TC_CMR_TCCLKS_CLOCK1 | AT91_TC_CMR_CPCTRG, &tc->tc[0].cmr);
 
-	writel(0xFFFFFFFF, &tc->tc[0].idr); /* disable interrupts */
+	writel(0xFFFFFFFF, &tc->tc[0].idr); /* disable interupts */
 	writel(TIMER_LOAD_VAL, &tc->tc[0].rc);
 
 	writel(AT91_TC_CCR_SWTRG | AT91_TC_CCR_CLKEN, &tc->tc[0].ccr);
-	gd->arch.lastinc = 0;
-	gd->arch.tbl = 0;
+	gd->lastinc = 0;
+	gd->tbl = 0;
 
 	return 0;
 }
@@ -56,9 +72,20 @@ int timer_init(void)
 /*
  * timer without interrupts
  */
+
+void reset_timer(void)
+{
+	reset_timer_masked();
+}
+
 ulong get_timer(ulong base)
 {
 	return get_timer_masked() - base;
+}
+
+void set_timer(ulong t)
+{
+	gd->tbl = t;
 }
 
 void __udelay(unsigned long usec)
@@ -66,23 +93,31 @@ void __udelay(unsigned long usec)
 	udelay_masked(usec);
 }
 
+void reset_timer_masked(void)
+{
+	/* reset time */
+	at91_tc_t *tc = (at91_tc_t *) AT91_TC_BASE;
+	gd->lastinc = readl(&tc->tc[0].cv) & 0x0000ffff;
+	gd->tbl = 0;
+}
+
 ulong get_timer_raw(void)
 {
-	at91_tc_t *tc = (at91_tc_t *) ATMEL_BASE_TC;
+	at91_tc_t *tc = (at91_tc_t *) AT91_TC_BASE;
 	u32 now;
 
 	now = readl(&tc->tc[0].cv) & 0x0000ffff;
 
-	if (now >= gd->arch.lastinc) {
+	if (now >= gd->lastinc) {
 		/* normal mode */
-		gd->arch.tbl += now - gd->arch.lastinc;
+		gd->tbl += now - gd->lastinc;
 	} else {
 		/* we have an overflow ... */
-		gd->arch.tbl += now + TIMER_LOAD_VAL - gd->arch.lastinc;
+		gd->tbl += now + TIMER_LOAD_VAL - gd->lastinc;
 	}
-	gd->arch.lastinc = now;
+	gd->lastinc = now;
 
-	return gd->arch.tbl;
+	return gd->tbl;
 }
 
 ulong get_timer_masked(void)

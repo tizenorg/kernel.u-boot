@@ -5,13 +5,30 @@
  *
  * Configuation settings for the SAMSUNG Universal (s5pc100) board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
 /* High Level Configuration Options */
+#define CONFIG_ARMV7		1	/* This is an ARM V7 CPU core */
 #define CONFIG_SAMSUNG		1	/* in a SAMSUNG core */
 #define CONFIG_S5P		1	/* which is in a S5P Family */
 #define CONFIG_S5PC110		1	/* which is in a S5PC110 */
@@ -23,18 +40,17 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
+#define CONFIG_USE_ARCH_MEMSET
+#define CONFIG_USE_ARCH_MEMCPY
+
 /* input clock of PLL: has 24MHz input clock at S5PC110 */
 #define CONFIG_SYS_CLK_FREQ_C110	24000000
 
 /* DRAM Base */
 #define CONFIG_SYS_SDRAM_BASE		0x30000000
 
-/* Text Base */
-#define CONFIG_SYS_TEXT_BASE		0x34800000
-
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_CMDLINE_TAG
-#define CONFIG_REVISION_TAG
 #define CONFIG_INITRD_TAG
 #define CONFIG_CMDLINE_EDITING
 
@@ -43,17 +59,18 @@
  * 1MB = 0x100000, 0x100000 = 1024 * 1024
  */
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (1 << 20))
+						/* initial data */
 /*
  * select serial console configuration
  */
 #define CONFIG_SERIAL2			1	/* use SERIAL2 */
+#define CONFIG_SERIAL_MULTI		1
 #define CONFIG_BAUDRATE			115200
 
 /* MMC */
-#define CONFIG_GENERIC_MMC
-#define CONFIG_MMC
-#define CONFIG_SDHCI
-#define CONFIG_S5P_SDHCI
+#define CONFIG_GENERIC_MMC		1
+#define CONFIG_MMC			1
+#define CONFIG_S5P_MMC			1
 
 /* PWM */
 #define CONFIG_PWM			1
@@ -74,6 +91,9 @@
 #define CONFIG_CMD_ONENAND
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_CMD_MMC
+
+#define CONFIG_CRC16
+#define CONFIG_XYZMODEM
 
 #define CONFIG_BOOTDELAY		1
 #define CONFIG_ZERO_BOOTDELAY_CHECK
@@ -114,13 +134,8 @@
 
 #define CONFIG_UBIFS_OPTION	"rootflags=bulk_read,no_chk_data_crc"
 
-#define CONFIG_MISC_COMMON
-#define CONFIG_MISC_INIT_R
-
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_SYS_CONSOLE_IS_IN_ENV
-#define CONFIG_ENV_VARS_UBOOT_CONFIG
-#define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 #define CONFIG_EXTRA_ENV_SETTINGS					\
 	CONFIG_UPDATEB \
 	"updatek=" \
@@ -168,6 +183,7 @@
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser	*/
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT	"Goni # "
 #define CONFIG_SYS_CBSIZE	256	/* Console I/O Buffer Size */
 #define CONFIG_SYS_PBSIZE	384	/* Print Buffer Size */
@@ -178,6 +194,14 @@
 #define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_SDRAM_BASE + 0x5000000)
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x4000000)
+
+#define CONFIG_SYS_HZ			1000
+
+/* valid baudrates */
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
+
+/* Stack sizes */
+#define CONFIG_STACKSIZE	(256 << 10)	/* 256 KiB */
 
 /* Goni has 3 banks of DRAM, but swap the bank */
 #define CONFIG_NR_DRAM_BANKS	3
@@ -203,28 +227,5 @@
 #define CONFIG_DOS_PARTITION		1
 
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_LOAD_ADDR - 0x1000000)
-
-#define CONFIG_SYS_CACHELINE_SIZE       64
-
-#define CONFIG_POWER
-#define CONFIG_POWER_I2C
-#define CONFIG_POWER_MAX8998
-
-#include <asm/arch/gpio.h>
-/*
- * I2C Settings
- */
-#define CONFIG_SOFT_I2C_GPIO_SCL s5pc110_gpio_get(j4, 3)
-#define CONFIG_SOFT_I2C_GPIO_SDA s5pc110_gpio_get(j4, 0)
-
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_SOFT		/* I2C bit-banged */
-#define CONFIG_SYS_I2C_SOFT_SPEED	50000
-#define CONFIG_SYS_I2C_SOFT_SLAVE	0x7F
-#define CONFIG_I2C_MULTI_BUS
-#define CONFIG_SYS_MAX_I2C_BUS	7
-#define CONFIG_USB_GADGET
-#define CONFIG_USB_GADGET_S3C_UDC_OTG
-#define CONFIG_USB_GADGET_DUALSPEED
 
 #endif	/* __CONFIG_H */

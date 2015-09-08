@@ -1,7 +1,21 @@
 /*
  * Copyright 2009-2011 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #ifndef _ASM_CONFIG_H_
@@ -9,27 +23,10 @@
 
 #ifdef CONFIG_MPC85xx
 #include <asm/config_mpc85xx.h>
-#define CONFIG_SYS_FSL_DDR
 #endif
 
 #ifdef CONFIG_MPC86xx
 #include <asm/config_mpc86xx.h>
-#define CONFIG_SYS_FSL_DDR
-#endif
-
-#ifdef CONFIG_MPC83xx
-#define CONFIG_SYS_FSL_DDR
-#endif
-
-#ifndef HWCONFIG_BUFFER_SIZE
-  #define HWCONFIG_BUFFER_SIZE 256
-#endif
-
-/* CONFIG_HARD_SPI triggers SPI bus initialization in PowerPC */
-#if defined(CONFIG_MPC8XXX_SPI) || defined(CONFIG_FSL_ESPI)
-# ifndef CONFIG_HARD_SPI
-#  define CONFIG_HARD_SPI
-# endif
 #endif
 
 #define CONFIG_LMB
@@ -38,10 +35,7 @@
 #define CONFIG_SYS_BOOT_GET_KBD
 
 #ifndef CONFIG_MAX_MEM_MAPPED
-#if	defined(CONFIG_4xx)		|| \
-	defined(CONFIG_E500)		|| \
-	defined(CONFIG_MPC86xx)		|| \
-	defined(CONFIG_E300)
+#if defined(CONFIG_4xx) || defined(CONFIG_E500) || defined(CONFIG_MPC86xx)
 #define CONFIG_MAX_MEM_MAPPED	((phys_size_t)2 << 30)
 #else
 #define CONFIG_MAX_MEM_MAPPED	(256 << 20)
@@ -81,23 +75,7 @@
 /* Since so many PPC SOCs have a semi-common LBC, define this here */
 #if defined(CONFIG_MPC85xx) || defined(CONFIG_MPC86xx) || \
 	defined(CONFIG_MPC83xx)
-#if !defined(CONFIG_FSL_IFC)
 #define CONFIG_FSL_LBC
-#endif
-#endif
-
-/* The TSEC driver uses the PHYLIB infrastructure */
-#ifndef CONFIG_PHYLIB
-#if defined(CONFIG_TSEC_ENET)
-#define CONFIG_PHYLIB
-
-#include <config_phylib_all_drivers.h>
-#endif /* TSEC_ENET */
-#endif /* !CONFIG_PHYLIB */
-
-/* The FMAN driver uses the PHYLIB infrastructure */
-#if defined(CONFIG_FMAN_ENET)
-#define CONFIG_PHYLIB
 #endif
 
 /* All PPC boards must swap IDE bytes */

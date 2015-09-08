@@ -9,7 +9,23 @@
  * (C) Copyright 2008
  * Daniel Hellstrom, Gaisler Research, daniel@gaisler.com.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H__
@@ -99,7 +115,7 @@
 		"bootm ${kernel_addr} ${ramdisk_addr}\0"		\
 	"net_nfs=tftp 40000000 ${bootfile};run nfsargs addip;bootm\0"	\
 	"scratch=40800000\0"					\
-	"getkernel=tftpboot $(scratch) $(bootfile)\0" \
+	"getkernel=tftpboot \$\(scratch\)\ \$\(bootfile\)\0" \
 	"bootargs=console=ttyS0,38400 root=/dev/nfs rw nfsroot=192.168.0.20:/export/rootfs ip=192.168.0.207:192.168.0.20:192.168.0.1:255.255.255.0:ml401:eth0\0" \
 	""
 
@@ -107,9 +123,9 @@
 #define CONFIG_GATEWAYIP 192.168.0.1
 #define CONFIG_SERVERIP 192.168.0.20
 #define CONFIG_IPADDR 192.168.0.207
-#define CONFIG_ROOTPATH "/export/rootfs"
+#define CONFIG_ROOTPATH /export/rootfs
 #define CONFIG_HOSTNAME  ml401
-#define CONFIG_BOOTFILE "/uImage"
+#define CONFIG_BOOTFILE  /uImage
 
 #define CONFIG_BOOTCOMMAND	"run flash_self"
 
@@ -250,6 +266,7 @@
 #ifndef USE_GRETH
 
 /* USE SMC91C111 MAC */
+#define CONFIG_NET_MULTI
 #define CONFIG_SMC91111          1
 #define CONFIG_SMC91111_BASE		0x20000300	/* chip select 3         */
 #define CONFIG_SMC_USE_32_BIT		1	/* 32 bit bus  */
@@ -260,6 +277,7 @@
 #else
 
 /* USE GRETH Ethernet Driver */
+#define CONFIG_NET_MULTI	1
 #define CONFIG_GRETH	1
 
 /* Default GRETH Ethernet HARDWARE address */
@@ -278,6 +296,7 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory     */
+#define CONFIG_SYS_PROMPT		"=> "	/* Monitor Command Prompt   */
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size  */
 #else
@@ -291,6 +310,8 @@
 #define CONFIG_SYS_MEMTEST_END		0x00f00000	/* 1 ... 15 MB in DRAM  */
 
 #define CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address */
+
+#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 
 /*-----------------------------------------------------------------------
  * USB stuff

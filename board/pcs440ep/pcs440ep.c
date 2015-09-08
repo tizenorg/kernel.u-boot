@@ -2,7 +2,23 @@
  * (C) Copyright 2006
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -16,7 +32,6 @@
 #include <sha1.h>
 #include <asm/io.h>
 #include <net.h>
-#include <ata.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -82,39 +97,39 @@ static void status_led_blink (void)
 void show_boot_progress (int val)
 {
 	/* find all valid Codes for val in README */
-	if (val == -BOOTSTAGE_ID_NEED_RESET)
-		return;
+	if (val == -30) return;
 	if (val < 0) {
 		/* smthing goes wrong */
 		status_led_blink ();
 		return;
 	}
 	switch (val) {
-	case BOOTSTAGE_ID_CHECK_MAGIC:
-		/* validating Image */
-		status_led_set(0, STATUS_LED_OFF);
-		status_led_set(1, STATUS_LED_ON);
-		status_led_set(2, STATUS_LED_ON);
-		break;
-	case BOOTSTAGE_ID_RUN_OS:
-		status_led_set(0, STATUS_LED_ON);
-		status_led_set(1, STATUS_LED_ON);
-		status_led_set(2, STATUS_LED_ON);
-		break;
+		case 1:
+			/* validating Image */
+			status_led_set (0, STATUS_LED_OFF);
+			status_led_set (1, STATUS_LED_ON);
+			status_led_set (2, STATUS_LED_ON);
+			break;
+		case 15:
+			/* booting */
+			status_led_set (0, STATUS_LED_ON);
+			status_led_set (1, STATUS_LED_ON);
+			status_led_set (2, STATUS_LED_ON);
+			break;
 #if 0
-	case BOOTSTAGE_ID_NET_ETH_START:
-		/* starting Ethernet configuration */
-		status_led_set(0, STATUS_LED_OFF);
-		status_led_set(1, STATUS_LED_OFF);
-		status_led_set(2, STATUS_LED_ON);
-		break;
+		case 64:
+			/* starting Ethernet configuration */
+			status_led_set (0, STATUS_LED_OFF);
+			status_led_set (1, STATUS_LED_OFF);
+			status_led_set (2, STATUS_LED_ON);
+			break;
 #endif
-	case BOOTSTAGE_ID_NET_START:
-		/* loading Image */
-		status_led_set(0, STATUS_LED_ON);
-		status_led_set(1, STATUS_LED_OFF);
-		status_led_set(2, STATUS_LED_ON);
-		break;
+		case 80:
+			/* loading Image */
+			status_led_set (0, STATUS_LED_ON);
+			status_led_set (1, STATUS_LED_OFF);
+			status_led_set (2, STATUS_LED_ON);
+			break;
 	}
 }
 #endif
@@ -494,13 +509,12 @@ int misc_init_r (void)
 
 int checkboard(void)
 {
-	char buf[64];
-	int i = getenv_f("serial#", buf, sizeof(buf));
+	char *s = getenv("serial#");
 
 	printf("Board: PCS440EP");
-	if (i > 0) {
+	if (s != NULL) {
 		puts(", serial# ");
-		puts(buf);
+		puts(s);
 	}
 	putc('\n');
 
@@ -657,6 +671,7 @@ U_BOOT_CMD(
  * ( bus per_addr 20 -30 is connectsd on CF bus A10-A0)
  * These values are shifted
  */
+extern ulong *ide_bus_offset;
 void inline ide_outb(int dev, int port, unsigned char val)
 {
 	debug ("ide_outb (dev= %d, port= 0x%x, val= 0x%02x) : @ 0x%08lx\n",
@@ -698,58 +713,3 @@ void ide_set_reset (int idereset)
 	udelay (10000);
 }
 #endif /* defined (CONFIG_CMD_IDE) && defined (CONFIG_IDE_RESET) */
-
-
-/* this is motly the same as it should, causing a little code duplication */
-#if defined(CONFIG_CMD_IDE)
-#define EIEIO		__asm__ volatile ("eieio")
-
-void ide_input_swap_data(int dev, ulong *sect_buf, int words)
-{
-	volatile ushort *pbuf =
-		(ushort *) (ATA_CURR_BASE(dev) + ATA_DATA_REG);
-	ushort *dbuf = (ushort *) sect_buf;
-
-	debug("in input swap data base for read is %lx\n",
-		(unsigned long) pbuf);
-
-	while (words--) {
-		*dbuf++ = *pbuf;
-		*dbuf++ = *pbuf;
-	}
-}
-
-void ide_output_data(int dev, const ulong *sect_buf, int words)
-{
-	ushort *dbuf;
-	volatile ushort *pbuf;
-
-	pbuf = (ushort *) (ATA_CURR_BASE(dev) + ATA_DATA_REG);
-	dbuf = (ushort *) sect_buf;
-	while (words--) {
-		EIEIO;
-		*pbuf = ld_le16(dbuf++);
-		EIEIO;
-		*pbuf = ld_le16(dbuf++);
-	}
-}
-
-void ide_input_data(int dev, ulong *sect_buf, int words)
-{
-	ushort *dbuf;
-	volatile ushort *pbuf;
-
-	pbuf = (ushort *) (ATA_CURR_BASE(dev) + ATA_DATA_REG);
-	dbuf = (ushort *) sect_buf;
-
-	debug("in input data base for read is %lx\n", (unsigned long) pbuf);
-
-	while (words--) {
-		EIEIO;
-		*dbuf++ = ld_le16(pbuf);
-		EIEIO;
-		*dbuf++ = ld_le16(pbuf);
-	}
-}
-
-#endif

@@ -6,7 +6,23 @@
  * Configuation settings for the TOP860 board.
  *
  * -----------------------------------------------------------------
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 /*
  * TOP860 is a simple module:
@@ -68,6 +84,7 @@
 #define	CONFIG_SYS_CPUCLOCK	CONFIG_SYSCLK
 #define	CONFIG_SYS_BRGCLOCK	CONFIG_SYSCLK
 #define	CONFIG_SYS_BUSCLOCK	(CONFIG_SYSCLK >> CONFIG_EBDF)
+#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 #define	CONFIG_8xx_GCLK_FREQ	CONFIG_SYSCLK
 
 /*-----------------------------------------------------------------------
@@ -117,9 +134,13 @@
 
 
 #define CONFIG_SYS_LONGHELP			/* undef to save memory		*/
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt	*/
 
 #undef	CONFIG_SYS_HUSH_PARSER			/* Hush parse for U-Boot	*/
 
+#ifdef	CONFIG_SYS_HUSH_PARSER
+ #define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
+#endif
 
 #if defined(CONFIG_CMD_KGDB)
  #define CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size	*/
@@ -141,6 +162,7 @@
  * Environment handler
  * only the first 6k in EEPROM are available for user. Of that we use 256b
  */
+#define	CONFIG_SOFT_I2C
 #define CONFIG_ENV_IS_IN_EEPROM	1	/* turn on EEPROM env feature */
 #define CONFIG_ENV_OFFSET		0x1000
 #define CONFIG_ENV_SIZE		0x0700
@@ -151,15 +173,13 @@
 #define CONFIG_SYS_EEPROM_PAGE_WRITE_BITS 3
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN 2
 #define CONFIG_SYS_EEPROM_SIZE 0x2000
+#define	CONFIG_SYS_I2C_SPEED	100000
+#define	CONFIG_SYS_I2C_SLAVE	0xFE
 #define	CONFIG_SYS_EEPROM_PAGE_WRITE_DELAY_MS 12
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_MISC_INIT_R
 
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_SOFT		/* I2C bit-banged */
-#define CONFIG_SYS_I2C_SOFT_SPEED	100000
-#define CONFIG_SYS_I2C_SOFT_SLAVE	0xFE
-/**/
+#if defined (CONFIG_SOFT_I2C)
 #define	SDA	0x00010
 #define	SCL	0x00020
 #define __I2C_DIR	immr->im_cpm.cp_pbdir
@@ -176,12 +196,14 @@
 #define	I2C_DELAY	{ udelay(5); }
 #define	I2C_ACTIVE	{ __I2C_DIR |= SDA; }
 #define	I2C_TRISTATE	{ __I2C_DIR &= ~SDA; }
+#endif
 
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200, 230400 }
 
 /*-----------------------------------------------------------------------
  * defines we need to get FEC running
  */
+#define	CONFIG_NET_MULTI	1	/* the only way to get the FEC in */
 #define CONFIG_FEC_ENET		1	/* Ethernet only via FEC	*/
 #define	FEC_ENET		1	/* eth.c needs it that way... */
 #define CONFIG_SYS_DISCOVER_PHY	1
@@ -398,6 +420,7 @@
 #define CONFIG_IPADDR					10.0.4.111
 
 #define CONFIG_SYS_LOAD_ADDR		0x00100000	/* default load address */
+#define	CONFIG_SYS_TFTP_LOADADDR	0x00100000
 
 /*
  * For booting Linux, the board info and command line data

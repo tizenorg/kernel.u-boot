@@ -3,7 +3,20 @@
  * Kyungmin Park <kyungmin.park@samsung.com>
  * Minkyu Kang <mk7.kang@samsung.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __ASM_ARM_ARCH_PWM_H_
@@ -29,6 +42,16 @@
 #define TCON_AUTO_RELOAD(x)	(1 << (TCON_OFFSET(x) + 3))
 #define TCON4_AUTO_RELOAD	(1 << 22)
 
+/* PWM Timer 2 */
+#define TCON2_AUTO_RELOAD	(1 << 15)
+#define TCON2_UPDATE		(1 << 13)
+#define TCON2_START		(1 << 12)
+
+/* PWM Timer 3 */
+#define TCON3_AUTO_RELOAD	(1 << 19)
+#define TCON3_UPDATE		(1 << 17)
+#define TCON3_START		(1 << 16)
+
 #ifndef __ASSEMBLY__
 struct s5p_timer {
 	unsigned int	tcfg0;
@@ -44,7 +67,7 @@ struct s5p_timer {
 	unsigned int	tcmpb2;
 	unsigned int	tcnto2;
 	unsigned int	tcntb3;
-	unsigned int	res1;
+	unsigned int	tcmpb3;
 	unsigned int	tcnto3;
 	unsigned int	tcntb4;
 	unsigned int	tcnto4;

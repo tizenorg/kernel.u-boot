@@ -1,22 +1,32 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian@popies.net>
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
  * Lead Tech Design <www.leadtechdesign.com>
  * Ilko Iliev <www.ronetix.at>
  *
  * Configuation settings for the RONETIX PM9263 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
 #define __CONFIG_H
-
-/*
- * SoC must be defined first, before hardware.h is included.
- * In this case SoC is defined in boards.cfg.
- */
-#include <asm/hardware.h>
 
 /* ARM asynchronous clock */
 #define CONFIG_DISPLAY_CPUINFO
@@ -26,15 +36,16 @@
 #define MASTER_PLL_MUL		65
 #define MAIN_PLL_DIV		2	/* 2 or 4 */
 #define CONFIG_SYS_AT91_MAIN_CLOCK	18432000
-#define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock xtal */
 
-#define CONFIG_SYS_AT91_CPU_NAME	"AT91SAM9263"
+#define CONFIG_SYS_HZ		1000
+
+#define CONFIG_ARM926EJS	1	/* This is an ARM926EJS Core	*/
+#define CONFIG_AT91SAM9263	1	/* It's an Atmel AT91SAM9263 SoC*/
 #define CONFIG_PM9263		1	/* on a Ronetix PM9263 Board	*/
 #define CONFIG_ARCH_CPU_INIT
+#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff	*/
 #define CONFIG_SYS_TEXT_BASE	0
-
-#define MACH_TYPE_PM9263	1475
-#define CONFIG_MACH_TYPE	MACH_TYPE_PM9263
+#define CONFIG_AT91FAMILY
 
 /* clocks */
 #define CONFIG_SYS_MOR_VAL						\
@@ -153,15 +164,16 @@
 
 #undef CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_USER_LOWLEVEL_INIT	1
-#define CONFIG_BOARD_EARLY_INIT_F
 
 /*
  * Hardware drivers
  */
 #define CONFIG_AT91_GPIO	1
 #define CONFIG_ATMEL_USART	1
-#define CONFIG_USART_BASE		ATMEL_BASE_DBGU
-#define	CONFIG_USART_ID			ATMEL_ID_SYS
+#undef CONFIG_USART0
+#undef CONFIG_USART1
+#undef CONFIG_USART2
+#define CONFIG_USART3		1	/* USART 3 is DBGU */
 
 /* LCD */
 #define CONFIG_LCD			1
@@ -179,8 +191,8 @@
 
 /* LED */
 #define CONFIG_AT91_LED
-#define CONFIG_RED_LED		GPIO_PIN_PB(7) /* this is the power led */
-#define CONFIG_GREEN_LED	GPIO_PIN_PB(8) /* this is the user1 led */
+#define	CONFIG_RED_LED		AT91_PIO_PORTB, 7	/* this is the power led */
+#define	CONFIG_GREEN_LED	AT91_PIO_PORTB, 8	/* this is the user1 led */
 
 #define CONFIG_BOOTDELAY	3
 
@@ -234,6 +246,7 @@
 /* NAND flash */
 #ifdef CONFIG_CMD_NAND
 #define CONFIG_NAND_ATMEL
+#define CONFIG_SYS_NAND_MAX_CHIPS	1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		0x40000000
 #define CONFIG_SYS_NAND_DBW_8		1
@@ -241,8 +254,8 @@
 #define CONFIG_SYS_NAND_MASK_ALE	(1 << 21)
 /* our CLE is AD22 */
 #define CONFIG_SYS_NAND_MASK_CLE	(1 << 22)
-#define CONFIG_SYS_NAND_ENABLE_PIN	GPIO_PIN_PD(15)
-#define CONFIG_SYS_NAND_READY_PIN	GPIO_PIN_PB(30)
+#define CONFIG_SYS_NAND_ENABLE_PIN	AT91_PIO_PORTD, 15
+#define CONFIG_SYS_NAND_READY_PIN	AT91_PIO_PORTB, 30
 
 #endif
 
@@ -265,12 +278,12 @@
 /* Ethernet */
 #define CONFIG_MACB			1
 #define CONFIG_RMII			1
+#define CONFIG_NET_MULTI		1
 #define CONFIG_NET_RETRY_COUNT		20
 #define CONFIG_RESET_PHY_R		1
 
 /* USB */
 #define CONFIG_USB_ATMEL
-#define CONFIG_USB_ATMEL_CLK_SEL_PLLB
 #define CONFIG_USB_OHCI_NEW			1
 #define CONFIG_DOS_PARTITION			1
 #define CONFIG_SYS_USB_OHCI_CPU_INIT		1
@@ -337,8 +350,8 @@
 #define CONFIG_SYS_JFFS2_FIRST_SECTOR	11
 
 #define CONFIG_BOOTCOMMAND		"run flashboot"
-#define CONFIG_ROOTPATH			"/ronetix/rootfs"
-#define CONFIG_AUTOBOOT_PROMPT		"autoboot in %d seconds\n", bootdelay
+#define CONFIG_ROOTPATH			/ronetix/rootfs
+#define CONFIG_AUTOBOOT_PROMPT		"autoboot in %d seconds\n"
 
 #define CONFIG_CON_ROT			"fbcon=rotate:3 "
 #define CONFIG_BOOTARGS			"root=/dev/mtdblock4 rootfstype=jffs2 "\
@@ -376,6 +389,7 @@
 #endif
 
 #define CONFIG_BAUDRATE			115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
 
 #define CONFIG_SYS_PROMPT		"u-boot-pm9263> "
 #define CONFIG_SYS_CBSIZE		256
@@ -393,5 +407,11 @@
 #define CONFIG_SYS_SDRAM_BASE	PHYS_SDRAM
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_SDRAM_BASE + 0x1000 - \
 				GENERATED_GBL_DATA_SIZE)
+
+#define CONFIG_STACKSIZE		(32 * 1024)	/* regular stack */
+
+#ifdef CONFIG_USE_IRQ
+#error CONFIG_USE_IRQ not supported
+#endif
 
 #endif

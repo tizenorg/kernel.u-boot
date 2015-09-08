@@ -13,13 +13,27 @@
  * (C) Copyright 2002
  * Gary Jennejohn, DENX Software Engineering, <garyj@denx.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/arch/cpu.h>
-#include <asm/arch/clock.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -29,9 +43,8 @@ static struct gptimer *timer_base = (struct gptimer *)CONFIG_SYS_TIMERBASE;
  * Nothing really to do with interrupts, just starts up a counter.
  */
 
-#define TIMER_CLOCK		(V_SCLK / (2 << CONFIG_SYS_PTV))
-#define TIMER_OVERFLOW_VAL	0xffffffff
-#define TIMER_LOAD_VAL		0
+#define TIMER_CLOCK	(V_SCLK / (2 << CONFIG_SYS_PTV))
+#define TIMER_LOAD_VAL	0xffffffff
 
 int timer_init(void)
 {
@@ -41,10 +54,7 @@ int timer_init(void)
 	writel((CONFIG_SYS_PTV << 2) | TCLR_PRE | TCLR_AR | TCLR_ST,
 		&timer_base->tclr);
 
-	/* reset time, capture current incrementer value time */
-	gd->arch.lastinc = readl(&timer_base->tcrr) /
-					(TIMER_CLOCK / CONFIG_SYS_HZ);
-	gd->arch.tbl = 0;	/* start "advancing" time stamp from 0 */
+	reset_timer_masked();	/* init the timestamp and lastinc value */
 
 	return 0;
 }
@@ -52,9 +62,19 @@ int timer_init(void)
 /*
  * timer without interrupts
  */
+void reset_timer(void)
+{
+	reset_timer_masked();
+}
+
 ulong get_timer(ulong base)
 {
 	return get_timer_masked() - base;
+}
+
+void set_timer(ulong t)
+{
+	gd->tbl = t;
 }
 
 /* delay x useconds */
@@ -66,11 +86,18 @@ void __udelay(unsigned long usec)
 	while (tmo > 0) {
 		now = readl(&timer_base->tcrr);
 		if (last > now) /* count up timer overflow */
-			tmo -= TIMER_OVERFLOW_VAL - last + now + 1;
+			tmo -= TIMER_LOAD_VAL - last + now;
 		else
 			tmo -= now - last;
 		last = now;
 	}
+}
+
+void reset_timer_masked(void)
+{
+	/* reset time, capture current incrementer value time */
+	gd->lastinc = readl(&timer_base->tcrr) / (TIMER_CLOCK / CONFIG_SYS_HZ);
+	gd->tbl = 0;		/* start "advancing" time stamp from 0 */
 }
 
 ulong get_timer_masked(void)
@@ -78,15 +105,14 @@ ulong get_timer_masked(void)
 	/* current tick value */
 	ulong now = readl(&timer_base->tcrr) / (TIMER_CLOCK / CONFIG_SYS_HZ);
 
-	if (now >= gd->arch.lastinc) {	/* normal mode (non roll) */
+	if (now >= gd->lastinc)	/* normal mode (non roll) */
 		/* move stamp fordward with absoulte diff ticks */
-		gd->arch.tbl += (now - gd->arch.lastinc);
-	} else {	/* we have rollover of incrementer */
-		gd->arch.tbl += ((TIMER_LOAD_VAL / (TIMER_CLOCK /
-				CONFIG_SYS_HZ)) - gd->arch.lastinc) + now;
-	}
-	gd->arch.lastinc = now;
-	return gd->arch.tbl;
+		gd->tbl += (now - gd->lastinc);
+	else	/* we have rollover of incrementer */
+		gd->tbl += ((TIMER_LOAD_VAL / (TIMER_CLOCK / CONFIG_SYS_HZ))
+			     - gd->lastinc) + now;
+	gd->lastinc = now;
+	return gd->tbl;
 }
 
 /*

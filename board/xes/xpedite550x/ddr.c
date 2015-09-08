@@ -2,19 +2,53 @@
  * Copyright 2010 Extreme Engineering Solutions, Inc.
  * Copyright 2007-2008 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 #include <i2c.h>
 
-#include <fsl_ddr_sdram.h>
-#include <fsl_ddr_dimm_params.h>
+#include <asm/fsl_ddr_sdram.h>
+#include <asm/fsl_ddr_dimm_params.h>
 
-void get_spd(ddr3_spd_eeprom_t *spd, u8 i2c_address)
+static void get_spd(ddr3_spd_eeprom_t *spd, unsigned char i2c_address)
 {
 	i2c_read(i2c_address, SPD_EEPROM_OFFSET, 2, (uchar *)spd,
 		 sizeof(ddr3_spd_eeprom_t));
+}
+
+void fsl_ddr_get_spd(ddr3_spd_eeprom_t *ctrl_dimms_spd,
+		      unsigned int ctrl_num)
+{
+	unsigned int i;
+	unsigned int i2c_address = 0;
+
+	for (i = 0; i < CONFIG_DIMM_SLOTS_PER_CTLR; i++) {
+		if (ctrl_num == 0 && i == 0)
+			i2c_address = SPD_EEPROM_ADDRESS1;
+		get_spd(&(ctrl_dimms_spd[i]), i2c_address);
+	}
+}
+
+unsigned int fsl_ddr_get_mem_data_rate(void)
+{
+	return get_ddr_freq(0);
 }
 
 /*
@@ -108,15 +142,9 @@ void fsl_ddr_board_options(memctl_options_t *popts,
 		    ddr_freq <= pbsp->datarate_mhz_high) {
 			popts->clk_adjust = pbsp->clk_adjust;
 			popts->cpo_override = pbsp->cpo;
-			popts->twot_en = 0;
-			break;
+			popts->twoT_en = 0;
 		}
 		pbsp++;
-	}
-
-	if (i == num_params) {
-		printf("Warning: board specific timing not found "
-		"for data rate %lu MT/s!\n", ddr_freq);
 	}
 
 	/*

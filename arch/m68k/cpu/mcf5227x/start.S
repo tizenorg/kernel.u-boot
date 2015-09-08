@@ -2,11 +2,28 @@
  * Copyright (C) 2003	Josef Baumgartner <josef.baumgartner@telex.de>
  * Based on code from Bernhard Kuhn <bkuhn@metrowerks.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <asm-offsets.h>
 #include <config.h>
+#include <timestamp.h>
 #include "version.h"
 #include <asm/cache.h>
 
@@ -469,7 +486,7 @@ clear_bss:
 /* exception code */
 	.globl _fault
 _fault:
-	bra _fault
+	jmp _fault
 	.globl	_exc_handler
 
 _exc_handler:
@@ -491,5 +508,7 @@ _int_handler:
 
 	.globl	version_string
 version_string:
-	.ascii U_BOOT_VERSION_STRING, "\0"
+	.ascii U_BOOT_VERSION
+	.ascii " (", U_BOOT_DATE, " - ", U_BOOT_TIME, ")"
+	.ascii CONFIG_IDENT_STRING, "\0"
 	.align 4

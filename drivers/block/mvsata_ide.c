@@ -1,9 +1,25 @@
 /*
- * Copyright (C) 2010 Albert ARIBAUD <albert.u.boot@aribaud.net>
+ * Copyright (C) 2010 Albert ARIBAUD <albert.aribaud@free.fr>
  *
- * Written-by: Albert ARIBAUD <albert.u.boot@aribaud.net>
+ * Written-by: Albert ARIBAUD <albert.aribaud@free.fr>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
@@ -17,9 +33,7 @@
 
 /* SATA port registers */
 struct mvsata_port_registers {
-	u32 reserved0[10];
-	u32 edma_cmd;
-	u32 reserved1[181];
+	u32 reserved1[192];
 	/* offset 0x300 : ATA Interface registers */
 	u32 sstatus;
 	u32 serror;
@@ -40,8 +54,8 @@ struct mvsata_port_registers {
  * Sanity checks:
  * - to compile at all, we need CONFIG_SYS_ATA_BASE_ADDR.
  * - for ide_preinit to make sense, we need at least one of
- *   CONFIG_SYS_ATA_IDE0_OFFSET or CONFIG_SYS_ATA_IDE1_OFFSET;
- * - for ide_preinit to be called, we need CONFIG_IDE_PREINIT.
+ *   CONFIG_SYS_ATA_IDE0_OFFSET or CONFIG_SYS_ATA_IDE0_OFFSET;
+ * - for inde_preinit to be called, we need CONFIG_IDE_PREINIT.
  * Fail with an explanation message if these conditions are not met.
  * This is particularly important for CONFIG_IDE_PREINIT, because
  * its lack would not cause a build error.
@@ -62,7 +76,6 @@ struct mvsata_port_registers {
  * and for SStatus DETection.
  */
 
-#define MVSATA_EDMA_CMD_ATA_RST		0x00000004
 #define MVSATA_SCONTROL_DET_MASK		0x0000000F
 #define MVSATA_SCONTROL_DET_NONE		0x00000000
 #define MVSATA_SCONTROL_DET_INIT		0x00000001
@@ -102,11 +115,6 @@ static int mvsata_ide_initialize_port(struct mvsata_port_registers *port)
 	u32 status;
 	u32 timeleft = 10000; /* wait at most 10 ms for SATA reset to complete */
 
-	/* Hard reset */
-	writel(MVSATA_EDMA_CMD_ATA_RST, &port->edma_cmd);
-	udelay(25); /* taken from original marvell port */
-	writel(0, &port->edma_cmd);
-
 	/* Set control IPM to 3 (no low power) and DET to 1 (initialize) */
 	control = readl(&port->scontrol);
 	control = (control & ~MVSATA_SCONTROL_MASK) | MVSATA_PORT_INIT;
@@ -134,25 +142,23 @@ static int mvsata_ide_initialize_port(struct mvsata_port_registers *port)
 
 int ide_preinit(void)
 {
-	int ret = MVSATA_STATUS_TIMEOUT;
 	int status;
-
 	/* Enable ATA port 0 (could be SATA port 0 or 1) if declared */
 #if defined(CONFIG_SYS_ATA_IDE0_OFFSET)
 	status = mvsata_ide_initialize_port(
 		(struct mvsata_port_registers *)
 		(CONFIG_SYS_ATA_BASE_ADDR + CONFIG_SYS_ATA_IDE0_OFFSET));
-	if (status == MVSATA_STATUS_OK)
-		ret = MVSATA_STATUS_OK;
+	if (status)
+		return status;
 #endif
 	/* Enable ATA port 1 (could be SATA port 0 or 1) if declared */
 #if defined(CONFIG_SYS_ATA_IDE1_OFFSET)
 	status = mvsata_ide_initialize_port(
 		(struct mvsata_port_registers *)
 		(CONFIG_SYS_ATA_BASE_ADDR + CONFIG_SYS_ATA_IDE1_OFFSET));
-	if (status == MVSATA_STATUS_OK)
-		ret = MVSATA_STATUS_OK;
+	if (status)
+		return status;
 #endif
-	/* Return success if at least one port initialization succeeded */
-	return ret;
+	/* return success if all ports initializations succeeded */
+	return MVSATA_STATUS_OK;
 }

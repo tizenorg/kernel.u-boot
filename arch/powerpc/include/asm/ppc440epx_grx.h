@@ -2,7 +2,20 @@
  * (C) Copyright 2010
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef _PPC440EPX_GRX_H_
@@ -385,7 +398,7 @@
 #define PLLD_LFBDV_MASK		0x0000003f  /* PLL Local Feedback Divisor */
 
 #define OPBDDV_MASK		0x03000000  /* OPB Clock Divisor Register */
-#define PERDV_MASK		0x07000000  /* Peripheral Clock Divisor */
+#define PERDV_MASK		0x07000000  /* Periferal Clock Divisor */
 #define PRADV_MASK		0x07000000  /* Primary Divisor A */
 #define PRBDV_MASK		0x07000000  /* Primary Divisor B */
 #define SPCID_MASK		0x03000000  /* Sync PCI Divisor  */
@@ -395,7 +408,7 @@
 #define PLLSYS1_PERCLK_DIV_MASK 0x03000000	/* Peripheral Clk Divisor */
 #define PLLSYS1_MAL_DIV_MASK	0x00c00000	/* MAL Clk Divisor */
 #define PLLSYS1_RW_MASK		0x00300000	/* ROM width */
-#define PLLSYS1_EAR_MASK	0x00080000	/* ERAP Address reset vector */
+#define PLLSYS1_EAR_MASK	0x00080000	/* ERAP Addres reset vector */
 #define PLLSYS1_PAE_MASK	0x00040000	/* PCI arbitor enable */
 #define PLLSYS1_PCHE_MASK	0x00020000	/* PCI host config enable */
 #define PLLSYS1_PISE_MASK	0x00010000	/* PCI init seq. enable */

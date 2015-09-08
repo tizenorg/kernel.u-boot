@@ -2,7 +2,20 @@
  * (C) Copyright 2008
  * Stefan Roese, DENX Software Engineering, sr@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -16,7 +29,6 @@
 #include <asm/4xx_pcie.h>
 #include <asm/ppc4xx-gpio.h>
 #include <asm/errno.h>
-#include <usb.h>
 
 extern flash_info_t flash_info[CONFIG_SYS_MAX_FLASH_BANKS]; /* info for FLASH chips */
 
@@ -189,7 +201,7 @@ int board_early_init_f(void)
 }
 
 #if defined(CONFIG_USB_OHCI_NEW) && defined(CONFIG_SYS_USB_OHCI_BOARD_INIT)
-int board_usb_init(int index, enum usb_init_type init)
+int usb_board_init(void)
 {
 	struct board_bcsr *bcsr_data =
 		(struct board_bcsr *)CONFIG_SYS_BCSR_BASE;
@@ -230,7 +242,7 @@ int usb_board_stop(void)
 	return 0;
 }
 
-int board_usb_cleanup(int index, enum usb_init_type init)
+int usb_board_init_fail(void)
 {
 	return usb_board_stop();
 }
@@ -281,8 +293,7 @@ int checkboard(void)
 {
 	struct board_bcsr *bcsr_data =
 		(struct board_bcsr *)CONFIG_SYS_BCSR_BASE;
-	char buf[64];
-	int i = getenv_f("serial#", buf, sizeof(buf));
+	char *s = getenv("serial#");
 
 	if (pvr_460ex()) {
 		printf("Board: Canyonlands - AMCC PPC460EX Evaluation Board");
@@ -308,9 +319,9 @@ int checkboard(void)
 
 	printf(", Rev. %X", in_8(&bcsr_data->cpld_rev));
 
-	if (i > 0) {
+	if (s != NULL) {
 		puts(", serial# ");
-		puts(buf);
+		puts(s);
 	}
 	putc('\n');
 

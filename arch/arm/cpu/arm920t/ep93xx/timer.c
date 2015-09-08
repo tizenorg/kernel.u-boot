@@ -9,7 +9,21 @@
  * Based on the original intr.c Cirrus Logic EP93xx Rev D. interrupt support,
  * author unknown.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this project.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include <common.h>
@@ -77,6 +91,17 @@ unsigned long get_timer(unsigned long base)
 	return get_timer_masked() - base;
 }
 
+void reset_timer_masked(void)
+{
+	read_timer();
+	timer.ticks = 0;
+}
+
+void reset_timer(void)
+{
+	reset_timer_masked();
+}
+
 void __udelay(unsigned long usec)
 {
 	unsigned long long target;
@@ -103,9 +128,7 @@ int timer_init(void)
 	writel(TIMER_ENABLE | TIMER_CLKSEL,
 		&timer_regs->timer3.control);
 
-	/* Reset the timer */
-	read_timer();
-	timer.ticks = 0;
+	reset_timer_masked();
 
 	return 0;
 }

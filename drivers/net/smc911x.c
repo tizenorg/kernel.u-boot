@@ -3,7 +3,23 @@
  *
  * (c) 2007 Pengutronix, Sascha Hauer <s.hauer@pengutronix.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -19,6 +35,8 @@ u32 pkt_data_pull(struct eth_device *dev, u32 addr) \
 void pkt_data_push(struct eth_device *dev, u32 addr, u32 val) \
 	__attribute__ ((weak, alias ("smc911x_reg_write")));
 
+#define mdelay(n)       udelay((n)*1000)
+
 static void smc911x_handle_mac_address(struct eth_device *dev)
 {
 	unsigned long addrh, addrl;
@@ -32,7 +50,7 @@ static void smc911x_handle_mac_address(struct eth_device *dev)
 	printf(DRIVERNAME ": MAC %pM\n", m);
 }
 
-static int smc911x_eth_phy_read(struct eth_device *dev,
+static int smc911x_miiphy_read(struct eth_device *dev,
 				u8 phy, u8 reg, u16 *val)
 {
 	while (smc911x_get_mac_csr(dev, MII_ACC) & MII_ACC_MII_BUSY)
@@ -49,7 +67,7 @@ static int smc911x_eth_phy_read(struct eth_device *dev,
 	return 0;
 }
 
-static int smc911x_eth_phy_write(struct eth_device *dev,
+static int smc911x_miiphy_write(struct eth_device *dev,
 				u8 phy, u8 reg, u16  val)
 {
 	while (smc911x_get_mac_csr(dev, MII_ACC) & MII_ACC_MII_BUSY)
@@ -85,10 +103,10 @@ static void smc911x_phy_configure(struct eth_device *dev)
 
 	smc911x_phy_reset(dev);
 
-	smc911x_eth_phy_write(dev, 1, MII_BMCR, BMCR_RESET);
+	smc911x_miiphy_write(dev, 1, MII_BMCR, BMCR_RESET);
 	mdelay(1);
-	smc911x_eth_phy_write(dev, 1, MII_ADVERTISE, 0x01e1);
-	smc911x_eth_phy_write(dev, 1, MII_BMCR, BMCR_ANENABLE |
+	smc911x_miiphy_write(dev, 1, MII_ADVERTISE, 0x01e1);
+	smc911x_miiphy_write(dev, 1, MII_BMCR, BMCR_ANENABLE |
 				BMCR_ANRESTART);
 
 	timeout = 5000;
@@ -97,7 +115,7 @@ static void smc911x_phy_configure(struct eth_device *dev)
 		if ((timeout--) == 0)
 			goto err_out;
 
-		if (smc911x_eth_phy_read(dev, 1, MII_BMSR, &status) != 0)
+		if (smc911x_miiphy_read(dev, 1, MII_BMSR, &status) != 0)
 			goto err_out;
 	} while (!(status & BMSR_LSTATUS));
 
@@ -145,7 +163,8 @@ static int smc911x_init(struct eth_device *dev, bd_t * bd)
 	return 0;
 }
 
-static int smc911x_send(struct eth_device *dev, void *packet, int length)
+static int smc911x_send(struct eth_device *dev,
+			volatile void *packet, int length)
 {
 	u32 *data = (u32*)packet;
 	u32 tmplen;
@@ -216,25 +235,6 @@ static int smc911x_rx(struct eth_device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_MII) || defined(CONFIG_CMD_MII)
-/* wrapper for smc911x_eth_phy_read */
-static int smc911x_miiphy_read(const char *devname, u8 phy, u8 reg, u16 *val)
-{
-	struct eth_device *dev = eth_get_dev_by_name(devname);
-	if (dev)
-		return smc911x_eth_phy_read(dev, phy, reg, val);
-	return -1;
-}
-/* wrapper for smc911x_eth_phy_write */
-static int smc911x_miiphy_write(const char *devname, u8 phy, u8 reg, u16 val)
-{
-	struct eth_device *dev = eth_get_dev_by_name(devname);
-	if (dev)
-		return smc911x_eth_phy_write(dev, phy, reg, val);
-	return -1;
-}
-#endif
-
 int smc911x_initialize(u8 dev_num, int base_addr)
 {
 	unsigned long addrl, addrh;
@@ -273,10 +273,5 @@ int smc911x_initialize(u8 dev_num, int base_addr)
 	sprintf(dev->name, "%s-%hu", DRIVERNAME, dev_num);
 
 	eth_register(dev);
-
-#if defined(CONFIG_MII) || defined(CONFIG_CMD_MII)
-	miiphy_register(dev->name, smc911x_miiphy_read, smc911x_miiphy_write);
-#endif
-
 	return 1;
 }

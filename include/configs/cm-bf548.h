@@ -11,7 +11,6 @@
 /*
  * Processor Settings
  */
-#define CONFIG_BFIN_CPU             bf548-0.0
 #define CONFIG_BFIN_BOOT_MODE       BFIN_BOOT_PARA
 
 
@@ -72,6 +71,7 @@
  * Network Settings
  */
 #define ADI_CMDS_NETWORK	1
+#define CONFIG_NET_MULTI
 #define CONFIG_SMC911X	1
 #define CONFIG_SMC911X_BASE	0x24000000
 #define CONFIG_SMC911X_16_BIT
@@ -118,13 +118,10 @@
 #define CONFIG_BOOTCOMMAND	"run flashboot"
 #define FLASHBOOT_ENV_SETTINGS	"flashboot=bootm 0x20040000\0"
 
-#define CONFIG_ADI_GPIO2
-
 #ifndef __ADSPBF542__
 /* Don't waste time transferring a logo over the UART */
 # if (CONFIG_BFIN_BOOT_MODE != BFIN_BOOT_UART)
 #  define CONFIG_VIDEO
-#  define EASYLOGO_HEADER <asm/bfin_logo_230x230_gzip.h>
 # endif
 # define CONFIG_DEB_DMA_URGENT
 #endif

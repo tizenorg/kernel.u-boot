@@ -2,7 +2,20 @@
  * (C) Copyright 2008
  * Matthias Fuchs, esd gmbh, matthias.fuchs@esd-electronics.com
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -372,6 +385,7 @@ int last_stage_init(void)
 	return 0;
 }
 
+#if defined(CONFIG_I2C_MULTI_BUS)
 /*
  * read field strength from I2C ADC
  */
@@ -486,6 +500,7 @@ U_BOOT_CMD(
 	"Initialize USB hub",
 	""
 );
+#endif /* CONFIG_I2C_MULTI_BUS */
 
 #define CONFIG_SYS_BOOT_EEPROM_PAGE_WRITE_BITS 3
 int boot_eeprom_write (unsigned dev_addr,
@@ -816,7 +831,7 @@ int do_time(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	*d = '\0';
 
 	start = get_ticks();
-	ret = run_command(cmd, 0);
+	ret = run_command (cmd, 0);
 	end = get_ticks();
 
 	printf("ticks=%ld\n", (ulong)(end - start));

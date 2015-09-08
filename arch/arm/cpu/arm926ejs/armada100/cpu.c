@@ -4,12 +4,28 @@
  * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
  * Contributor: Mahavir Jain <mjain@marvell.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <common.h>
-#include <asm/arch/cpu.h>
 #include <asm/arch/armada100.h>
+#include <asm/io.h>
 
 #define UARTCLK14745KHZ	(APBC_APBCLK | APBC_FNCLK | APBC_FNCLKSEL(1))
 #define SET_MRVL_ID	(1<<8)
@@ -46,16 +62,6 @@ int arch_cpu_init(void)
 	/* Enable GPIO clock */
 	writel(APBC_APBCLK, &apb1clkres->gpio);
 
-#ifdef CONFIG_I2C_MV
-	/* Enable general I2C clock */
-	writel(APBC_RST | APBC_FNCLK | APBC_APBCLK, &apb1clkres->twsi0);
-	writel(APBC_FNCLK | APBC_APBCLK, &apb1clkres->twsi0);
-
-	/* Enable power I2C clock */
-	writel(APBC_RST | APBC_FNCLK | APBC_APBCLK, &apb1clkres->twsi1);
-	writel(APBC_FNCLK | APBC_APBCLK, &apb1clkres->twsi1);
-#endif
-
 	/*
 	 * Enable Functional and APB clock at 14.7456MHz
 	 * for configured UART console
@@ -82,11 +88,5 @@ int print_cpuinfo(void)
 	id = readl(&cpuregs->chip_id);
 	printf("SoC:   Armada 88AP%X-%X\n", (id & 0xFFF), (id >> 0x10));
 	return 0;
-}
-#endif
-
-#ifdef CONFIG_I2C_MV
-void i2c_clk_enable(void)
-{
 }
 #endif

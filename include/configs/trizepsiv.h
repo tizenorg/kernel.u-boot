@@ -14,7 +14,23 @@
  *
  * Configuation settings for the LUBBOCK board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -24,14 +40,16 @@
  * High Level Configuration Options
  * (easy to change)
  */
-#define CONFIG_CPU_PXA27X		1	/* This is an PXA27x CPU    */
+#define CONFIG_PXA27X		1	/* This is an PXA27x CPU    */
 
 #define CONFIG_MMC		1
-#define CONFIG_BOARD_LATE_INIT
+#define BOARD_LATE_INIT		1
 #define	CONFIG_SYS_TEXT_BASE	0x0
 
+#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff */
+
 /* we will never enable dcache, because we have to setup MMU first */
-#define CONFIG_SYS_DCACHE_OFF
+#define CONFIG_SYS_NO_DCACHE
 
 #define RTC
 
@@ -48,10 +66,10 @@
  * select serial console configuration
  */
 #define CONFIG_PXA_SERIAL
+#define CONFIG_SERIAL_MULTI
 #define CONFIG_FFUART	       1       /* we use FFUART on Conxs */
 #define CONFIG_BTUART	       1       /* we use BTUART on Conxs */
 #define CONFIG_STUART	       1       /* we use STUART on Conxs */
-#define CONFIG_CONS_INDEX	3
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -125,17 +143,20 @@
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	230400		/* speed to run kgdb serial port */
+#define CONFIG_KGDB_SER_INDEX	2		/* which serial port to use */
 #endif
 
 /*
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_HUSH_PARSER		1
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 #define CONFIG_SYS_LONGHELP				/* undef to save memory		*/
 #ifdef CONFIG_SYS_HUSH_PARSER
 #define CONFIG_SYS_PROMPT		"$ "		/* Monitor Command Prompt */
 #else
+#define CONFIG_SYS_PROMPT		"=> "		/* Monitor Command Prompt */
 #endif
 #define CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size	*/
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
@@ -148,13 +169,27 @@
 
 #define CONFIG_SYS_LOAD_ADDR		0xa1000000	/* default load address */
 
+#define CONFIG_SYS_HZ			1000
 #define CONFIG_SYS_CPUSPEED		0x207		/* need to look more closely, I think this is Turbo = 2x, L=91Mhz */
 
+						/* valid baudrates */
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
+
 #ifdef CONFIG_MMC
-#define	CONFIG_GENERIC_MMC
-#define	CONFIG_PXA_MMC_GENERIC
+#define CONFIG_PXA_MMC
 #define CONFIG_CMD_MMC
 #define CONFIG_SYS_MMC_BASE		0xF0000000
+#endif
+
+/*
+ * Stack sizes
+ *
+ * The stack sizes are set up in start.S using the settings below
+ */
+#define CONFIG_STACKSIZE	(128*1024)	/* regular stack */
+#ifdef CONFIG_USE_IRQ
+#define CONFIG_STACKSIZE_IRQ	(4*1024)	/* IRQ stack */
+#define CONFIG_STACKSIZE_FIQ	(4*1024)	/* FIQ stack */
 #endif
 
 /*
@@ -256,6 +291,7 @@
 #define CONFIG_SYS_MCIO0_VAL		0x00008407
 #define CONFIG_SYS_MCIO1_VAL		0x0000c108
 
+#define CONFIG_NET_MULTI		1
 #define CONFIG_DRIVER_DM9000		1
 
 #if CONFIG_POLARIS

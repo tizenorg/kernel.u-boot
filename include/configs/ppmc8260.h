@@ -12,7 +12,23 @@
  *
  * Configuation settings for the WindRiver PPMC8260 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -267,6 +283,7 @@
 #define CONFIG_SYS_LONGHELP
 
 /* Monitor Command Prompt */
+#define CONFIG_SYS_PROMPT		"=> "
 
 
 /*
@@ -314,6 +331,7 @@
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE /* Boot Argument Buffer Size	   */
 
 #define CONFIG_SYS_LOAD_ADDR		0x140000   /* default load address */
+#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 
 #define CONFIG_SYS_MEMTEST_START	0x2000	/* memtest works from the end of */
 					/* the exception vector table */
@@ -327,6 +345,9 @@
 
 #define CONFIG_SYS_MEMTEST_END		( CONFIG_SYS_SDRAM_SIZE * 1024 * 1024 \
 				- CONFIG_SYS_MEM_END_USAGE )
+
+/* valid baudrates */
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /*
  * Low Level Configuration Settings
@@ -351,8 +372,8 @@
  * - Select bus for bd/buffers (see 28-13)
  * - Enable Full Duplex in FSMR
  */
-#define CONFIG_SYS_CMXFCR_MASK2		(CMXFCR_FC2|CMXFCR_RF2CS_MSK|CMXFCR_TF2CS_MSK)
-#define CONFIG_SYS_CMXFCR_VALUE2	(CMXFCR_RF2CS_CLK13|CMXFCR_TF2CS_CLK14)
+#define CONFIG_SYS_CMXFCR_MASK		(CMXFCR_FC2|CMXFCR_RF2CS_MSK|CMXFCR_TF2CS_MSK)
+#define CONFIG_SYS_CMXFCR_VALUE	(CMXFCR_RF2CS_CLK13|CMXFCR_TF2CS_CLK14)
 #define CONFIG_SYS_CPMFCR_RAMTYPE	0
 #define CONFIG_SYS_FCC_PSMR		(FCC_PSMR_FDE | FCC_PSMR_LPB)
 #endif	/* CONFIG_ETHER_INDEX */

@@ -3,7 +3,23 @@
  * Minkyu Kang <mk7.kang@samsung.com>
  * Heungjun Kim <riverful.kim@samsung.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -295,6 +311,35 @@ static unsigned long s5pc1xx_get_pwm_clk(void)
 		return s5pc100_get_pclk();
 }
 
+/* s5pc110: return lcd clock frequency */
+static unsigned long s5pc110_get_lcd_clk(void)
+{
+	struct s5pc110_clock *clk =
+		(struct s5pc110_clock *)samsung_get_base_clock();
+	unsigned long pclk, sclk;
+	unsigned int sel;
+	unsigned int ratio;
+
+	sel = readl(&clk->src1);
+	sel = (sel >> 20) & 0xf;
+
+	if (sel == 0x6)
+		sclk = get_pll_clk(MPLL);
+	else if (sel == 0x7)
+		sclk = get_pll_clk(EPLL);
+	else if (sel == 0x8)
+		sclk = get_pll_clk(VPLL);
+	else
+		return 0;
+
+	ratio = readl(&clk->div1);
+	ratio = (ratio >> 20) & 0xf;
+
+	pclk = sclk / (ratio + 1);
+
+	return pclk;
+}
+
 unsigned long get_pll_clk(int pllreg)
 {
 	if (cpu_is_s5pc110())
@@ -321,7 +366,14 @@ unsigned long get_uart_clk(int dev_index)
 	return s5pc1xx_get_uart_clk(dev_index);
 }
 
+unsigned long get_lcd_clk(void)
+{
+	if (cpu_is_s5pc110())
+		return s5pc110_get_lcd_clk();
+	return 0;
+}
+
 void set_mmc_clk(int dev_index, unsigned int div)
 {
-	/* Do NOTHING */
+	/* DO NOTHING */
 }

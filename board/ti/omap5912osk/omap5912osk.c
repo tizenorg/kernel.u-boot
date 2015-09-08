@@ -14,7 +14,23 @@
  * Texas Instruments, <www.ti.com>
  * Rishi Bhattacharya <rishi@ti.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -50,14 +66,6 @@ int board_init (void)
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = 0x10000100;
 
-	flash__init();
-	ether__init();
-
-	return 0;
-}
-
-void s_init(void)
-{
 	/* Configure MUX settings */
 	set_muxconf_regs ();
 	peripheral_power_enable ();
@@ -67,6 +75,17 @@ void s_init(void)
  *  ... rkw ...
  */
 	icache_enable ();
+
+	flash__init ();
+	ether__init ();
+	return 0;
+}
+
+
+int misc_init_r (void)
+{
+	/* currently empty */
+	return (0);
 }
 
 /******************************
@@ -116,17 +135,12 @@ void ether__init (void)
  Routine:
  Description:
 ******************************/
-int dram_init(void)
-{
-	gd->ram_size = get_ram_size((long *)PHYS_SDRAM_1, PHYS_SDRAM_1_SIZE);
-
-	return 0;
-}
-
-void dram_init_banksize(void)
+int dram_init (void)
 {
 	gd->bd->bi_dram[0].start = PHYS_SDRAM_1;
 	gd->bd->bi_dram[0].size = PHYS_SDRAM_1_SIZE;
+
+	return 0;
 }
 
 /******************************************************
@@ -281,14 +295,13 @@ void peripheral_power_enable (void)
  */
 int checkboard(void)
 {
-	char buf[64];
-	int i = getenv_f("serial#", buf, sizeof(buf));
+	char *s = getenv("serial#");
 
 	puts("Board: OSK5912");
 
-	if (i > 0) {
+	if (s != NULL) {
 		puts(", serial# ");
-		puts(buf);
+		puts(s);
 	}
 	putc('\n');
 

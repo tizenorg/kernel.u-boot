@@ -8,7 +8,10 @@
  * Copyright (C) 2007 MontaVista Software, Inc.
  *                    Anton Vorontsov <avorontsov@ru.mvista.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
  */
 
 #include <common.h>
@@ -203,6 +206,11 @@ const qe_iop_conf_t qe_iop_conf_tab[] = {
 	/* END of table */
 	{0,  0, 0, 0, QE_IOP_TAB_END},
 };
+
+int board_early_init_f(void)
+{
+	return 0;
+}
 
 int board_early_init_r(void)
 {

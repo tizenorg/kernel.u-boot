@@ -10,19 +10,16 @@
 
 typedef struct
 {
-	unsigned long freq_processor[CONFIG_MAX_CPUS];
-	unsigned long freq_systembus;
-	unsigned long freq_ddrbus;
-	unsigned long freq_localbus;
-	unsigned long freq_qe;
+  unsigned long freqProcessor[CONFIG_MAX_CPUS];
+  unsigned long freqSystemBus;
+  unsigned long freqDDRBus;
+  unsigned long freqLocalBus;
+  unsigned long freqQE;
 #ifdef CONFIG_SYS_DPAA_FMAN
-	unsigned long freq_fman[CONFIG_SYS_NUM_FMAN];
-#endif
-#ifdef CONFIG_SYS_DPAA_QBMAN
-	unsigned long freq_qman;
+  unsigned long freqFMan[CONFIG_SYS_NUM_FMAN];
 #endif
 #ifdef CONFIG_SYS_DPAA_PME
-	unsigned long freq_pme;
+  unsigned long freqPME;
 #endif
 } MPC85xx_SYS_INFO;
 

@@ -2,7 +2,23 @@
  * (C) Copyright 2004, Psyent Corporation <www.psyent.com>
  * Scott McNutt <smcnutt@psyent.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -101,7 +117,7 @@
  * If the default period is acceptable, TMRCNT can be left undefined.
  * TMRMS represents the desired mecs per tick (msecs per interrupt).
  *----------------------------------------------------------------------*/
-#define CONFIG_SYS_LOW_RES_TIMER
+#define CONFIG_SYS_HZ			1000	/* Always 1000 */
 #define CONFIG_SYS_NIOS_TMRBASE	0x00920860	/* Tick timer base addr	*/
 #define CONFIG_SYS_NIOS_TMRIRQ		3	/* Timer IRQ num */
 #define CONFIG_SYS_NIOS_TMRMS		10	/* Desired period (msec)*/
@@ -139,6 +155,7 @@
  * MISC
  *----------------------------------------------------------------------*/
 #define	CONFIG_SYS_LONGHELP				/* Provide extended help*/
+#define	CONFIG_SYS_PROMPT		"==> "		/* Command prompt	*/
 #define	CONFIG_SYS_CBSIZE		256		/* Console I/O buf size	*/
 #define	CONFIG_SYS_MAXARGS		16		/* Max command args	*/
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE	/* Boot arg buf size	*/

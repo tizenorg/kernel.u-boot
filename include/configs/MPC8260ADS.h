@@ -19,7 +19,23 @@
  *
  * Copyright (C) Freescale Semiconductor, Inc. 2006-2009.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -112,20 +128,20 @@
 #if   CONFIG_ETHER_INDEX == 1
 
 # define CONFIG_SYS_PHY_ADDR		0
-# define CONFIG_SYS_CMXFCR_VALUE1	(CMXFCR_RF1CS_CLK11 | CMXFCR_TF1CS_CLK10)
-# define CONFIG_SYS_CMXFCR_MASK1	(CMXFCR_FC1 | CMXFCR_RF1CS_MSK | CMXFCR_TF1CS_MSK)
+# define CONFIG_SYS_CMXFCR_VALUE	(CMXFCR_RF1CS_CLK11 | CMXFCR_TF1CS_CLK10)
+# define CONFIG_SYS_CMXFCR_MASK	(CMXFCR_FC1 | CMXFCR_RF1CS_MSK | CMXFCR_TF1CS_MSK)
 
 #elif CONFIG_ETHER_INDEX == 2
 
 #if CONFIG_ADSTYPE == CONFIG_SYS_8272ADS	/* RxCLK is CLK15, TxCLK is CLK16 */
 # define CONFIG_SYS_PHY_ADDR		3
-# define CONFIG_SYS_CMXFCR_VALUE2	(CMXFCR_RF2CS_CLK15 | CMXFCR_TF2CS_CLK16)
+# define CONFIG_SYS_CMXFCR_VALUE	(CMXFCR_RF2CS_CLK15 | CMXFCR_TF2CS_CLK16)
 #else					/* RxCLK is CLK13, TxCLK is CLK14 */
 # define CONFIG_SYS_PHY_ADDR		0
-# define CONFIG_SYS_CMXFCR_VALUE2	(CMXFCR_RF2CS_CLK13 | CMXFCR_TF2CS_CLK14)
+# define CONFIG_SYS_CMXFCR_VALUE	(CMXFCR_RF2CS_CLK13 | CMXFCR_TF2CS_CLK14)
 #endif /* CONFIG_ADSTYPE == CONFIG_SYS_8272ADS */
 
-# define CONFIG_SYS_CMXFCR_MASK2	(CMXFCR_FC2 | CMXFCR_RF2CS_MSK | CMXFCR_TF2CS_MSK)
+# define CONFIG_SYS_CMXFCR_MASK	(CMXFCR_FC2 | CMXFCR_RF2CS_MSK | CMXFCR_TF2CS_MSK)
 
 #endif	/* CONFIG_ETHER_INDEX */
 
@@ -179,7 +195,6 @@
 /*PCI*/
 #if CONFIG_ADSTYPE >= CONFIG_SYS_PQ2FADS
 #define CONFIG_PCI
-#define CONFIG_PCI_INDIRECT_BRIDGE
 #define CONFIG_PCI_PNP
 #define CONFIG_PCI_BOOTDELAY 0
 #define CONFIG_PCI_SCAN_SHOW
@@ -271,7 +286,9 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 #define CONFIG_SYS_LONGHELP			/* undef to save memory	    */
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt   */
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size  */
 #else
@@ -285,6 +302,8 @@
 #define CONFIG_SYS_MEMTEST_END		0x00f00000	/* 1 ... 15 MB in DRAM	*/
 
 #define CONFIG_SYS_LOAD_ADDR		0x400000	/* default load address */
+
+#define CONFIG_SYS_HZ			1000	/* decrementer freq: 1 ms ticks */
 
 #define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200, 230400 }
 
@@ -513,18 +532,17 @@
 #define CONFIG_NETDEV eth0
 #define CONFIG_LOADADDR 500000 /* default location for tftp and bootm */
 
+#define XMK_STR(x)	#x
+#define MK_STR(x)	XMK_STR(x)
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"netdev=" __stringify(CONFIG_NETDEV) "\0"			\
+	"netdev=" MK_STR(CONFIG_NETDEV) "\0"				\
 	"tftpflash=tftpboot $loadaddr $uboot; "				\
-		"protect off " __stringify(CONFIG_SYS_TEXT_BASE)	\
-			" +$filesize; "	\
-		"erase " __stringify(CONFIG_SYS_TEXT_BASE) " +$filesize; " \
-		"cp.b $loadaddr " __stringify(CONFIG_SYS_TEXT_BASE)	\
-			" $filesize; "	\
-		"protect on " __stringify(CONFIG_SYS_TEXT_BASE)		\
-			" +$filesize; "	\
-		"cmp.b $loadaddr " __stringify(CONFIG_SYS_TEXT_BASE)	\
-			" $filesize\0"	\
+		"protect off " MK_STR(CONFIG_SYS_TEXT_BASE) " +$filesize; "	\
+		"erase " MK_STR(CONFIG_SYS_TEXT_BASE) " +$filesize; "		\
+		"cp.b $loadaddr " MK_STR(CONFIG_SYS_TEXT_BASE) " $filesize; "	\
+		"protect on " MK_STR(CONFIG_SYS_TEXT_BASE) " +$filesize; "		\
+		"cmp.b $loadaddr " MK_STR(CONFIG_SYS_TEXT_BASE) " $filesize\0"	\
 	"fdtaddr=400000\0"						\
 	"console=ttyCPM0\0"						\
 	"setbootargs=setenv bootargs "					\
@@ -547,5 +565,8 @@
 	"tftp $loadaddr $bootfile;"					\
 	"tftp $fdtaddr $fdtfile;"					\
 	"bootm $loadaddr $ramdiskaddr $fdtaddr"
+
+#undef MK_STR
+#undef XMK_STR
 
 #endif /* __CONFIG_H */

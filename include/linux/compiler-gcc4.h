@@ -12,9 +12,7 @@
 #define __used			__attribute__((__used__))
 #define __must_check 		__attribute__((warn_unused_result))
 #define __compiler_offsetof(a,b) __builtin_offsetof(a,b)
-#ifndef __always_inline
-# define __always_inline		inline __attribute__((always_inline))
-#endif
+#define __always_inline		inline __attribute__((always_inline))
 
 /*
  * A trick to suppress uninitialized variable warning without generating any

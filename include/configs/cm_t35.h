@@ -1,7 +1,7 @@
 /*
- * (C) Copyright 2011 CompuLab, Ltd.
+ * (C) Copyright 2010
+ * CompuLab, Ltd.
  * Mike Rapoport <mike@compulab.co.il>
- * Igor Grinberg <grinberg@compulab.co.il>
  *
  * Based on omap3_beagle.h
  * (C) Copyright 2006-2008
@@ -9,9 +9,25 @@
  * Richard Woodruff <r-woodruff2@ti.com>
  * Syed Mohammed Khasim <x0khasim@ti.com>
  *
- * Configuration settings for the CompuLab CM-T35 and CM-T3730 boards
+ * Configuration settings for the CompuLab CM-T35 board
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef __CONFIG_H
@@ -20,12 +36,13 @@
 /*
  * High Level Configuration Options
  */
-#define CONFIG_OMAP	/* in a TI OMAP core */
-#define CONFIG_OMAP34XX	/* which is a 34XX */
-#define CONFIG_OMAP_GPIO
-#define CONFIG_CMD_GPIO
-#define CONFIG_CM_T3X	/* working with CM-T35 and CM-T3730 */
-#define CONFIG_OMAP_COMMON
+#define CONFIG_ARMV7		1	/* This is an ARM V7 CPU core */
+#define CONFIG_OMAP		1	/* in a TI OMAP core */
+#define CONFIG_OMAP34XX		1	/* which is a 34XX */
+#define CONFIG_OMAP3430		1	/* which is in a 3430 */
+#define CONFIG_CM_T35		1	/* working with CM-T35 */
+
+#define CONFIG_SYS_TEXT_BASE	0x80008000
 
 #define CONFIG_SDRC	/* The chip has SDRC controller */
 
@@ -35,29 +52,37 @@
 /*
  * Display CPU and Board information
  */
-#define CONFIG_DISPLAY_CPUINFO
-#define CONFIG_DISPLAY_BOARDINFO
+#define CONFIG_DISPLAY_CPUINFO		1
+#define CONFIG_DISPLAY_BOARDINFO	1
 
 /* Clock Defines */
 #define V_OSCK			26000000	/* Clock output from T2 */
 #define V_SCLK			(V_OSCK >> 1)
 
+#undef CONFIG_USE_IRQ				/* no support for IRQs */
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_OF_LIBFDT		1
+/*
+ * The early kernel mapping on ARM currently only maps from the base of DRAM
+ * to the end of the kernel image.  The kernel is loaded at DRAM base + 0x8000.
+ * The early kernel pagetable uses DRAM base + 0x4000 to DRAM base + 0x8000,
+ * so that leaves DRAM base to DRAM base + 0x4000 available.
+ */
+#define CONFIG_SYS_BOOTMAPSZ	        0x4000
 
-#define CONFIG_CMDLINE_TAG		/* enable passing of ATAGs */
-#define CONFIG_SETUP_MEMORY_TAGS
-#define CONFIG_INITRD_TAG
-#define CONFIG_REVISION_TAG
-#define CONFIG_SERIAL_TAG
+#define CONFIG_CMDLINE_TAG		1	/* enable passing of ATAGs */
+#define CONFIG_SETUP_MEMORY_TAGS	1
+#define CONFIG_INITRD_TAG		1
+#define CONFIG_REVISION_TAG		1
 
 /*
  * Size of malloc() pool
  */
-#define CONFIG_ENV_SIZE		(16 << 10)	/* 16 KiB */
-					/* Sector */
-#define CONFIG_SYS_MALLOC_LEN	(CONFIG_ENV_SIZE + (128 << 10))
+#define CONFIG_ENV_SIZE			(128 << 10)	/* 128 KiB */
+						/* Sector */
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (128 << 10))
+						/* initial data */
 
 /*
  * Hardware drivers
@@ -85,27 +110,23 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{4800, 9600, 19200, 38400, 57600,\
 					115200}
+#define CONFIG_GENERIC_MMC		1
+#define CONFIG_MMC			1
+#define CONFIG_OMAP_HSMMC		1
+#define CONFIG_DOS_PARTITION		1
 
-#define CONFIG_GENERIC_MMC
-#define CONFIG_MMC
-#define CONFIG_OMAP_HSMMC
-#define CONFIG_DOS_PARTITION
+/* DDR - I use Micron DDR */
+#define CONFIG_OMAP3_MICRON_DDR		1
 
 /* USB */
-#define CONFIG_USB_OMAP3
-#define CONFIG_USB_EHCI
-#define CONFIG_USB_EHCI_OMAP
-#define CONFIG_USB_STORAGE
-#define CONFIG_MUSB_UDC
-#define CONFIG_TWL4030_USB
-#define CONFIG_CMD_USB
+#define CONFIG_MUSB_UDC			1
+#define CONFIG_USB_OMAP3		1
+#define CONFIG_TWL4030_USB		1
 
 /* USB device configuration */
-#define CONFIG_USB_DEVICE
-#define CONFIG_USB_TTY
-#define CONFIG_SYS_CONSOLE_IS_IN_ENV
-/* This delay is really for slow-to-power-on USB sticks, not the hub */
-#define CONFIG_USB_HUB_MIN_POWER_ON_DELAY 500
+#define CONFIG_USB_DEVICE		1
+#define CONFIG_USB_TTY			1
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV	1
 
 /* commands to include */
 #include <config_cmd_default.h>
@@ -113,13 +134,13 @@
 #define CONFIG_CMD_CACHE
 #define CONFIG_CMD_EXT2		/* EXT2 Support			*/
 #define CONFIG_CMD_FAT		/* FAT support			*/
+#define CONFIG_CMD_JFFS2	/* JFFS2 Support		*/
 #define CONFIG_CMD_MTDPARTS	/* Enable MTD parts commands */
 #define CONFIG_MTD_DEVICE	/* needed for mtdparts commands */
-#define CONFIG_MTD_PARTITIONS
-#define MTDIDS_DEFAULT		"nand0=nand"
-#define MTDPARTS_DEFAULT	"mtdparts=nand:512k(x-loader),"\
-				"1920k(u-boot),256k(u-boot-env),"\
-				"4m(kernel),-(fs)"
+#define MTDIDS_DEFAULT			"nand0=nand"
+#define MTDPARTS_DEFAULT		"mtdparts=nand:512k(x-loader),"\
+					"1920k(u-boot),128k(u-boot-env),"\
+					"4m(kernel),-(fs)"
 
 #define CONFIG_CMD_I2C		/* I2C serial bus support	*/
 #define CONFIG_CMD_MMC		/* MMC support			*/
@@ -132,55 +153,62 @@
 #undef CONFIG_CMD_IMLS		/* List all found images	*/
 
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_OMAP24_I2C_SPEED	100000
-#define CONFIG_SYS_OMAP24_I2C_SLAVE	1
-#define CONFIG_SYS_I2C_OMAP34XX
-#define CONFIG_SYS_I2C_EEPROM_ADDR	0x50
-#define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	1
-#define CONFIG_I2C_MULTI_BUS
+#define CONFIG_HARD_I2C			1
+#define CONFIG_SYS_I2C_SPEED		100000
+#define CONFIG_SYS_I2C_SLAVE		1
+#define CONFIG_SYS_I2C_BUS		0
+#define CONFIG_SYS_I2C_BUS_SELECT	1
+#define CONFIG_DRIVER_OMAP34XX_I2C	1
 
 /*
  * TWL4030
  */
-#define CONFIG_TWL4030_POWER
-#define CONFIG_TWL4030_LED
+#define CONFIG_TWL4030_POWER		1
+#define CONFIG_TWL4030_LED		1
 
 /*
  * Board NAND Info.
  */
-#define CONFIG_SYS_NAND_QUIET_TEST
+#define CONFIG_SYS_NAND_QUIET_TEST	1
 #define CONFIG_NAND_OMAP_GPMC
 #define CONFIG_SYS_NAND_ADDR		NAND_BASE	/* physical address */
 							/* to access nand */
 #define CONFIG_SYS_NAND_BASE		NAND_BASE	/* physical address */
 							/* to access nand at */
 							/* CS0 */
-#define GPMC_NAND_ECC_LP_x8_LAYOUT
+#define GPMC_NAND_ECC_LP_x16_LAYOUT	1
 
 #define CONFIG_SYS_MAX_NAND_DEVICE	1		/* Max number of NAND */
 							/* devices */
+#define CONFIG_JFFS2_NAND
+/* nand device jffs2 lives on */
+#define CONFIG_JFFS2_DEV		"nand0"
+/* start of jffs2 partition */
+#define CONFIG_JFFS2_PART_OFFSET	0x680000
+#define CONFIG_JFFS2_PART_SIZE		0xf980000	/* size of jffs2 */
+							/* partition */
+
 /* Environment information */
-#define CONFIG_BOOTDELAY		3
-#define CONFIG_ZERO_BOOTDELAY_CHECK
+#define CONFIG_BOOTDELAY		10
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x82000000\0" \
 	"usbtty=cdc_acm\0" \
-	"console=ttyO2,115200n8\0" \
+	"console=ttyS2,115200n8\0" \
 	"mpurate=500\0" \
 	"vram=12M\0" \
 	"dvimode=1024x768MR-16@60\0" \
 	"defaultdisplay=dvi\0" \
 	"mmcdev=0\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
-	"mmcrootfstype=ext4 rootwait\0" \
+	"mmcrootfstype=ext3 rootwait\0" \
 	"nandroot=/dev/mtdblock4 rw\0" \
-	"nandrootfstype=ubifs\0" \
+	"nandrootfstype=jffs2\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"mpurate=${mpurate} " \
 		"vram=${vram} " \
 		"omapfb.mode=dvi:${dvimode} " \
+		"omapfb.debug=y " \
 		"omapdss.def_disp=${defaultdisplay} " \
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype}\0" \
@@ -188,6 +216,7 @@
 		"mpurate=${mpurate} " \
 		"vram=${vram} " \
 		"omapfb.mode=dvi:${dvimode} " \
+		"omapfb.debug=y " \
 		"omapdss.def_disp=${defaultdisplay} " \
 		"root=${nandroot} " \
 		"rootfstype=${nandrootfstype}\0" \
@@ -200,12 +229,11 @@
 		"bootm ${loadaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 2a0000 400000; " \
+		"nand read ${loadaddr} 280000 400000; " \
 		"bootm ${loadaddr}\0" \
 
-#define CONFIG_CMD_BOOTZ
 #define CONFIG_BOOTCOMMAND \
-	"mmc dev ${mmcdev}; if mmc rescan; then " \
+	"if mmc rescan ${mmcdev}; then " \
 		"if run loadbootscript; then " \
 			"run bootscript; " \
 		"else " \
@@ -216,16 +244,14 @@
 		"fi; " \
 	"else run nandboot; fi"
 
+#define CONFIG_AUTO_COMPLETE		1
 /*
  * Miscellaneous configurable options
  */
-#define CONFIG_AUTO_COMPLETE
-#define CONFIG_CMDLINE_EDITING
-#define CONFIG_TIMESTAMP
-#define CONFIG_SYS_AUTOLOAD		"no"
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
-#define CONFIG_SYS_PROMPT		"CM-T3x # "
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
+#define CONFIG_SYS_PROMPT		"CM-T35 # "
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + \
@@ -249,36 +275,70 @@
  */
 #define CONFIG_SYS_TIMERBASE		(OMAP34XX_GPT2)
 #define CONFIG_SYS_PTV			2       /* Divisor: 2^(PTV+1) => 8 */
+#define CONFIG_SYS_HZ			1000
+
+/*-----------------------------------------------------------------------
+ * Stack sizes
+ *
+ * The stack sizes are set up in start.S using the settings below
+ */
+#define CONFIG_STACKSIZE	(128 << 10)	/* regular stack 128 KiB */
+#ifdef CONFIG_USE_IRQ
+#define CONFIG_STACKSIZE_IRQ	(4 << 10)	/* IRQ stack 4 KiB */
+#define CONFIG_STACKSIZE_FIQ	(4 << 10)	/* FIQ stack 4 KiB */
+#endif
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map
  */
 #define CONFIG_NR_DRAM_BANKS	1	/* CS1 is never populated */
 #define PHYS_SDRAM_1		OMAP34XX_SDRC_CS0
+#define PHYS_SDRAM_1_SIZE	(32 << 20)	/* at least 32 MiB */
+
+/* SDRAM Bank Allocation method */
+#define SDRC_R_B_C		1
 
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
 
 /* **** PISMO SUPPORT *** */
+
 /* Configure the PISMO */
 #define PISMO1_NAND_SIZE		GPMC_SIZE_128M
+#define PISMO1_ONEN_SIZE		GPMC_SIZE_128M
+
+#define CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 2 sectors */
+
+#define CONFIG_SYS_FLASH_BASE		boot_flash_base
 
 /* Monitor at start of flash */
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
-#define CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 2 sectors */
+#define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
 
-#define CONFIG_ENV_IS_IN_NAND
+#define CONFIG_ENV_IS_IN_NAND		1
+#define ONENAND_ENV_OFFSET		0x260000 /* environment starts here */
 #define SMNAND_ENV_OFFSET		0x260000 /* environment starts here */
-#define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
+
+#define CONFIG_SYS_ENV_SECT_SIZE	boot_flash_sec
+#define CONFIG_ENV_OFFSET		boot_flash_off
 #define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
 
+#ifndef __ASSEMBLY__
+extern unsigned int boot_flash_base;
+extern volatile unsigned int boot_flash_env_addr;
+extern unsigned int boot_flash_off;
+extern unsigned int boot_flash_sec;
+extern unsigned int boot_flash_type;
+#endif
+
 #if defined(CONFIG_CMD_NET)
+#define CONFIG_NET_MULTI
 #define CONFIG_SMC911X
 #define CONFIG_SMC911X_32_BIT
-#define CM_T3X_SMC911X_BASE	0x2C000000
-#define SB_T35_SMC911X_BASE	(CM_T3X_SMC911X_BASE + (16 << 20))
-#define CONFIG_SMC911X_BASE	CM_T3X_SMC911X_BASE
+#define CM_T35_SMC911X_BASE	0x2C000000
+#define SB_T35_SMC911X_BASE	(CM_T35_SMC911X_BASE + (16 << 20))
+#define CONFIG_SMC911X_BASE	CM_T35_SMC911X_BASE
 #endif /* (CONFIG_CMD_NET) */
 
 /* additions for new relocation code, must be added to all boards */
@@ -288,100 +348,5 @@
 #define CONFIG_SYS_INIT_SP_ADDR		(CONFIG_SYS_INIT_RAM_ADDR +	\
 					 CONFIG_SYS_INIT_RAM_SIZE -	\
 					 GENERATED_GBL_DATA_SIZE)
-
-/* Status LED */
-#define CONFIG_STATUS_LED		/* Status LED enabled */
-#define CONFIG_BOARD_SPECIFIC_LED
-#define CONFIG_GPIO_LED
-#define GREEN_LED_GPIO			186 /* CM-T35 Green LED is GPIO186 */
-#define GREEN_LED_DEV			0
-#define STATUS_LED_BIT			GREEN_LED_GPIO
-#define STATUS_LED_STATE		STATUS_LED_ON
-#define STATUS_LED_PERIOD		(CONFIG_SYS_HZ / 2)
-#define STATUS_LED_BOOT			GREEN_LED_DEV
-
-#define CONFIG_SPLASHIMAGE_GUARD
-
-/* GPIO banks */
-#ifdef CONFIG_STATUS_LED
-#define CONFIG_OMAP3_GPIO_6	/* GPIO186 is in GPIO bank 6  */
-#endif
-
-/* Display Configuration */
-#define CONFIG_OMAP3_GPIO_2
-#define CONFIG_OMAP3_GPIO_5
-#define CONFIG_VIDEO_OMAP3
-#define LCD_BPP		LCD_COLOR16
-
-#define CONFIG_LCD
-#define CONFIG_SPLASH_SCREEN
-#define CONFIG_CMD_BMP
-#define CONFIG_BMP_16BPP
-#define CONFIG_SCF0403_LCD
-
-#define CONFIG_OMAP3_SPI
-
-/* Defines for SPL */
-#define CONFIG_SPL
-#define CONFIG_SPL_FRAMEWORK
-#define CONFIG_SPL_NAND_SIMPLE
-
-#define CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR	0x300 /* address 0x60000 */
-#define CONFIG_SYS_U_BOOT_MAX_SIZE_SECTORS	0x200 /* 256 KB */
-#define CONFIG_SYS_MMC_SD_FAT_BOOT_PARTITION	1
-#define CONFIG_SPL_FAT_LOAD_PAYLOAD_NAME	"u-boot.img"
-
-#define CONFIG_SPL_BOARD_INIT
-#define CONFIG_SPL_LIBCOMMON_SUPPORT
-#define CONFIG_SPL_LIBDISK_SUPPORT
-#define CONFIG_SPL_I2C_SUPPORT
-#define CONFIG_SPL_LIBGENERIC_SUPPORT
-#define CONFIG_SPL_MMC_SUPPORT
-#define CONFIG_SPL_FAT_SUPPORT
-#define CONFIG_SPL_SERIAL_SUPPORT
-#define CONFIG_SPL_NAND_SUPPORT
-#define CONFIG_SPL_NAND_BASE
-#define CONFIG_SPL_NAND_DRIVERS
-#define CONFIG_SPL_NAND_ECC
-#define CONFIG_SPL_GPIO_SUPPORT
-#define CONFIG_SPL_POWER_SUPPORT
-#define CONFIG_SPL_OMAP3_ID_NAND
-#define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
-
-/* NAND boot config */
-#define CONFIG_SYS_NAND_5_ADDR_CYCLE
-#define CONFIG_SYS_NAND_PAGE_COUNT	64
-#define CONFIG_SYS_NAND_PAGE_SIZE	2048
-#define CONFIG_SYS_NAND_OOBSIZE		64
-#define CONFIG_SYS_NAND_BLOCK_SIZE	(128 * 1024)
-#define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_LARGE_BADBLOCK_POS
-/*
- * Use the ECC/OOB layout from omap_gpmc.h that matches your chip:
- * SP vs LP, 8bit vs 16bit: GPMC_NAND_HW_ECC_LAYOUT
- */
-#define CONFIG_SYS_NAND_ECCPOS		{ 1, 2, 3, 4, 5, 6, 7, 8, 9, \
-					 10, 11, 12 }
-#define CONFIG_SYS_NAND_ECCSIZE		512
-#define CONFIG_SYS_NAND_ECCBYTES	3
-#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_HAM1_CODE_HW
-
-#define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
-
-#define CONFIG_SPL_TEXT_BASE		0x40200800
-#define CONFIG_SPL_MAX_SIZE		(54 * 1024)	/* 8 KB for stack */
-#define CONFIG_SPL_STACK		LOW_LEVEL_SRAM_STACK
-
-/*
- * Use 0x80008000 as TEXT_BASE here for compatibility reasons with the
- * older x-loader implementations. And move the BSS area so that it
- * doesn't overlap with TEXT_BASE.
- */
-#define CONFIG_SYS_TEXT_BASE		0x80008000
-#define CONFIG_SPL_BSS_START_ADDR	0x80100000
-#define CONFIG_SPL_BSS_MAX_SIZE		0x80000		/* 512 KB */
-
-#define CONFIG_SYS_SPL_MALLOC_START	0x80208000
-#define CONFIG_SYS_SPL_MALLOC_SIZE	0x100000
 
 #endif /* __CONFIG_H */

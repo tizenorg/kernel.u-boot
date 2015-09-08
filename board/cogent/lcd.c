@@ -48,7 +48,7 @@
 
 #include <common.h>
 #include <stdarg.h>
-#include "lcd.h"
+#include <board/cogent/lcd.h>
 
 static char lines[2][LCD_LINE_LENGTH+1];
 static int curline;

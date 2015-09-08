@@ -40,7 +40,6 @@ static void usage(const char *exec_name)
 	       "\t-r : the environment has multiple copies in flash\n"
 	       "\t-b : the target is big endian (default is little endian)\n"
 	       "\t-p <byte> : fill the image with <byte> bytes instead of 0xff bytes\n"
-	       "\t-V : print version information and exit\n"
 	       "\n"
 	       "If the input file is \"-\", data is read from standard input\n",
 	       exec_name);
@@ -90,7 +89,7 @@ int main(int argc, char **argv)
 	opterr = 0;
 
 	/* Parse the cmdline */
-	while ((option = getopt(argc, argv, ":s:o:rbp:hV")) != -1) {
+	while ((option = getopt(argc, argv, ":s:o:rbp:h")) != -1) {
 		switch (option) {
 		case 's':
 			datasize = xstrtol(optarg);
@@ -113,9 +112,6 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 			usage(prg);
-			return EXIT_SUCCESS;
-		case 'V':
-			printf("%s version %s\n", prg, PLAIN_VERSION);
 			return EXIT_SUCCESS;
 		case ':':
 			fprintf(stderr, "Missing argument for option -%c\n",

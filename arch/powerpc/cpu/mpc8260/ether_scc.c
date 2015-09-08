@@ -16,7 +16,23 @@
  * DENX Software Engineerin GmbH
  * Gary Jennejohn <garyj@denx.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -26,6 +42,10 @@
 #include <net.h>
 #include <command.h>
 #include <config.h>
+
+#ifndef CONFIG_NET_MULTI
+#error "CONFIG_NET_MULTI must be defined."
+#endif
 
 #if (CONFIG_ETHER_INDEX == 1)
 #  define PROFF_ENET            PROFF_SCC1
@@ -89,7 +109,7 @@ typedef volatile struct CommonBufferDescriptor {
 static RTXBD *rtx;
 
 
-static int sec_send(struct eth_device *dev, void *packet, int length)
+static int sec_send(struct eth_device *dev, volatile void *packet, int length)
 {
     int i;
     int result = 0;

@@ -2,7 +2,23 @@
  * (C) Copyright 2010
  * Reinhard Meyer, EMK Elektronik, reinhard.meyer@emk-elektronik.de
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -28,7 +44,7 @@
  * by u-Boot commands.
  *
  * Note: Redundant environment will not work in this flash since
- * it does use partial page writes. Make sure the environment spans
+ * it does use partial page writes. Make sure the environent spans
  * whole pages!
  */
 
@@ -44,8 +60,8 @@
  * do a read-modify-write for partially programmed pages
  */
 #include <common.h>
-#include <asm/io.h>
 #include <asm/arch/hardware.h>
+#include <asm/arch/io.h>
 #include <asm/arch/at91_common.h>
 #include <asm/arch/at91_eefc.h>
 #include <asm/arch/at91_dbu.h>
@@ -61,8 +77,8 @@ static u32 pagesize;
 
 unsigned long flash_init (void)
 {
-	at91_eefc_t *eefc = (at91_eefc_t *) ATMEL_BASE_EEFC;
-	at91_dbu_t *dbu = (at91_dbu_t *) ATMEL_BASE_DBGU;
+	at91_eefc_t *eefc = (at91_eefc_t *) 0xfffffa00;
+	at91_dbu_t *dbu = (at91_dbu_t *) 0xfffff200;
 	u32 id, size, nplanes, planesize, nlocks;
 	u32 addr, i, tmp=0;
 
@@ -103,7 +119,7 @@ unsigned long flash_init (void)
 	flash_info[0].sector_count = nlocks;
 	flash_info[0].flash_id = id;
 
-	addr = ATMEL_BASE_FLASH;
+	addr = AT91SAM9XE_FLASH_BASE;
 	for (i=0; i<nlocks; i++) {
 		tmp = readl(&eefc->frr);	/* words 4+nplanes+1.. */
 		flash_info[0].start[i] = addr;
@@ -151,8 +167,8 @@ void flash_print_info (flash_info_t *info)
 
 int flash_real_protect (flash_info_t *info, long sector, int prot)
 {
-	at91_eefc_t *eefc = (at91_eefc_t *) ATMEL_BASE_EEFC;
-	u32 pagenum = (info->start[sector]-ATMEL_BASE_FLASH)/pagesize;
+	at91_eefc_t *eefc = (at91_eefc_t *) 0xfffffa00;
+	u32 pagenum = (info->start[sector]-AT91SAM9XE_FLASH_BASE)/pagesize;
 	u32 i, tmp=0;
 
 	debug("protect sector=%ld prot=%d\n", sector, prot);
@@ -189,7 +205,7 @@ int flash_real_protect (flash_info_t *info, long sector, int prot)
 
 static u32 erase_write_page (u32 pagenum)
 {
-	at91_eefc_t *eefc = (at91_eefc_t *) ATMEL_BASE_EEFC;
+	at91_eefc_t *eefc = (at91_eefc_t *) 0xfffffa00;
 
 	debug("erase+write page=%u\n", pagenum);
 
@@ -233,7 +249,7 @@ int write_buff (flash_info_t *info, uchar *src, ulong addr, ulong cnt)
 	}
 
 	/* now start copying data */
-	pagenum = (addr-ATMEL_BASE_FLASH)/pagesize;
+	pagenum = (addr-AT91SAM9XE_FLASH_BASE)/pagesize;
 	src32 = (u32 *) src;
 	dst32 = (u32 *) addr;
 	while (cnt > 0) {

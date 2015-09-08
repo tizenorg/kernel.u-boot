@@ -7,7 +7,23 @@
  *
  * Srikanth Srinivasan (srikanth.srinivasan@freescale.com)
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -21,6 +37,7 @@
 #define __CONFIG_H
 
 /* High Level Configuration Options */
+#define CONFIG_MPC86xx		1	/* MPC86xx */
 #define CONFIG_MPC8641		1	/* MPC8641 specific */
 #define CONFIG_SBC8641D		1	/* SBC8641D board specific */
 #define CONFIG_MP		1	/* support multiple processors */
@@ -47,7 +64,6 @@
 #define CONFIG_PCIE1		1	/* PCIE controler 1 (slot 1) */
 #define CONFIG_PCIE2		1	/* PCIE controler 2 (slot 2) */
 #define CONFIG_FSL_PCI_INIT	1	/* Use common FSL init code */
-#define CONFIG_PCI_INDIRECT_BRIDGE 1	/* indirect PCI bridge support */
 #define CONFIG_FSL_LAW		1	/* Use common FSL init code */
 
 #define CONFIG_TSEC_ENET		/* tsec ethernet support */
@@ -260,6 +276,7 @@
 /* Use the HUSH parser */
 #define CONFIG_SYS_HUSH_PARSER
 #ifdef  CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 #endif
 
 /*
@@ -272,12 +289,13 @@
 /*
  * I2C
  */
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_FSL
-#define CONFIG_SYS_FSL_I2C_SPEED	400000
-#define CONFIG_SYS_FSL_I2C_SLAVE	0x7F
-#define CONFIG_SYS_FSL_I2C_OFFSET	0x3100
-#define CONFIG_SYS_I2C_NOPROBES		{ {0, 0x69} }
+#define	CONFIG_FSL_I2C		/* Use FSL common I2C driver */
+#define	CONFIG_HARD_I2C		/* I2C with hardware support*/
+#undef	CONFIG_SOFT_I2C			/* I2C bit-banged */
+#define CONFIG_SYS_I2C_SPEED		400000	/* I2C speed and slave address */
+#define CONFIG_SYS_I2C_SLAVE		0x7F
+#define CONFIG_SYS_I2C_NOPROBES        {0x69}	/* Don't probe these addrs */
+#define CONFIG_SYS_I2C_OFFSET		0x3100
 
 /*
  * RapidIO MMU
@@ -314,6 +332,7 @@
 
 #undef CONFIG_SYS_SCSI_SCAN_BUS_REVERSE
 
+#define CONFIG_NET_MULTI
 #define CONFIG_PCI_PNP			/* do pci plug-and-play */
 
 #undef CONFIG_EEPRO100
@@ -341,6 +360,10 @@
 #endif	/* CONFIG_PCI */
 
 #if defined(CONFIG_TSEC_ENET)
+
+#ifndef CONFIG_NET_MULTI
+#define CONFIG_NET_MULTI	1
+#endif
 
 /* #define CONFIG_MII		1 */	/* MII PHY management */
 
@@ -495,6 +518,7 @@
  */
 #define CONFIG_SYS_LONGHELP			/* undef to save memory	*/
 #define CONFIG_SYS_LOAD_ADDR	0x2000000	/* default load address */
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt */
 
 #if defined(CONFIG_CMD_KGDB)
     #define CONFIG_SYS_CBSIZE	1024		/* Console I/O Buffer Size */
@@ -505,6 +529,7 @@
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS	16		/* max number of command args */
 #define CONFIG_SYS_BARGSIZE	CONFIG_SYS_CBSIZE	/* Boot Argument Buffer Size */
+#define CONFIG_SYS_HZ		1000		/* decrementer freq: 1ms ticks */
 
 /*
  * For booting Linux, the board info and command line data
@@ -522,6 +547,7 @@
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	230400	/* speed to run kgdb serial port */
+#define CONFIG_KGDB_SER_INDEX	2	/* which serial port to use */
 #endif
 
 /*
@@ -544,8 +570,8 @@
 #define CONFIG_IPADDR		192.168.0.50
 
 #define CONFIG_HOSTNAME		sbc8641d
-#define CONFIG_ROOTPATH		"/opt/eldk/ppc_74xx"
-#define CONFIG_BOOTFILE		"uImage"
+#define CONFIG_ROOTPATH		/opt/eldk/ppc_74xx
+#define CONFIG_BOOTFILE		uImage
 
 #define CONFIG_SERVERIP		192.168.0.2
 #define CONFIG_GATEWAYIP	192.168.0.1

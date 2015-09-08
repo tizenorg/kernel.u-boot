@@ -4,7 +4,23 @@
  * (C) Copyright 2000
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -75,7 +91,7 @@ void dtimer_interrupt(void *not_used)
 	}
 }
 
-int timer_init(void)
+void timer_init(void)
 {
 	volatile dtmr_t *timerp = (dtmr_t *) (CONFIG_SYS_TMR_BASE);
 
@@ -98,8 +114,11 @@ int timer_init(void)
 	/* set a period of 1us, set timer mode to restart and enable timer and interrupt */
 	timerp->tmr = CONFIG_SYS_TIMER_PRESCALER | DTIM_DTMR_CLK_DIV1 |
 	    DTIM_DTMR_FRR | DTIM_DTMR_ORRI | DTIM_DTMR_RST_EN;
+}
 
-	return 0;
+void reset_timer(void)
+{
+	timestamp = 0;
 }
 
 ulong get_timer(ulong base)
@@ -107,6 +126,10 @@ ulong get_timer(ulong base)
 	return (timestamp - base);
 }
 
+void set_timer(ulong t)
+{
+	timestamp = t;
+}
 #endif				/* CONFIG_MCFTMR */
 
 #if defined(CONFIG_MCFPIT)
@@ -148,8 +171,14 @@ void timer_init(void)
 	timerp->pcsr = PIT_PCSR_OVW;
 	timerp->pmr = lastinc = 0;
 	timerp->pcsr |= PIT_PCSR_PRE(CONFIG_SYS_PIT_PRESCALE) | PIT_PCSR_EN;
+}
 
-	return 0;
+void set_timer(ulong t)
+{
+	volatile pit_t *timerp = (pit_t *) (CONFIG_SYS_PIT_BASE);
+
+	timestamp = 0;
+	timerp->pmr = lastinc = 0;
 }
 
 ulong get_timer(ulong base)
@@ -167,8 +196,8 @@ ulong get_timer(ulong base)
 
 void wait_ticks(unsigned long ticks)
 {
-	u32 start = get_timer(0);
-	while (get_timer(start) < ticks) ;
+	set_timer(0);
+	while (get_timer(0) < ticks) ;
 }
 #endif				/* CONFIG_MCFPIT */
 

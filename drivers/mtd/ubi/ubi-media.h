@@ -1,7 +1,19 @@
 /*
  * Copyright (c) International Business Machines Corp., 2006
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+ * the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  * Authors: Artem Bityutskiy (Битюцкий Артём)
  *          Thomas Gleixner
@@ -19,6 +31,7 @@
 #define __UBI_MEDIA_H__
 
 #include <asm/byteorder.h>
+#include <linux/types.h>
 
 /* The version of UBI images supported by this implementation */
 #define UBI_VERSION 1
@@ -139,7 +152,8 @@ struct ubi_ec_hdr {
 	__be64  ec; /* Warning: the current limit is 31-bit anyway! */
 	__be32  vid_hdr_offset;
 	__be32  data_offset;
-	__u8    padding2[36];
+	__be32  image_seq;
+	__u8	padding2[32];
 	__be32  hdr_crc;
 } __attribute__ ((packed));
 

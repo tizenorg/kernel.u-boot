@@ -1,23 +1,71 @@
 /*
  * (c) 2007 Sascha Hauer <s.hauer@pengutronix.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  */
 
 #include <common.h>
 #include <watchdog.h>
+#ifdef CONFIG_MX31
+#include <asm/arch/mx31.h>
+#else
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/clock.h>
-#include <serial.h>
-#include <linux/compiler.h>
+#endif
 
 #define __REG(x)     (*((volatile u32 *)(x)))
 
-#ifndef CONFIG_MXC_UART_BASE
-#error "define CONFIG_MXC_UART_BASE to use the MXC UART driver"
+#if defined(CONFIG_SYS_MX31_UART1) || defined(CONFIG_SYS_MX25_UART1)
+#define UART_PHYS 0x43f90000
+#elif defined(CONFIG_SYS_MX31_UART2) || defined(CONFIG_SYS_MX25_UART2)
+#define UART_PHYS 0x43f94000
+#elif defined(CONFIG_SYS_MX31_UART3) || defined(CONFIG_SYS_MX25_UART3)
+#define UART_PHYS 0x5000c000
+#elif defined(CONFIG_SYS_MX31_UART4) || defined(CONFIG_SYS_MX25_UART4)
+#define UART_PHYS 0x43fb0000
+#elif defined(CONFIG_SYS_MX31_UART5) || defined(CONFIG_SYS_MX25_UART5)
+#define UART_PHYS 0x43fb4000
+#elif defined(CONFIG_SYS_MX27_UART1)
+#define UART_PHYS 0x1000a000
+#elif defined(CONFIG_SYS_MX27_UART2)
+#define UART_PHYS 0x1000b000
+#elif defined(CONFIG_SYS_MX27_UART3)
+#define UART_PHYS 0x1000c000
+#elif defined(CONFIG_SYS_MX27_UART4)
+#define UART_PHYS 0x1000d000
+#elif defined(CONFIG_SYS_MX27_UART5)
+#define UART_PHYS 0x1001b000
+#elif defined(CONFIG_SYS_MX27_UART6)
+#define UART_PHYS 0x1001c000
+#elif defined(CONFIG_SYS_MX35_UART1) || defined(CONFIG_SYS_MX51_UART1) || \
+	defined(CONFIG_SYS_MX53_UART1)
+#define UART_PHYS UART1_BASE_ADDR
+#elif defined(CONFIG_SYS_MX35_UART2) || defined(CONFIG_SYS_MX51_UART2) || \
+	defined(CONFIG_SYS_MX53_UART2)
+#define UART_PHYS UART2_BASE_ADDR
+#elif defined(CONFIG_SYS_MX35_UART3) || defined(CONFIG_SYS_MX51_UART3) || \
+	defined(CONFIG_SYS_MX53_UART3)
+#define UART_PHYS UART3_BASE_ADDR
+#else
+#error "define CONFIG_SYS_MXxx_UARTx to use the MXC UART driver"
 #endif
 
-#define UART_PHYS	CONFIG_MXC_UART_BASE
+#ifdef CONFIG_SERIAL_MULTI
+#warning "MXC driver does not support MULTI serials."
+#endif
 
 /* Register definitions */
 #define URXD  0x0  /* Receiver Register */
@@ -130,7 +178,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static void mxc_serial_setbrg(void)
+void serial_setbrg (void)
 {
 	u32 clk = imx_get_uartclk();
 
@@ -143,14 +191,14 @@ static void mxc_serial_setbrg(void)
 
 }
 
-static int mxc_serial_getc(void)
+int serial_getc (void)
 {
 	while (__REG(UART_PHYS + UTS) & UTS_RXEMPTY)
 		WATCHDOG_RESET();
 	return (__REG(UART_PHYS + URXD) & URXD_RX_DATA); /* mask out status from upper word */
 }
 
-static void mxc_serial_putc(const char c)
+void serial_putc (const char c)
 {
 	__REG(UART_PHYS + UTXD) = c;
 
@@ -166,7 +214,7 @@ static void mxc_serial_putc(const char c)
 /*
  * Test whether a character is in the RX buffer
  */
-static int mxc_serial_tstc(void)
+int serial_tstc (void)
 {
 	/* If receive fifo is empty, return false */
 	if (__REG(UART_PHYS + UTS) & UTS_RXEMPTY)
@@ -174,12 +222,20 @@ static int mxc_serial_tstc(void)
 	return 1;
 }
 
+void
+serial_puts (const char *s)
+{
+	while (*s) {
+		serial_putc (*s++);
+	}
+}
+
 /*
  * Initialise the serial port with the given baudrate. The settings
  * are always 8 data bits, no parity, 1 stop bit, no start bits.
  *
  */
-static int mxc_serial_init(void)
+int serial_init (void)
 {
 	__REG(UART_PHYS + UCR1) = 0x0;
 	__REG(UART_PHYS + UCR2) = 0x0;
@@ -200,25 +256,4 @@ static int mxc_serial_init(void)
 	__REG(UART_PHYS + UCR1) = UCR1_UARTEN;
 
 	return 0;
-}
-
-static struct serial_device mxc_serial_drv = {
-	.name	= "mxc_serial",
-	.start	= mxc_serial_init,
-	.stop	= NULL,
-	.setbrg	= mxc_serial_setbrg,
-	.putc	= mxc_serial_putc,
-	.puts	= default_serial_puts,
-	.getc	= mxc_serial_getc,
-	.tstc	= mxc_serial_tstc,
-};
-
-void mxc_serial_initialize(void)
-{
-	serial_register(&mxc_serial_drv);
-}
-
-__weak struct serial_device *default_serial_console(void)
-{
-	return &mxc_serial_drv;
 }

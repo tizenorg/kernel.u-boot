@@ -12,18 +12,16 @@
 #include <common.h>
 #include <command.h>
 #include <stdio_dev.h>
-#include <serial.h>
 #include <environment.h>
 #include <malloc.h>
 #include <mmc.h>
 #include <net.h>
+#include <timestamp.h>
 #include <status_led.h>
 #include <version.h>
-#include <watchdog.h>
 
 #include <asm/cplb.h>
 #include <asm/mach-common/bits/mpu.h>
-#include <asm/clock.h>
 #include <kgdb.h>
 
 #ifdef CONFIG_CMD_NAND
@@ -39,11 +37,9 @@
 int post_flag;
 #endif
 
-#if defined(CONFIG_SYS_I2C)
-#include <i2c.h>
-#endif
-
 DECLARE_GLOBAL_DATA_PTR;
+
+const char version_string[] = U_BOOT_VERSION " ("U_BOOT_DATE" - "U_BOOT_TIME")";
 
 __attribute__((always_inline))
 static inline void serial_early_puts(const char *s)
@@ -56,7 +52,7 @@ static inline void serial_early_puts(const char *s)
 
 static int display_banner(void)
 {
-	display_options();
+	printf("\n\n%s\n\n", version_string);
 	printf("CPU:   ADSP %s "
 		"(Detected Rev: 0.%d) "
 		"(%s boot)\n",
@@ -68,8 +64,11 @@ static int display_banner(void)
 
 static int init_baudrate(void)
 {
-	gd->baudrate = getenv_ulong("baudrate", 10, CONFIG_BAUDRATE);
-	gd->bd->bi_baudrate = gd->baudrate;
+	char baudrate[15];
+	int i = getenv_f("baudrate", baudrate, sizeof(baudrate));
+	gd->bd->bi_baudrate = gd->baudrate = (i > 0)
+	    ? simple_strtoul(baudrate, NULL, 10)
+	    : CONFIG_BAUDRATE;
 	return 0;
 }
 
@@ -84,8 +83,8 @@ static void display_global_data(void)
 	bd = gd->bd;
 	printf(" gd: %p\n", gd);
 	printf(" |-flags: %lx\n", gd->flags);
-	printf(" |-board_type: %lx\n", gd->arch.board_type);
-	printf(" |-baudrate: %u\n", gd->baudrate);
+	printf(" |-board_type: %lx\n", gd->board_type);
+	printf(" |-baudrate: %lu\n", gd->baudrate);
 	printf(" |-have_console: %lx\n", gd->have_console);
 	printf(" |-ram_size: %lx\n", gd->ram_size);
 	printf(" |-env_addr: %lx\n", gd->env_addr);
@@ -93,6 +92,7 @@ static void display_global_data(void)
 	printf(" |-jt(%p): %p\n", gd->jt, *(gd->jt));
 	printf(" \\-bd: %p\n", gd->bd);
 	printf("   |-bi_baudrate: %x\n", bd->bi_baudrate);
+	printf("   |-bi_ip_addr: %lx\n", bd->bi_ip_addr);
 	printf("   |-bi_boot_params: %lx\n", bd->bi_boot_params);
 	printf("   |-bi_memstart: %lx\n", bd->bi_memstart);
 	printf("   |-bi_memsize: %lx\n", bd->bi_memsize);
@@ -103,13 +103,6 @@ static void display_global_data(void)
 
 #define CPLB_PAGE_SIZE (4 * 1024 * 1024)
 #define CPLB_PAGE_MASK (~(CPLB_PAGE_SIZE - 1))
-#if defined(__ADSPBF60x__)
-#define CPLB_EX_PAGE_SIZE (16 * 1024 * 1024)
-#define CPLB_EX_PAGE_MASK (~(CPLB_EX_PAGE_SIZE - 1))
-#else
-#define CPLB_EX_PAGE_SIZE CPLB_PAGE_SIZE
-#define CPLB_EX_PAGE_MASK CPLB_PAGE_MASK
-#endif
 void init_cplbtables(void)
 {
 	volatile uint32_t *ICPLB_ADDR, *ICPLB_DATA;
@@ -141,12 +134,6 @@ void init_cplbtables(void)
 	icplb_add(0xFFA00000, L1_IMEMORY);
 	dcplb_add(0xFF800000, L1_DMEMORY);
 	++i;
-#if defined(__ADSPBF60x__)
-	icplb_add(0x0, 0x0);
-	dcplb_add(CONFIG_SYS_FLASH_BASE, PAGE_SIZE_16MB | CPLB_DIRTY |
-		CPLB_SUPV_WR | CPLB_USER_WR | CPLB_USER_RD | CPLB_VALID);
-	++i;
-#endif
 
 	if (CONFIG_MEM_SIZE) {
 		uint32_t mbase = CONFIG_SYS_MONITOR_BASE;
@@ -170,11 +157,9 @@ void init_cplbtables(void)
 		}
 	}
 
-#ifndef __ADSPBF60x__
 	icplb_add(0x20000000, SDRAM_INON_CHBL);
 	dcplb_add(0x20000000, SDRAM_EBIU);
 	++i;
-#endif
 
 	/* Add entries for the rest of external RAM up to the bootrom */
 	extern_memory = 0;
@@ -189,11 +174,10 @@ void init_cplbtables(void)
 	++i;
 #endif
 
-	while (i < 16 && extern_memory <
-		(CONFIG_SYS_MONITOR_BASE & CPLB_EX_PAGE_MASK)) {
+	while (i < 16 && extern_memory < (CONFIG_SYS_MONITOR_BASE & CPLB_PAGE_MASK)) {
 		icplb_add(extern_memory, SDRAM_IGENERIC);
 		dcplb_add(extern_memory, SDRAM_DGENERIC);
-		extern_memory += CPLB_EX_PAGE_SIZE;
+		extern_memory += CPLB_PAGE_SIZE;
 		++i;
 	}
 	while (i < 16) {
@@ -201,46 +185,6 @@ void init_cplbtables(void)
 		dcplb_add(0, 0);
 		++i;
 	}
-}
-
-static int global_board_data_init(void)
-{
-#ifndef CONFIG_SYS_GBL_DATA_ADDR
-# define CONFIG_SYS_GBL_DATA_ADDR 0
-#endif
-#ifndef CONFIG_SYS_BD_INFO_ADDR
-# define CONFIG_SYS_BD_INFO_ADDR 0
-#endif
-
-	bd_t *bd;
-
-	if (CONFIG_SYS_GBL_DATA_ADDR) {
-		gd = (gd_t *) (CONFIG_SYS_GBL_DATA_ADDR);
-		memset((void *)gd, 0, GENERATED_GBL_DATA_SIZE);
-	} else {
-		static gd_t _bfin_gd;
-		gd = &_bfin_gd;
-	}
-
-	if (CONFIG_SYS_BD_INFO_ADDR) {
-		bd = (bd_t *) (CONFIG_SYS_BD_INFO_ADDR);
-		memset(bd, 0, GENERATED_BD_INFO_SIZE);
-	} else {
-		static bd_t _bfin_bd;
-		bd = &_bfin_bd;
-	}
-	gd->bd = bd;
-
-	bd->bi_r_version = version_string;
-	bd->bi_cpu = __stringify(CONFIG_BFIN_CPU);
-	bd->bi_board_name = BFIN_BOARD_NAME;
-	bd->bi_vco = get_vco();
-	bd->bi_cclk = get_cclk();
-	bd->bi_sclk = get_sclk();
-	bd->bi_memstart = CONFIG_SYS_SDRAM_BASE;
-	bd->bi_memsize = CONFIG_SYS_MAX_RAM_SIZE;
-
-	return 0;
 }
 
 /*
@@ -263,6 +207,8 @@ extern int timer_init(void);
 
 void board_init_f(ulong bootflag)
 {
+	ulong addr;
+	bd_t *bd;
 	char buf[32];
 
 #ifdef CONFIG_BOARD_EARLY_INIT_F
@@ -285,9 +231,9 @@ void board_init_f(ulong bootflag)
 	dcache_enable();
 #endif
 
-#ifdef CONFIG_HW_WATCHDOG
+#ifdef CONFIG_WATCHDOG
 	serial_early_puts("Setting up external watchdog\n");
-	hw_watchdog_init();
+	watchdog_init();
 #endif
 
 #ifdef DEBUG
@@ -295,8 +241,26 @@ void board_init_f(ulong bootflag)
 		hang();
 #endif
 	serial_early_puts("Init global data\n");
+	gd = (gd_t *) (CONFIG_SYS_GBL_DATA_ADDR);
+	memset((void *)gd, 0, GENERATED_GBL_DATA_SIZE);
 
-	global_board_data_init();
+	/* Board data initialization */
+	addr = (CONFIG_SYS_GBL_DATA_ADDR + sizeof(gd_t));
+
+	/* Align to 4 byte boundary */
+	addr &= ~(4 - 1);
+	bd = (bd_t *) addr;
+	gd->bd = bd;
+	memset((void *)bd, 0, sizeof(bd_t));
+
+	bd->bi_r_version = version_string;
+	bd->bi_cpu = BFIN_CPU;
+	bd->bi_board_name = BFIN_BOARD_NAME;
+	bd->bi_vco = get_vco();
+	bd->bi_cclk = get_cclk();
+	bd->bi_sclk = get_sclk();
+	bd->bi_memstart = CONFIG_SYS_SDRAM_BASE;
+	bd->bi_memsize = CONFIG_SYS_MAX_RAM_SIZE;
 
 	/* Initialize */
 	serial_early_puts("IRQ init\n");
@@ -307,7 +271,6 @@ void board_init_f(ulong bootflag)
 	init_baudrate();
 	serial_early_puts("Serial init\n");
 	serial_init();
-	serial_initialize();
 	serial_early_puts("Console init flash\n");
 	console_init_f();
 	serial_early_puts("End of early debugging\n");
@@ -318,19 +281,10 @@ void board_init_f(ulong bootflag)
 
 	printf("Clock: VCO: %s MHz, ", strmhz(buf, get_vco()));
 	printf("Core: %s MHz, ", strmhz(buf, get_cclk()));
-#if defined(__ADSPBF60x__)
-	printf("System0: %s MHz, ", strmhz(buf, get_sclk0()));
-	printf("System1: %s MHz, ", strmhz(buf, get_sclk1()));
-	printf("Dclk: %s MHz\n", strmhz(buf, get_dclk()));
-#else
 	printf("System: %s MHz\n", strmhz(buf, get_sclk()));
-#endif
 
-	if (CONFIG_MEM_SIZE) {
-		printf("RAM:   ");
-		print_size(gd->bd->bi_memsize, "\n");
-	}
-
+	printf("RAM:   ");
+	print_size(bd->bi_memsize, "\n");
 #if defined(CONFIG_POST)
 	post_init_f();
 	post_bootmode_init();
@@ -346,13 +300,21 @@ static void board_net_init_r(bd_t *bd)
 	bb_miiphy_init();
 #endif
 #ifdef CONFIG_CMD_NET
+	char *s;
+
+	if ((s = getenv("bootfile")) != NULL)
+		copy_filename(BootFile, s, sizeof(BootFile));
+
+	bd->bi_ip_addr = getenv_IPaddr("ipaddr");
+
 	printf("Net:   ");
-	eth_initialize(bd);
+	eth_initialize(gd->bd);
 #endif
 }
 
 void board_init_r(gd_t * id, ulong dest_addr)
 {
+	char *s;
 	bd_t *bd;
 	gd = id;
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
@@ -393,9 +355,6 @@ void board_init_r(gd_t * id, ulong dest_addr)
 	mmc_initialize(bd);
 #endif
 
-#if defined(CONFIG_SYS_I2C)
-	i2c_reloc_fixup();
-#endif
 	/* relocate environment function pointers etc. */
 	env_relocate();
 
@@ -417,7 +376,8 @@ void board_init_r(gd_t * id, ulong dest_addr)
 #endif
 
 	/* Initialize from environment */
-	load_addr = getenv_ulong("loadaddr", 16, load_addr);
+	if ((s = getenv("loadaddr")) != NULL)
+		load_addr = simple_strtoul(s, NULL, 16);
 
 #if defined(CONFIG_MISC_INIT_R)
 	/* miscellaneous platform dependent initialisations */
@@ -433,7 +393,7 @@ void board_init_r(gd_t * id, ulong dest_addr)
 		post_run(NULL, POST_RAM | post_bootmode_get(0));
 #endif
 
-	if (CONFIG_MEM_SIZE && bfin_os_log_check()) {
+	if (bfin_os_log_check()) {
 		puts("\nLog buffer from operating system:\n");
 		bfin_os_log_dump();
 		puts("\n");
@@ -442,4 +402,18 @@ void board_init_r(gd_t * id, ulong dest_addr)
 	/* main_loop() can return to retry autoboot, if so just run it again. */
 	for (;;)
 		main_loop();
+}
+
+void hang(void)
+{
+#ifdef CONFIG_STATUS_LED
+	status_led_set(STATUS_LED_BOOT, STATUS_LED_OFF);
+	status_led_set(STATUS_LED_CRASH, STATUS_LED_BLINKING);
+#endif
+	puts("### ERROR ### Please RESET the board ###\n");
+	while (1)
+		/* If a JTAG emulator is hooked up, we'll automatically trigger
+		 * a breakpoint in it.  If one isn't, this is just a NOP.
+		 */
+		asm("emuexcpt;");
 }

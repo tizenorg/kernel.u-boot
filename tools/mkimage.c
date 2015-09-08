@@ -5,12 +5,24 @@
  * DENX Software Engineering
  * Wolfgang Denk, wd@denx.de
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include "mkimage.h"
 #include <image.h>
-#include <version.h>
 
 static void copy_file(int, const char *, int);
 static void usage(void);
@@ -19,14 +31,13 @@ static void usage(void);
 struct image_type_params *mkimage_tparams = NULL;
 
 /* parameters initialized by core will be used by the image type code */
-struct image_tool_params params = {
+struct mkimage_params params = {
 	.os = IH_OS_LINUX,
 	.arch = IH_ARCH_PPC,
 	.type = IH_TYPE_KERNEL,
 	.comp = IH_COMP_GZIP,
 	.dtc = MKIMAGE_DEFAULT_DTC_OPTIONS,
 	.imagename = "",
-	.imagename2 = "",
 };
 
 /*
@@ -137,10 +148,15 @@ main (int argc, char **argv)
 	char *ptr;
 	int retval = 0;
 	struct image_type_params *tparams = NULL;
-	int pad_len = 0;
 
-	/* Init all image generation/list support */
-	register_image_tool(mkimage_register);
+	/* Init Kirkwood Boot image generation/list support */
+	init_kwb_image_type ();
+	/* Init Freescale imx Boot image generation/list support */
+	init_imx_image_type ();
+	/* Init FIT image generation/list support */
+	init_fit_image_type ();
+	/* Init Default image generation/list support */
+	init_default_image_type ();
 
 	params.cmdname = *argv;
 	params.addr = params.ep = 0;
@@ -156,11 +172,6 @@ main (int argc, char **argv)
 					(params.arch =
 					genimg_get_arch_id (*++argv)) < 0)
 					usage ();
-				goto NXTARG;
-			case 'c':
-				if (--argc <= 0)
-					usage();
-				params.comment = *++argv;
 				goto NXTARG;
 			case 'C':
 				if ((--argc <= 0) ||
@@ -219,52 +230,22 @@ main (int argc, char **argv)
 			case 'f':
 				if (--argc <= 0)
 					usage ();
-				params.datafile = *++argv;
-				/* no break */
-			case 'F':
 				/*
 				 * The flattened image tree (FIT) format
 				 * requires a flattened device tree image type
 				 */
 				params.type = IH_TYPE_FLATDT;
+				params.datafile = *++argv;
 				params.fflag = 1;
-				goto NXTARG;
-			case 'k':
-				if (--argc <= 0)
-					usage();
-				params.keydir = *++argv;
-				goto NXTARG;
-			case 'K':
-				if (--argc <= 0)
-					usage();
-				params.keydest = *++argv;
 				goto NXTARG;
 			case 'n':
 				if (--argc <= 0)
 					usage ();
 				params.imagename = *++argv;
 				goto NXTARG;
-			case 'r':
-				params.require_keys = 1;
-				break;
-			case 'R':
-				if (--argc <= 0)
-					usage();
-				/*
-				 * This entry is for the second configuration
-				 * file, if only one is not enough.
-				 */
-				params.imagename2 = *++argv;
-				goto NXTARG;
-			case 's':
-				params.skipcpy = 1;
-				break;
 			case 'v':
 				params.vflag++;
 				break;
-			case 'V':
-				printf("mkimage version %s\n", PLAIN_VERSION);
-				exit(EXIT_SUCCESS);
 			case 'x':
 				params.xflag++;
 				break;
@@ -372,15 +353,11 @@ NXTARG:		;
 	}
 
 	/*
-	 * In case there an header with a variable
-	 * length will be added, the corresponding
-	 * function is called. This is responsible to
-	 * allocate memory for the header itself.
+	 * Must be -w then:
+	 *
+	 * write dummy header, to be fixed later
 	 */
-	if (tparams->vrec_header)
-		pad_len = tparams->vrec_header(&params, tparams);
-	else
-		memset(tparams->hdr, 0, tparams->header_size);
+	memset (tparams->hdr, 0, tparams->header_size);
 
 	if (write(ifd, tparams->hdr, tparams->header_size)
 					!= tparams->header_size) {
@@ -389,69 +366,63 @@ NXTARG:		;
 		exit (EXIT_FAILURE);
 	}
 
-	if (!params.skipcpy) {
-		if (params.type == IH_TYPE_MULTI ||
-		    params.type == IH_TYPE_SCRIPT) {
-			char *file = params.datafile;
-			uint32_t size;
+	if (params.type == IH_TYPE_MULTI || params.type == IH_TYPE_SCRIPT) {
+		char *file = params.datafile;
+		uint32_t size;
 
-			for (;;) {
-				char *sep = NULL;
+		for (;;) {
+			char *sep = NULL;
 
-				if (file) {
-					if ((sep = strchr(file, ':')) != NULL) {
-						*sep = '\0';
-					}
-
-					if (stat (file, &sbuf) < 0) {
-						fprintf (stderr, "%s: Can't stat %s: %s\n",
-							 params.cmdname, file, strerror(errno));
-						exit (EXIT_FAILURE);
-					}
-					size = cpu_to_uimage (sbuf.st_size);
-				} else {
-					size = 0;
+			if (file) {
+				if ((sep = strchr(file, ':')) != NULL) {
+					*sep = '\0';
 				}
 
-				if (write(ifd, (char *)&size, sizeof(size)) != sizeof(size)) {
-					fprintf (stderr, "%s: Write error on %s: %s\n",
-						 params.cmdname, params.imagefile,
-						 strerror(errno));
+				if (stat (file, &sbuf) < 0) {
+					fprintf (stderr, "%s: Can't stat %s: %s\n",
+						params.cmdname, file, strerror(errno));
 					exit (EXIT_FAILURE);
 				}
-
-				if (!file) {
-					break;
-				}
-
-				if (sep) {
-					*sep = ':';
-					file = sep + 1;
-				} else {
-					file = NULL;
-				}
+				size = cpu_to_uimage (sbuf.st_size);
+			} else {
+				size = 0;
 			}
 
-			file = params.datafile;
-
-			for (;;) {
-				char *sep = strchr(file, ':');
-				if (sep) {
-					*sep = '\0';
-					copy_file (ifd, file, 1);
-					*sep++ = ':';
-					file = sep;
-				} else {
-					copy_file (ifd, file, 0);
-					break;
-				}
+			if (write(ifd, (char *)&size, sizeof(size)) != sizeof(size)) {
+				fprintf (stderr, "%s: Write error on %s: %s\n",
+					params.cmdname, params.imagefile,
+					strerror(errno));
+				exit (EXIT_FAILURE);
 			}
-		} else if (params.type == IH_TYPE_PBLIMAGE) {
-			/* PBL has special Image format, implements its' own */
-			pbl_load_uboot(ifd, &params);
-		} else {
-			copy_file(ifd, params.datafile, pad_len);
+
+			if (!file) {
+				break;
+			}
+
+			if (sep) {
+				*sep = ':';
+				file = sep + 1;
+			} else {
+				file = NULL;
+			}
 		}
+
+		file = params.datafile;
+
+		for (;;) {
+			char *sep = strchr(file, ':');
+			if (sep) {
+				*sep = '\0';
+				copy_file (ifd, file, 1);
+				*sep++ = ':';
+				file = sep;
+			} else {
+				copy_file (ifd, file, 0);
+				break;
+			}
+		}
+	} else {
+		copy_file (ifd, params.datafile, 0);
 	}
 
 	/* We're a bit of paranoid */
@@ -524,18 +495,9 @@ copy_file (int ifd, const char *datafile, int pad)
 	unsigned char *ptr;
 	int tail;
 	int zero = 0;
-	uint8_t zeros[4096];
 	int offset = 0;
 	int size;
 	struct image_type_params *tparams = mkimage_get_type (params.type);
-
-	if (pad >= sizeof(zeros)) {
-		fprintf(stderr, "%s: Can't pad to %d\n",
-			params.cmdname, pad);
-		exit(EXIT_FAILURE);
-	}
-
-	memset(zeros, 0, sizeof(zeros));
 
 	if (params.vflag) {
 		fprintf (stderr, "Adding Image %s\n", datafile);
@@ -594,8 +556,7 @@ copy_file (int ifd, const char *datafile, int pad)
 		exit (EXIT_FAILURE);
 	}
 
-	tail = size % 4;
-	if ((pad == 1) && (tail != 0)) {
+	if (pad && ((tail = size % 4) != 0)) {
 
 		if (write(ifd, (char *)&zero, 4-tail) != 4-tail) {
 			fprintf (stderr, "%s: Write error on %s: %s\n",
@@ -603,20 +564,14 @@ copy_file (int ifd, const char *datafile, int pad)
 				strerror(errno));
 			exit (EXIT_FAILURE);
 		}
-	} else if (pad > 1) {
-		if (write(ifd, (char *)&zeros, pad) != pad) {
-			fprintf(stderr, "%s: Write error on %s: %s\n",
-				params.cmdname, params.imagefile,
-				strerror(errno));
-			exit(EXIT_FAILURE);
-		}
 	}
 
 	(void) munmap((void *)ptr, sbuf.st_size);
 	(void) close (dfd);
 }
 
-static void usage(void)
+void
+usage ()
 {
 	fprintf (stderr, "Usage: %s -l image\n"
 			 "          -l ==> list image header information\n",
@@ -633,21 +588,7 @@ static void usage(void)
 			 "          -d ==> use image data from 'datafile'\n"
 			 "          -x ==> set XIP (execute in place)\n",
 		params.cmdname);
-	fprintf(stderr, "       %s [-D dtc_options] [-f fit-image.its|-F] fit-image\n",
-		params.cmdname);
-	fprintf(stderr, "          -D => set options for device tree compiler\n"
-			"          -f => input filename for FIT source\n");
-#ifdef CONFIG_FIT_SIGNATURE
-	fprintf(stderr, "Signing / verified boot options: [-k keydir] [-K dtb] [ -c <comment>] [-r]\n"
-			"          -k => set directory containing private keys\n"
-			"          -K => write public keys to this .dtb file\n"
-			"          -c => add comment in signature node\n"
-			"          -F => re-sign existing FIT image\n"
-			"          -r => mark keys used as 'required' in dtb\n");
-#else
-	fprintf(stderr, "Signing / verified boot not supported (CONFIG_FIT_SIGNATURE undefined)\n");
-#endif
-	fprintf (stderr, "       %s -V ==> print version information and exit\n",
+	fprintf (stderr, "       %s [-D dtc_options] -f fit-image.its fit-image\n",
 		params.cmdname);
 
 	exit (EXIT_FAILURE);

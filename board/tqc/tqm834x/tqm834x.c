@@ -2,7 +2,24 @@
  * (C) Copyright 2005
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
  */
 
 #include <common.h>
@@ -42,7 +59,7 @@ ulong flash_get_size (ulong base, int banknum);
 
 /* Local functions */
 static int detect_num_flash_banks(void);
-static long int get_ddr_bank_size(short cs, long *base);
+static long int get_ddr_bank_size(short cs, volatile long *base);
 static void set_cs_bounds(short cs, long base, long size);
 static void set_cs_config(short cs, long config);
 static void set_ddr_config(void);
@@ -103,10 +120,10 @@ phys_size_t initdram (int board_type)
 		debug("\nDetecting Bank%d\n", cs);
 
 		bank_size = get_ddr_bank_size(cs,
-			(long *)(CONFIG_SYS_DDR_BASE + size));
+			(volatile long*)(CONFIG_SYS_DDR_BASE + size));
 		size += bank_size;
 
-		debug("DDR Bank%d size: %ld MiB\n\n", cs, bank_size >> 20);
+		debug("DDR Bank%d size: %d MiB\n\n", cs, bank_size >> 20);
 
 		/* exit if less than one bank */
 		if(size < DDR_MAX_SIZE_PER_CS) break;
@@ -245,7 +262,7 @@ static int detect_num_flash_banks(void)
 /*************************************************************************
  * Detect the size of a ddr bank. Sets CS bounds and CS config accordingly.
  */
-static long int get_ddr_bank_size(short cs, long *base)
+static long int get_ddr_bank_size(short cs, volatile long *base)
 {
 	/* This array lists all valid DDR SDRAM configurations, with
 	 * Bank sizes in bytes. (Refer to Table 9-27 in the MPC8349E RM).
@@ -316,7 +333,7 @@ static long int get_ddr_bank_size(short cs, long *base)
  */
 static void set_cs_bounds(short cs, long base, long size)
 {
-	debug("Setting bounds %08lx, %08lx for cs %d\n", base, size, cs);
+	debug("Setting bounds %08x, %08x for cs %d\n", base, size, cs);
 	if(size == 0){
 		im->ddr.csbnds[cs].csbnds = 0x00000000;
 	} else {
@@ -334,7 +351,7 @@ static void set_cs_bounds(short cs, long base, long size)
  */
 static void set_cs_config(short cs, long config)
 {
-	debug("Setting config %08lx for cs %d\n", config, cs);
+	debug("Setting config %08x for cs %d\n", config, cs);
 	im->ddr.cs_config[cs] = config;
 	SYNC;
 }

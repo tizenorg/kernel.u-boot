@@ -6,7 +6,23 @@
  * (C) Copyright 2003
  * Kyle Harris, Nexus Technologies, Inc. kharris@nexus-tech.net
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <config.h>
@@ -24,47 +40,34 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 struct fsl_esdhc {
-	uint    dsaddr;		/* SDMA system address register */
-	uint    blkattr;	/* Block attributes register */
-	uint    cmdarg;		/* Command argument register */
-	uint    xfertyp;	/* Transfer type register */
-	uint    cmdrsp0;	/* Command response 0 register */
-	uint    cmdrsp1;	/* Command response 1 register */
-	uint    cmdrsp2;	/* Command response 2 register */
-	uint    cmdrsp3;	/* Command response 3 register */
-	uint    datport;	/* Buffer data port register */
-	uint    prsstat;	/* Present state register */
-	uint    proctl;		/* Protocol control register */
-	uint    sysctl;		/* System Control Register */
-	uint    irqstat;	/* Interrupt status register */
-	uint    irqstaten;	/* Interrupt status enable register */
-	uint    irqsigen;	/* Interrupt signal enable register */
-	uint    autoc12err;	/* Auto CMD error status register */
-	uint    hostcapblt;	/* Host controller capabilities register */
-	uint    wml;		/* Watermark level register */
-	uint    mixctrl;	/* For USDHC */
-	char    reserved1[4];	/* reserved */
-	uint    fevt;		/* Force event register */
-	uint    admaes;		/* ADMA error status register */
-	uint    adsaddr;	/* ADMA system address register */
-	char    reserved2[160];	/* reserved */
-	uint    hostver;	/* Host controller version register */
-	char    reserved3[4];	/* reserved */
-	uint    dmaerraddr;	/* DMA error address register */
-	char    reserved4[4];	/* reserved */
-	uint    dmaerrattr;	/* DMA error attribute register */
-	char    reserved5[4];	/* reserved */
-	uint    hostcapblt2;	/* Host controller capabilities register 2 */
-	char    reserved6[8];	/* reserved */
-	uint    tcr;		/* Tuning control register */
-	char    reserved7[28];	/* reserved */
-	uint    sddirctl;	/* SD direction control register */
-	char    reserved8[712];	/* reserved */
-	uint    scr;		/* eSDHC control register */
+	uint	dsaddr;
+	uint	blkattr;
+	uint	cmdarg;
+	uint	xfertyp;
+	uint	cmdrsp0;
+	uint	cmdrsp1;
+	uint	cmdrsp2;
+	uint	cmdrsp3;
+	uint	datport;
+	uint	prsstat;
+	uint	proctl;
+	uint	sysctl;
+	uint	irqstat;
+	uint	irqstaten;
+	uint	irqsigen;
+	uint	autoc12err;
+	uint	hostcapblt;
+	uint	wml;
+	char	reserved1[8];
+	uint	fevt;
+	char	reserved2[168];
+	uint	hostver;
+	char	reserved3[780];
+	uint	scr;
 };
 
 /* Return the XFERTYP flags for a given command and data packet */
-static uint esdhc_xfertyp(struct mmc_cmd *cmd, struct mmc_data *data)
+uint esdhc_xfertyp(struct mmc_cmd *cmd, struct mmc_data *data)
 {
 	uint xfertyp = 0;
 
@@ -96,10 +99,6 @@ static uint esdhc_xfertyp(struct mmc_cmd *cmd, struct mmc_data *data)
 	else if (cmd->resp_type & MMC_RSP_PRESENT)
 		xfertyp |= XFERTYP_RSPTYP_48;
 
-#if defined(CONFIG_MX53) || defined(CONFIG_T4240QDS)
-	if (cmd->cmdidx == MMC_CMD_STOP_TRANSMISSION)
-		xfertyp |= XFERTYP_CMDTYP_ABORT;
-#endif
 	return XFERTYP_CMD(cmd->cmdidx) | xfertyp;
 }
 
@@ -110,8 +109,7 @@ static uint esdhc_xfertyp(struct mmc_cmd *cmd, struct mmc_data *data)
 static void
 esdhc_pio_read_write(struct mmc *mmc, struct mmc_data *data)
 {
-	struct fsl_esdhc_cfg *cfg = mmc->priv;
-	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
+	struct fsl_esdhc *regs = mmc->priv;
 	uint blocks;
 	char *buffer;
 	uint databuf;
@@ -180,18 +178,14 @@ static int esdhc_setup_data(struct mmc *mmc, struct mmc_data *data)
 	wml_value = data->blocksize/4;
 
 	if (data->flags & MMC_DATA_READ) {
-		if (wml_value > WML_RD_WML_MAX)
-			wml_value = WML_RD_WML_MAX_VAL;
+		if (wml_value > 0x10)
+			wml_value = 0x10;
 
 		esdhc_clrsetbits32(&regs->wml, WML_RD_WML_MASK, wml_value);
 		esdhc_write32(&regs->dsaddr, (u32)data->dest);
 	} else {
-		flush_dcache_range((ulong)data->src,
-				   (ulong)data->src+data->blocks
-					 *data->blocksize);
-
-		if (wml_value > WML_WR_WML_MAX)
-			wml_value = WML_WR_WML_MAX_VAL;
+		if (wml_value > 0x80)
+			wml_value = 0x80;
 		if ((esdhc_read32(&regs->prsstat) & PRSSTAT_WPSPL) == 0) {
 			printf("\nThe SD card is locked. Can not write to a locked card.\n\n");
 			return TIMEOUT;
@@ -249,15 +243,7 @@ static int esdhc_setup_data(struct mmc *mmc, struct mmc_data *data)
 	return 0;
 }
 
-static void check_and_invalidate_dcache_range
-	(struct mmc_cmd *cmd,
-	 struct mmc_data *data) {
-	unsigned start = (unsigned)data->dest ;
-	unsigned size = roundup(ARCH_DMA_MINALIGN,
-				data->blocks*data->blocksize);
-	unsigned end = start+size ;
-	invalidate_dcache_range(start, end);
-}
+
 /*
  * Sends a command out on the bus.  Takes the mmc pointer,
  * a command pointer, and an optional data pointer.
@@ -306,63 +292,22 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 	/* Figure out the transfer arguments */
 	xfertyp = esdhc_xfertyp(cmd, data);
 
-	/* Mask all irqs */
-	esdhc_write32(&regs->irqsigen, 0);
-
 	/* Send the command */
 	esdhc_write32(&regs->cmdarg, cmd->cmdarg);
-#if defined(CONFIG_FSL_USDHC)
-	esdhc_write32(&regs->mixctrl,
-	(esdhc_read32(&regs->mixctrl) & 0xFFFFFF80) | (xfertyp & 0x7F));
-	esdhc_write32(&regs->xfertyp, xfertyp & 0xFFFF0000);
-#else
 	esdhc_write32(&regs->xfertyp, xfertyp);
-#endif
 
 	/* Wait for the command to complete */
-	while (!(esdhc_read32(&regs->irqstat) & (IRQSTAT_CC | IRQSTAT_CTOE)))
+	while (!(esdhc_read32(&regs->irqstat) & IRQSTAT_CC))
 		;
 
 	irqstat = esdhc_read32(&regs->irqstat);
-
-	/* Reset CMD and DATA portions on error */
-	if (irqstat & (CMD_ERR | IRQSTAT_CTOE)) {
-		esdhc_write32(&regs->sysctl, esdhc_read32(&regs->sysctl) |
-			      SYSCTL_RSTC);
-		while (esdhc_read32(&regs->sysctl) & SYSCTL_RSTC)
-			;
-
-		if (data) {
-			esdhc_write32(&regs->sysctl,
-				      esdhc_read32(&regs->sysctl) |
-				      SYSCTL_RSTD);
-			while ((esdhc_read32(&regs->sysctl) & SYSCTL_RSTD))
-				;
-		}
-	}
+	esdhc_write32(&regs->irqstat, irqstat);
 
 	if (irqstat & CMD_ERR)
 		return COMM_ERR;
 
 	if (irqstat & IRQSTAT_CTOE)
 		return TIMEOUT;
-
-	/* Workaround for ESDHC errata ENGcm03648 */
-	if (!data && (cmd->resp_type & MMC_RSP_BUSY)) {
-		int timeout = 2500;
-
-		/* Poll on DATA0 line for cmd with busy signal for 250 ms */
-		while (timeout > 0 && !(esdhc_read32(&regs->prsstat) &
-					PRSSTAT_DAT0)) {
-			udelay(100);
-			timeout--;
-		}
-
-		if (timeout <= 0) {
-			printf("Timeout waiting for DAT0 to go high!\n");
-			return TIMEOUT;
-		}
-	}
 
 	/* Copy the response to the response buffer */
 	if (cmd->resp_type & MMC_RSP_136) {
@@ -387,15 +332,14 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 		do {
 			irqstat = esdhc_read32(&regs->irqstat);
 
-			if (irqstat & IRQSTAT_DTOE)
-				return TIMEOUT;
-
 			if (irqstat & DATA_ERR)
 				return COMM_ERR;
-		} while ((irqstat & DATA_COMPLETE) != DATA_COMPLETE);
+
+			if (irqstat & IRQSTAT_DTOE)
+				return TIMEOUT;
+		} while (!(irqstat & IRQSTAT_TC) &&
+				(esdhc_read32(&regs->prsstat) & PRSSTAT_DLA));
 #endif
-		if (data->flags & MMC_DATA_READ)
-			check_and_invalidate_dcache_range(cmd, data);
 	}
 
 	esdhc_write32(&regs->irqstat, -1);
@@ -403,12 +347,12 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 	return 0;
 }
 
-static void set_sysctl(struct mmc *mmc, uint clock)
+void set_sysctl(struct mmc *mmc, uint clock)
 {
+	int sdhc_clk = gd->sdhc_clk;
 	int div, pre_div;
 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
 	volatile struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
-	int sdhc_clk = cfg->sdhc_clk;
 	uint clk;
 
 	if (clock < mmc->f_min)
@@ -464,20 +408,21 @@ static int esdhc_init(struct mmc *mmc)
 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
 	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
 	int timeout = 1000;
+	int ret = 0;
+	u8 card_absent;
 
 	/* Reset the entire host controller */
-	esdhc_setbits32(&regs->sysctl, SYSCTL_RSTA);
+	esdhc_write32(&regs->sysctl, SYSCTL_RSTA);
 
 	/* Wait until the controller is available */
 	while ((esdhc_read32(&regs->sysctl) & SYSCTL_RSTA) && --timeout)
 		udelay(1000);
 
-#ifndef ARCH_MXC
 	/* Enable cache snooping */
-	esdhc_write32(&regs->scr, 0x00000040);
-#endif
+	if (cfg && !cfg->no_snoop)
+		esdhc_write32(&regs->scr, 0x00000040);
 
-	esdhc_setbits32(&regs->sysctl, SYSCTL_HCKEN | SYSCTL_IPGEN);
+	esdhc_write32(&regs->sysctl, SYSCTL_HCKEN | SYSCTL_IPGEN);
 
 	/* Set the initial clock speed */
 	mmc_set_clock(mmc, 400000);
@@ -491,23 +436,21 @@ static int esdhc_init(struct mmc *mmc)
 	/* Set timout to the maximum value */
 	esdhc_clrsetbits32(&regs->sysctl, SYSCTL_TIMEOUT_MASK, 14 << 16);
 
-	return 0;
-}
+	/* Check if there is a callback for detecting the card */
+	if (board_mmc_getcd(&card_absent, mmc)) {
+		timeout = 1000;
+		while (!(esdhc_read32(&regs->prsstat) & PRSSTAT_CINS) &&
+				--timeout)
+			udelay(1000);
 
-static int esdhc_getcd(struct mmc *mmc)
-{
-	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
-	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
-	int timeout = 1000;
+		if (timeout <= 0)
+			ret = NO_CARD_ERR;
+	} else {
+		if (card_absent)
+			ret = NO_CARD_ERR;
+	}
 
-#ifdef CONFIG_ESDHC_DETECT_QUIRK
-	if (CONFIG_ESDHC_DETECT_QUIRK)
-		return 1;
-#endif
-	while (!(esdhc_read32(&regs->prsstat) & PRSSTAT_CINS) && --timeout)
-		udelay(1000);
-
-	return timeout > 0;
+	return ret;
 }
 
 static void esdhc_reset(struct fsl_esdhc *regs)
@@ -515,7 +458,7 @@ static void esdhc_reset(struct fsl_esdhc *regs)
 	unsigned long timeout = 100; /* wait max 100 ms */
 
 	/* reset the controller */
-	esdhc_setbits32(&regs->sysctl, SYSCTL_RSTA);
+	esdhc_write32(&regs->sysctl, SYSCTL_RSTA);
 
 	/* hardware clears the bit when it is done */
 	while ((esdhc_read32(&regs->sysctl) & SYSCTL_RSTA) && --timeout)
@@ -534,25 +477,17 @@ int fsl_esdhc_initialize(bd_t *bis, struct fsl_esdhc_cfg *cfg)
 		return -1;
 
 	mmc = malloc(sizeof(struct mmc));
-	if (!mmc)
-		return -ENOMEM;
 
-	memset(mmc, 0, sizeof(struct mmc));
-	sprintf(mmc->name, "FSL_SDHC");
+	sprintf(mmc->name, "FSL_ESDHC");
 	regs = (struct fsl_esdhc *)cfg->esdhc_base;
 
 	/* First reset the eSDHC controller */
 	esdhc_reset(regs);
 
-	esdhc_setbits32(&regs->sysctl, SYSCTL_PEREN | SYSCTL_HCKEN
-				| SYSCTL_IPGEN | SYSCTL_CKEN);
-
 	mmc->priv = cfg;
 	mmc->send_cmd = esdhc_send_cmd;
 	mmc->set_ios = esdhc_set_ios;
 	mmc->init = esdhc_init;
-	mmc->getcd = esdhc_getcd;
-	mmc->getwp = NULL;
 
 	voltage_caps = 0;
 	caps = regs->hostcapblt;
@@ -561,12 +496,6 @@ int fsl_esdhc_initialize(bd_t *bis, struct fsl_esdhc_cfg *cfg)
 	caps = caps & ~(ESDHC_HOSTCAPBLT_SRS |
 			ESDHC_HOSTCAPBLT_VS18 | ESDHC_HOSTCAPBLT_VS30);
 #endif
-
-/* T4240 host controller capabilities register should have VS33 bit */
-#ifdef CONFIG_SYS_FSL_MMC_HAS_CAPBLT_VS33
-	caps = caps | ESDHC_HOSTCAPBLT_VS33;
-#endif
-
 	if (caps & ESDHC_HOSTCAPBLT_VS18)
 		voltage_caps |= MMC_VDD_165_195;
 	if (caps & ESDHC_HOSTCAPBLT_VS30)
@@ -584,27 +513,14 @@ int fsl_esdhc_initialize(bd_t *bis, struct fsl_esdhc_cfg *cfg)
 		return -1;
 	}
 
-	mmc->host_caps = MMC_MODE_4BIT | MMC_MODE_8BIT | MMC_MODE_HC;
-
-	if (cfg->max_bus_width > 0) {
-		if (cfg->max_bus_width < 8)
-			mmc->host_caps &= ~MMC_MODE_8BIT;
-		if (cfg->max_bus_width < 4)
-			mmc->host_caps &= ~MMC_MODE_4BIT;
-	}
+	mmc->host_caps = MMC_MODE_4BIT | MMC_MODE_8BIT;
 
 	if (caps & ESDHC_HOSTCAPBLT_HSS)
 		mmc->host_caps |= MMC_MODE_HS_52MHz | MMC_MODE_HS;
 
-#ifdef CONFIG_ESDHC_DETECT_8_BIT_QUIRK
-	if (CONFIG_ESDHC_DETECT_8_BIT_QUIRK)
-		mmc->host_caps &= ~MMC_MODE_8BIT;
-#endif
-
 	mmc->f_min = 400000;
-	mmc->f_max = MIN(gd->arch.sdhc_clk, 52000000);
+	mmc->f_max = MIN(gd->sdhc_clk, 52000000);
 
-	mmc->b_max = 0;
 	mmc_register(mmc);
 
 	return 0;
@@ -614,9 +530,9 @@ int fsl_esdhc_mmc_init(bd_t *bis)
 {
 	struct fsl_esdhc_cfg *cfg;
 
-	cfg = calloc(sizeof(struct fsl_esdhc_cfg), 1);
+	cfg = malloc(sizeof(struct fsl_esdhc_cfg));
+	memset(cfg, 0, sizeof(struct fsl_esdhc_cfg));
 	cfg->esdhc_base = CONFIG_SYS_FSL_ESDHC_ADDR;
-	cfg->sdhc_clk = gd->arch.sdhc_clk;
 	return fsl_esdhc_initialize(bis, cfg);
 }
 
@@ -634,7 +550,7 @@ void fdt_fixup_esdhc(void *blob, bd_t *bd)
 #endif
 
 	do_fixup_by_compat_u32(blob, compat, "clock-frequency",
-			       gd->arch.sdhc_clk, 1);
+			       gd->sdhc_clk, 1);
 
 	do_fixup_by_compat(blob, compat, "status", "okay",
 			   4 + 1, 1);

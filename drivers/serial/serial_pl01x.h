@@ -3,7 +3,23 @@
  * ARM Ltd.
  * Philippe Robin, <philippe.robin@arm.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -27,11 +43,7 @@ struct pl01x_regs {
 	u32	pl010_lcrl;	/* 0x10 Line control register, low byte */
 	u32	pl010_cr;	/* 0x14 Control register */
 	u32	fr;		/* 0x18 Flag register (Read only) */
-#ifdef CONFIG_PL011_SERIAL_RLCR
-	u32	pl011_rlcr;	/* 0x1c Receive line control register */
-#else
 	u32	reserved;
-#endif
 	u32	ilpr;		/* 0x20 IrDA low-power counter register */
 	u32	pl011_ibrd;	/* 0x24 Integer baud rate register */
 	u32	pl011_fbrd;	/* 0x28 Fractional baud rate register */

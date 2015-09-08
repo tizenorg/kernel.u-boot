@@ -2,7 +2,7 @@
  * Copyright (C) 2009, DENX Software Engineering
  * Author: John Rigby <jcrigby@gmail.com
  *
- *   Based on arch-mx31/imx-regs.h
+ *   Based on arch-mx31/mx31-regs.h
  *	Copyright (C) 2009 Ilya Yanok,
  *		Emcraft Systems <yanok@emcraft.com>
  *   and arch-mx27/imx-regs.h
@@ -11,14 +11,33 @@
  *	Copyright (C) 2009 Ilya Yanok,
  *		Emcraft Systems <yanok@emcraft.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef _IMX_REGS_H
 #define _IMX_REGS_H
 
-#if !(defined(__KERNEL_STRICT_NAMES) || defined(__ASSEMBLY__))
-#include <asm/types.h>
+#ifndef __ASSEMBLY__
+#ifdef CONFIG_FEC_MXC
+extern void mx25_fec_init_pins(void);
+extern void imx_get_mac_from_fuse(unsigned char *mac);
+#endif
 
 /* Clock Control Module (CCM) registers */
 struct ccm_regs {
@@ -65,6 +84,18 @@ struct esdramc_regs {
 	u32 cdlyl;	/* delay line cycle length debug */
 };
 
+/* GPIO registers */
+struct gpio_regs {
+	u32 dr;		/* data */
+	u32 dir;	/* direction */
+	u32 psr;	/* pad satus */
+	u32 icr1;	/* interrupt config 1 */
+	u32 icr2;	/* interrupt config 2 */
+	u32 imr;	/* interrupt mask */
+	u32 isr;	/* interrupt status */
+	u32 edge_sel;	/* edge select */
+};
+
 /* General Purpose Timer (GPT) registers */
 struct gpt_regs {
 	u32 ctrl;   	/* control */
@@ -97,12 +128,8 @@ struct iim_regs {
 	u32 iim_sdat;
 	u32 iim_prev;
 	u32 iim_srev;
-	u32 iim_prg_p;
-	u32 iim_scs0;
-	u32 iim_scs1;
-	u32 iim_scs2;
-	u32 iim_scs3;
-	u32 res1[0x1f1];
+	u32 iim_prog_p;
+	u32 res1[0x1f5];
 	struct fuse_bank {
 		u32 fuse_regs[0x20];
 		u32 fuse_rsvd[0xe0];
@@ -110,61 +137,11 @@ struct iim_regs {
 };
 
 struct fuse_bank0_regs {
-	u32 fuse0_7[8];
-	u32 uid[8];
-	u32 fuse16_25[0xa];
+	u32 fuse0_25[0x1a];
 	u32 mac_addr[6];
 };
 
-struct fuse_bank1_regs {
-	u32 fuse0_21[0x16];
-	u32 usr5;
-	u32 fuse23_29[7];
-	u32 usr6[2];
-};
-
-/* Multi-Layer AHB Crossbar Switch (MAX) registers */
-struct max_regs {
-	u32 mpr0;
-	u32 pad00[3];
-	u32 sgpcr0;
-	u32 pad01[59];
-	u32 mpr1;
-	u32 pad02[3];
-	u32 sgpcr1;
-	u32 pad03[59];
-	u32 mpr2;
-	u32 pad04[3];
-	u32 sgpcr2;
-	u32 pad05[59];
-	u32 mpr3;
-	u32 pad06[3];
-	u32 sgpcr3;
-	u32 pad07[59];
-	u32 mpr4;
-	u32 pad08[3];
-	u32 sgpcr4;
-	u32 pad09[251];
-	u32 mgpcr0;
-	u32 pad10[63];
-	u32 mgpcr1;
-	u32 pad11[63];
-	u32 mgpcr2;
-	u32 pad12[63];
-	u32 mgpcr3;
-	u32 pad13[63];
-	u32 mgpcr4;
-};
-
-/* AHB <-> IP-Bus Interface (AIPS) */
-struct aips_regs {
-	u32 mpr_0_7;
-	u32 mpr_8_15;
-};
-
 #endif
-
-#define ARCH_MXC
 
 /* AIPS 1 */
 #define IMX_AIPS1_BASE		(0x43F00000)
@@ -177,14 +154,13 @@ struct aips_regs {
 #define IMX_I2C3_BASE		(0x43F84000)
 #define IMX_CAN1_BASE		(0x43F88000)
 #define IMX_CAN2_BASE		(0x43F8C000)
-#define UART1_BASE		(0x43F90000)
-#define UART2_BASE		(0x43F94000)
+#define IMX_UART1_BASE		(0x43F90000)
+#define IMX_UART2_BASE		(0x43F94000)
 #define IMX_I2C2_BASE		(0x43F98000)
 #define IMX_OWIRE_BASE		(0x43F9C000)
 #define IMX_CSPI1_BASE		(0x43FA4000)
 #define IMX_KPP_BASE		(0x43FA8000)
 #define IMX_IOPADMUX_BASE	(0x43FAC000)
-#define IOMUXC_BASE_ADDR	IMX_IOPADMUX_BASE
 #define IMX_IOPADCTL_BASE	(0x43FAC22C)
 #define IMX_IOPADGRPCTL_BASE	(0x43FAC418)
 #define IMX_IOPADINPUTSEL_BASE	(0x43FAC460)
@@ -195,15 +171,15 @@ struct aips_regs {
 /* SPBA */
 #define IMX_SPBA_BASE		(0x50000000)
 #define IMX_CSPI3_BASE		(0x50004000)
-#define UART4_BASE		(0x50008000)
-#define UART3_BASE		(0x5000C000)
+#define IMX_UART4_BASE		(0x50008000)
+#define IMX_UART3_BASE		(0x5000C000)
 #define IMX_CSPI2_BASE		(0x50010000)
 #define IMX_SSI2_BASE		(0x50014000)
 #define IMX_ESAI_BASE		(0x50018000)
 #define IMX_ATA_DMA_BASE	(0x50020000)
 #define IMX_SIM1_BASE		(0x50024000)
 #define IMX_SIM2_BASE		(0x50028000)
-#define UART5_BASE		(0x5002C000)
+#define IMX_UART5_BASE		(0x5002C000)
 #define IMX_TSC_BASE		(0x50030000)
 #define IMX_SSI1_BASE		(0x50034000)
 #define IMX_FEC_BASE		(0x50038000)
@@ -238,9 +214,7 @@ struct aips_regs {
 #define IMX_PWM1_BASE		(0x53FE0000)
 #define IMX_RTIC_BASE		(0x53FEC000)
 #define IMX_IIM_BASE		(0x53FF0000)
-#define IIM_BASE_ADDR		IMX_IIM_BASE
 #define IMX_USB_BASE		(0x53FF4000)
-#define IMX_USB_PORT_OFFSET	0x200
 #define IMX_CSI_BASE		(0x53FF8000)
 #define IMX_DRYICE_BASE		(0x53FFC000)
 
@@ -249,7 +223,6 @@ struct aips_regs {
 
 /* 128K Internal Static RAM */
 #define IMX_RAM_BASE		(0x78000000)
-#define IMX_RAM_SIZE		(128 * 1024)
 
 /* SDRAM BANKS */
 #define IMX_SDRAM_BANK0_BASE	(0x80000000)
@@ -344,15 +317,5 @@ struct aips_regs {
 #define WCR_WDE 		0x04
 #define WSR_UNLOCK1		0x5555
 #define WSR_UNLOCK2		0xAAAA
-
-/* Names used in GPIO driver */
-#define GPIO1_BASE_ADDR		IMX_GPIO1_BASE
-#define GPIO2_BASE_ADDR		IMX_GPIO2_BASE
-#define GPIO3_BASE_ADDR		IMX_GPIO3_BASE
-#define GPIO4_BASE_ADDR		IMX_GPIO4_BASE
-
-#define CHIP_REV_1_0		0x10
-#define CHIP_REV_1_1		0x11
-#define CHIP_REV_1_2		0x12
 
 #endif				/* _IMX_REGS_H */

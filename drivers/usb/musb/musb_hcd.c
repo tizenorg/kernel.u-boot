@@ -3,13 +3,25 @@
  *
  * Copyright (c) 2008 Texas Instruments
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  *
  * Author: Thomas Abraham t-abraham@ti.com, Texas Instruments
  */
 
 #include <common.h>
-#include <usb.h>
 #include "musb_hcd.h"
 
 /* MSC control transfers */
@@ -267,7 +279,7 @@ static int wait_until_ep0_ready(struct usb_device *dev, u32 bit_mask)
 /*
  * waits until tx ep is ready. Returns 1 when ep is ready and 0 on error.
  */
-static int wait_until_txep_ready(struct usb_device *dev, u8 ep)
+static u8 wait_until_txep_ready(struct usb_device *dev, u8 ep)
 {
 	u16 csr;
 	int timeout = CONFIG_MUSB_TIMEOUT;
@@ -299,7 +311,7 @@ static int wait_until_txep_ready(struct usb_device *dev, u8 ep)
 /*
  * waits until rx ep is ready. Returns 1 when ep is ready and 0 on error.
  */
-static int wait_until_rxep_ready(struct usb_device *dev, u8 ep)
+static u8 wait_until_rxep_ready(struct usb_device *dev, u8 ep)
 {
 	u16 csr;
 	int timeout = CONFIG_MUSB_TIMEOUT;
@@ -417,12 +429,8 @@ static int ctrlreq_out_data_phase(struct usb_device *dev, u32 len, void *buffer)
 
 		/* Set TXPKTRDY bit */
 		csr = readw(&musbr->txcsr);
-			
-		csr |= MUSB_CSR0_TXPKTRDY;
-#if !defined(CONFIG_SOC_DM365)
-		csr |= MUSB_CSR0_H_DIS_PING;
-#endif
-		writew(csr, &musbr->txcsr);
+		writew(csr | MUSB_CSR0_H_DIS_PING | MUSB_CSR0_TXPKTRDY,
+					&musbr->txcsr);
 		result = wait_until_ep0_ready(dev, MUSB_CSR0_TXPKTRDY);
 		if (result < 0)
 			break;
@@ -443,10 +451,8 @@ static int ctrlreq_out_status_phase(struct usb_device *dev)
 
 	/* Set the StatusPkt bit */
 	csr = readw(&musbr->txcsr);
-	csr |= (MUSB_CSR0_TXPKTRDY | MUSB_CSR0_H_STATUSPKT);
-#if !defined(CONFIG_SOC_DM365)
-	csr |= MUSB_CSR0_H_DIS_PING;
-#endif
+	csr |= (MUSB_CSR0_H_DIS_PING | MUSB_CSR0_TXPKTRDY |
+			MUSB_CSR0_H_STATUSPKT);
 	writew(csr, &musbr->txcsr);
 
 	/* Wait until TXPKTRDY bit is cleared */
@@ -463,10 +469,7 @@ static int ctrlreq_in_status_phase(struct usb_device *dev)
 	int result;
 
 	/* Set the StatusPkt bit and ReqPkt bit */
-	csr = MUSB_CSR0_H_REQPKT | MUSB_CSR0_H_STATUSPKT;
-#if !defined(CONFIG_SOC_DM365)
-	csr |= MUSB_CSR0_H_DIS_PING;
-#endif
+	csr = MUSB_CSR0_H_DIS_PING | MUSB_CSR0_H_REQPKT | MUSB_CSR0_H_STATUSPKT;
 	writew(csr, &musbr->txcsr);
 	result = wait_until_ep0_ready(dev, MUSB_CSR0_H_REQPKT);
 
@@ -482,8 +485,8 @@ static int ctrlreq_in_status_phase(struct usb_device *dev)
  */
 static u8 get_dev_speed(struct usb_device *dev)
 {
-	return (dev->speed == USB_SPEED_HIGH) ? MUSB_TYPE_SPEED_HIGH :
-		((dev->speed == USB_SPEED_LOW) ? MUSB_TYPE_SPEED_LOW :
+	return (dev->speed & USB_SPEED_HIGH) ? MUSB_TYPE_SPEED_HIGH :
+		((dev->speed & USB_SPEED_LOW) ? MUSB_TYPE_SPEED_LOW :
 						MUSB_TYPE_SPEED_FULL);
 }
 
@@ -821,7 +824,7 @@ static int musb_submit_rh_msg(struct usb_device *dev, unsigned long pipe,
 
 	dev->act_len = len;
 	dev->status = stat;
-	debug("dev act_len %d, status %lu\n", dev->act_len, dev->status);
+	debug("dev act_len %d, status %d\n", dev->act_len, dev->status);
 
 	return stat;
 }
@@ -845,20 +848,18 @@ int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 			int len, struct devrequest *setup)
 {
 	int devnum = usb_pipedevice(pipe);
+	u16 csr;
 	u8  devspeed;
 
 #ifdef MUSB_NO_MULTIPOINT
 	/* Control message is for the HUB? */
-	if (devnum == rh_devnum) {
-		int stat = musb_submit_rh_msg(dev, pipe, buffer, len, setup);
-		if (stat)
-			return stat;
-	}
+	if (devnum == rh_devnum)
+		return musb_submit_rh_msg(dev, pipe, buffer, len, setup);
 #endif
 
 	/* select control endpoint */
 	writeb(MUSB_CONTROL_EP, &musbr->index);
-	readw(&musbr->txcsr);
+	csr = readw(&musbr->txcsr);
 
 #ifndef MUSB_NO_MULTIPOINT
 	/* target addr and (for multipoint) hub addr/port */
@@ -1018,7 +1019,7 @@ int submit_bulk_msg(struct usb_device *dev, unsigned long pipe,
 			writew(csr | MUSB_TXCSR_TXPKTRDY, &musbr->txcsr);
 
 			/* Wait until the TxPktRdy bit is cleared */
-			if (wait_until_txep_ready(dev, MUSB_BULK_EP) != 1) {
+			if (!wait_until_txep_ready(dev, MUSB_BULK_EP)) {
 				readw(&musbr->txcsr);
 				usb_settoggle(dev, ep, dir_out,
 				(csr >> MUSB_TXCSR_H_DATATOGGLE_SHIFT) & 1);
@@ -1053,7 +1054,7 @@ int submit_bulk_msg(struct usb_device *dev, unsigned long pipe,
 			writew(csr | MUSB_RXCSR_H_REQPKT, &musbr->rxcsr);
 
 			/* Wait until the RxPktRdy bit is set */
-			if (wait_until_rxep_ready(dev, MUSB_BULK_EP) != 1) {
+			if (!wait_until_rxep_ready(dev, MUSB_BULK_EP)) {
 				csr = readw(&musbr->rxcsr);
 				usb_settoggle(dev, ep, dir_out,
 				(csr >> MUSB_S_RXCSR_H_DATATOGGLE) & 1);
@@ -1089,7 +1090,7 @@ int submit_bulk_msg(struct usb_device *dev, unsigned long pipe,
 /*
  * This function initializes the usb controller module.
  */
-int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
+int usb_lowlevel_init(void)
 {
 	u8  power;
 	u32 timeout;
@@ -1101,7 +1102,8 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 
 	/* Configure all the endpoint FIFO's and start usb controller */
 	musbr = musb_cfg.regs;
-	musb_configure_ep(&epinfo[0], ARRAY_SIZE(epinfo));
+	musb_configure_ep(&epinfo[0],
+			sizeof(epinfo) / sizeof(struct musb_epinfo));
 	musb_start();
 
 	/*
@@ -1109,7 +1111,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	 * should be a usb device connected.
 	 */
 	timeout = musb_cfg.timeout;
-	while (--timeout)
+	while (timeout--)
 		if (readb(&musbr->devctl) & MUSB_DEVCTL_HM)
 			break;
 
@@ -1140,7 +1142,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 /*
  * This function stops the operation of the davinci usb module.
  */
-int usb_lowlevel_stop(int index)
+int usb_lowlevel_stop(void)
 {
 	/* Reset the USB module */
 	musb_platform_deinit();
@@ -1226,7 +1228,7 @@ int submit_int_msg(struct usb_device *dev, unsigned long pipe,
 			writew(csr | MUSB_RXCSR_H_REQPKT, &musbr->rxcsr);
 
 			/* Wait until the RxPktRdy bit is set */
-			if (wait_until_rxep_ready(dev, MUSB_INTR_EP) != 1) {
+			if (!wait_until_rxep_ready(dev, MUSB_INTR_EP)) {
 				csr = readw(&musbr->rxcsr);
 				usb_settoggle(dev, ep, dir_out,
 				(csr >> MUSB_S_RXCSR_H_DATATOGGLE) & 1);
@@ -1261,3 +1263,31 @@ int submit_int_msg(struct usb_device *dev, unsigned long pipe,
 	dev->act_len = len;
 	return 0;
 }
+
+
+#ifdef CONFIG_SYS_USB_EVENT_POLL
+/*
+ * This function polls for USB keyboard data.
+ */
+void usb_event_poll()
+{
+	struct stdio_dev *dev;
+	struct usb_device *usb_kbd_dev;
+	struct usb_interface *iface;
+	struct usb_endpoint_descriptor *ep;
+	int pipe;
+	int maxp;
+
+	/* Get the pointer to USB Keyboard device pointer */
+	dev = stdio_get_by_name("usbkbd");
+	usb_kbd_dev = (struct usb_device *)dev->priv;
+	iface = &usb_kbd_dev->config.if_desc[0];
+	ep = &iface->ep_desc[0];
+	pipe = usb_rcvintpipe(usb_kbd_dev, ep->bEndpointAddress);
+
+	/* Submit a interrupt transfer request */
+	maxp = usb_maxpacket(usb_kbd_dev, pipe);
+	usb_submit_int_msg(usb_kbd_dev, pipe, &new[0],
+			maxp > 8 ? 8 : maxp, ep->bInterval);
+}
+#endif /* CONFIG_SYS_USB_EVENT_POLL */

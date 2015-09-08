@@ -3,7 +3,19 @@
  *
  * Copyright (C) 2010 Texas Instruments Incorporated
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include <config.h>
@@ -57,8 +69,8 @@ static void dmmc_set_clock(struct mmc *mmc, uint clock)
 static int
 dmmc_wait_fifo_status(volatile struct davinci_mmc_regs *regs, uint status)
 {
-	uint wdog = WATCHDOG_COUNT;
-
+	uint mmcstatus1, wdog = WATCHDOG_COUNT;
+	mmcstatus1 = get_val(&regs->mmcst1);
 	while (--wdog && ((get_val(&regs->mmcst1) & status) != status))
 		udelay(10);
 
@@ -74,8 +86,9 @@ dmmc_wait_fifo_status(volatile struct davinci_mmc_regs *regs, uint status)
 /* Busy bit wait loop for MMCST1 */
 static int dmmc_busy_wait(volatile struct davinci_mmc_regs *regs)
 {
-	uint wdog = WATCHDOG_COUNT;
+	uint mmcstatus1, wdog = WATCHDOG_COUNT;
 
+	mmcstatus1 = get_val(&regs->mmcst1);
 	while (--wdog && (get_val(&regs->mmcst1) & MMCST1_BUSY))
 		udelay(10);
 
@@ -273,11 +286,8 @@ dmmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 			 */
 			if (bytes_left > fifo_bytes)
 				dmmc_wait_fifo_status(regs, 0x4a);
-			else if (bytes_left == fifo_bytes) {
+			else if (bytes_left == fifo_bytes)
 				dmmc_wait_fifo_status(regs, 0x40);
-				if (cmd->cmdidx == MMC_CMD_SEND_EXT_CSD)
-					udelay(600);
-			}
 
 			for (i = 0; bytes_left && (i < fifo_words); i++) {
 				cmddata = get_val(&regs->mmcdrr);
@@ -378,16 +388,15 @@ int davinci_mmc_init(bd_t *bis, struct davinci_mmc *host)
 	mmc->send_cmd = dmmc_send_cmd;
 	mmc->set_ios = dmmc_set_ios;
 	mmc->init = dmmc_init;
-	mmc->getcd = NULL;
-	mmc->getwp = NULL;
 
 	mmc->f_min = 200000;
 	mmc->f_max = 25000000;
 	mmc->voltages = host->voltages;
 	mmc->host_caps = host->host_caps;
 
+#ifdef CONFIG_MMC_MBLOCK
 	mmc->b_max = DAVINCI_MAX_BLOCKS;
-
+#endif
 	mmc_register(mmc);
 
 	return 0;

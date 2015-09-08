@@ -3,7 +3,11 @@
  *
  *  Copyright (C) 2005 HP Labs
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  */
 
 #ifndef __ASM_ARCH_AT91_GPIO_H
@@ -14,9 +18,9 @@
 #include <asm/arch/at91_pio.h>
 #include <asm/arch/hardware.h>
 
-#ifdef CONFIG_ATMEL_LEGACY
+#ifdef CONFIG_AT91_LEGACY
 
-#define PIN_BASE		0
+#define PIN_BASE		32
 
 #define MAX_GPIO_BANKS		5
 
@@ -188,13 +192,13 @@
 #define	AT91_PIN_PE31	(PIN_BASE + 0x80 + 31)
 
 static unsigned long at91_pios[] = {
-	ATMEL_BASE_PIOA,
-	ATMEL_BASE_PIOB,
-	ATMEL_BASE_PIOC,
-#ifdef ATMEL_BASE_PIOD
-	ATMEL_BASE_PIOD,
-#ifdef ATMEL_BASE_PIOE
-	ATMEL_BASE_PIOE
+	AT91_PIOA,
+	AT91_PIOB,
+	AT91_PIOC,
+#ifdef AT91_PIOD
+	AT91_PIOD,
+#ifdef AT91_PIOE
+	AT91_PIOE
 #endif
 #endif
 };
@@ -203,7 +207,7 @@ static inline void *pin_to_controller(unsigned pin)
 {
 	pin -= PIN_BASE;
 	pin /= 32;
-	return (void *)(at91_pios[pin]);
+	return (void *)(AT91_BASE_SYS + at91_pios[pin]);
 }
 
 static inline unsigned pin_to_mask(unsigned pin)
@@ -231,26 +235,4 @@ static inline unsigned pin_to_mask(unsigned pin)
 #define at91_set_gpio_value(x, y)	at91_set_pio_value(x, y)
 #define at91_get_gpio_value(x)		at91_get_pio_value(x)
 #endif
-
-#define GPIO_PIOA_BASE  (0)
-#define GPIO_PIOB_BASE  (GPIO_PIOA_BASE + 32)
-#define GPIO_PIOC_BASE  (GPIO_PIOB_BASE + 32)
-#define GPIO_PIOD_BASE  (GPIO_PIOC_BASE + 32)
-#define GPIO_PIOE_BASE  (GPIO_PIOD_BASE + 32)
-#define GPIO_PIN_PA(x)  (GPIO_PIOA_BASE + (x))
-#define GPIO_PIN_PB(x)  (GPIO_PIOB_BASE + (x))
-#define GPIO_PIN_PC(x)  (GPIO_PIOC_BASE + (x))
-#define GPIO_PIN_PD(x)  (GPIO_PIOD_BASE + (x))
-#define GPIO_PIN_PE(x)  (GPIO_PIOE_BASE + (x))
-
-static inline unsigned at91_gpio_to_port(unsigned gpio)
-{
-	return gpio / 32;
-}
-
-static inline unsigned at91_gpio_to_pin(unsigned gpio)
-{
-	return gpio % 32;
-}
-
-#endif /* __ASM_ARCH_AT91_GPIO_H */
+#endif

@@ -2,7 +2,23 @@
  * (C) Copyright 2010
  * Matthias Weisser <weisserm@arcor.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -41,6 +57,7 @@ static void dsp_init(struct mb86r0x_gdc_dsp *dsp, char *modestr,
 	u16 l2dx, l2dy, l2wx, l2wy, l2ww, l2wh;
 	unsigned long div;
 	int bpp;
+	u32 i;
 
 	bpp = video_get_params(&var_mode, modestr);
 
@@ -60,7 +77,8 @@ static void dsp_init(struct mb86r0x_gdc_dsp *dsp, char *modestr,
 	}
 
 	/* Fill memory with white */
-	memset(videomem, 0xFF, var_mode.xres * var_mode.yres * 2);
+	for (i = 0; i < var_mode.xres * var_mode.yres / 2; i++)
+		*videomem++ = 0xFFFFFFFF;
 
 	mb86r0x.winSizeX = var_mode.xres;
 	mb86r0x.winSizeY = var_mode.yres;

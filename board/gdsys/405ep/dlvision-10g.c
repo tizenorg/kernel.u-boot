@@ -2,7 +2,23 @@
  * (C) Copyright 2010
  * Dirk Eibach,  Guntermann & Drunck GmbH, eibach@gdsys.de
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -10,19 +26,10 @@
 #include <asm/processor.h>
 #include <asm/io.h>
 #include <asm/ppc4xx-gpio.h>
-#include <dtt.h>
 
-#include "405ep.h"
 #include <gdsys_fpga.h>
 
 #include "../common/osd.h"
-
-#define LATCH0_BASE (CONFIG_SYS_LATCH_BASE)
-#define LATCH1_BASE (CONFIG_SYS_LATCH_BASE + 0x100)
-#define LATCH2_BASE (CONFIG_SYS_LATCH_BASE + 0x200)
-#define LATCH3_BASE (CONFIG_SYS_LATCH_BASE + 0x300)
-
-#define LATCH2_MC2_PRESENT_N 0x0080
 
 enum {
 	UNITTYPE_VIDEO_USER = 0,
@@ -34,8 +41,6 @@ enum {
 enum {
 	HWVER_101 = 0,
 	HWVER_110 = 1,
-	HWVER_120 = 2,
-	HWVER_130 = 3,
 };
 
 enum {
@@ -55,37 +60,15 @@ enum {
 	RAM_DDR2_64 = 2,
 };
 
-struct ihs_fpga *fpga_ptr[] = CONFIG_SYS_FPGA_PTR;
-
-int misc_init_r(void)
-{
-	/* startup fans */
-	dtt_init();
-
-	return 0;
-}
-
-static unsigned int get_hwver(void)
-{
-	u16 latch3 = in_le16((void *)LATCH3_BASE);
-
-	return latch3 & 0x0003;
-}
-
-static unsigned int get_mc2_present(void)
-{
-	u16 latch2 = in_le16((void *)LATCH2_BASE);
-
-	return !(latch2 & LATCH2_MC2_PRESENT_N);
-}
-
 static void print_fpga_info(unsigned dev)
 {
-	u16 versions;
-	u16 fpga_version;
-	u16 fpga_features;
+	ihs_fpga_t *fpga = (ihs_fpga_t *) CONFIG_SYS_FPGA_BASE(dev);
+	u16 versions = in_le16(&fpga->versions);
+	u16 fpga_version = in_le16(&fpga->fpga_version);
+	u16 fpga_features = in_le16(&fpga->fpga_features);
 	unsigned unit_type;
 	unsigned hardware_version;
+	unsigned feature_compression;
 	unsigned feature_rs232;
 	unsigned feature_audio;
 	unsigned feature_sysclock;
@@ -96,10 +79,6 @@ static void print_fpga_info(unsigned dev)
 	int fpga_state = get_fpga_state(dev);
 
 	printf("FPGA%d: ", dev);
-
-	FPGA_GET_REG(dev, versions, &versions);
-	FPGA_GET_REG(dev, fpga_version, &fpga_version);
-	FPGA_GET_REG(dev, fpga_features, &fpga_features);
 
 	hardware_version = versions & 0x000f;
 
@@ -113,6 +92,7 @@ static void print_fpga_info(unsigned dev)
 
 	unit_type = (versions >> 4) & 0x000f;
 	hardware_version = versions & 0x000f;
+	feature_compression = (fpga_features >> 13) & 0x0003;
 	feature_rs232 = fpga_features & (1<<11);
 	feature_audio = (fpga_features >> 9) & 0x0003;
 	feature_sysclock = (fpga_features >> 7) & 0x0003;
@@ -149,15 +129,7 @@ static void print_fpga_info(unsigned dev)
 		break;
 
 	case HWVER_110:
-		printf(" HW-Ver 1.10-1.12\n");
-		break;
-
-	case HWVER_120:
-		printf(" HW-Ver 1.20\n");
-		break;
-
-	case HWVER_130:
-		printf(" HW-Ver 1.30\n");
+		printf(" HW-Ver 1.10\n");
 		break;
 
 	default:
@@ -234,11 +206,12 @@ static void print_fpga_info(unsigned dev)
  */
 int checkboard(void)
 {
+	unsigned k;
 	char *s = getenv("serial#");
 
-	puts("Board: ");
+	printf("Board: ");
 
-	puts("DLVision 10G");
+	printf("DLVision 10G");
 
 	if (s != NULL) {
 		puts(", serial# ");
@@ -247,57 +220,20 @@ int checkboard(void)
 
 	puts("\n");
 
+	for (k = 0; k < CONFIG_SYS_FPGA_COUNT; ++k)
+		print_fpga_info(k);
+
 	return 0;
 }
 
 int last_stage_init(void)
 {
-	u16 versions;
+	unsigned k;
 
-	FPGA_GET_REG(0, versions, &versions);
-
-	print_fpga_info(0);
-	if (get_mc2_present())
-		print_fpga_info(1);
-
-	if (((versions >> 4) & 0x000f) != UNITTYPE_MAIN_USER)
-		return 0;
-
-	if (!get_fpga_state(0) || (get_hwver() == HWVER_101))
-		osd_probe(0);
-
-	if (get_mc2_present() &&
-	    (!get_fpga_state(1) || (get_hwver() == HWVER_101)))
-		osd_probe(1);
+	for (k = 0; k < CONFIG_SYS_OSD_SCREENS; ++k)
+		if (!get_fpga_state(k)
+		    || (get_fpga_state(k) == FPGA_STATE_DONE_FAILED))
+			osd_probe(k);
 
 	return 0;
-}
-
-void gd405ep_init(void)
-{
-}
-
-void gd405ep_set_fpga_reset(unsigned state)
-{
-	if (state) {
-		out_le16((void *)LATCH0_BASE, CONFIG_SYS_LATCH0_RESET);
-		out_le16((void *)LATCH1_BASE, CONFIG_SYS_LATCH1_RESET);
-	} else {
-		out_le16((void *)LATCH0_BASE, CONFIG_SYS_LATCH0_BOOT);
-		out_le16((void *)LATCH1_BASE, CONFIG_SYS_LATCH1_BOOT);
-	}
-}
-
-void gd405ep_setup_hw(void)
-{
-	/*
-	 * set "startup-finished"-gpios
-	 */
-	gpio_write_bit(21, 0);
-	gpio_write_bit(22, 1);
-}
-
-int gd405ep_get_fpga_done(unsigned fpga)
-{
-	return in_le16((void *)LATCH2_BASE) & CONFIG_SYS_FPGA_DONE(fpga);
 }

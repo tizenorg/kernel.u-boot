@@ -2,7 +2,22 @@
  * Copyright 2010 Extreme Engineering Solutions, Inc.
  * Copyright 2007-2008 Freescale Semiconductor, Inc.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -16,6 +31,7 @@
  */
 #define CONFIG_BOOKE		1	/* BOOKE */
 #define CONFIG_E500		1	/* BOOKE e500 family */
+#define CONFIG_MPC85xx		1	/* MPC8540/60/55/41/48 */
 #define CONFIG_P2020		1
 #define CONFIG_XPEDITE550X	1
 #define CONFIG_SYS_BOARD_NAME	"XPedite5500"
@@ -32,7 +48,6 @@
 #define CONFIG_PCI_SCAN_SHOW	1	/* show pci devices on startup */
 #define CONFIG_PCIE1		1	/* PCIE controler 1 (PEX8112 or XMC) */
 #define CONFIG_FSL_PCI_INIT	1	/* Use common FSL init code */
-#define CONFIG_PCI_INDIRECT_BRIDGE 1	/* indirect PCI bridge support */
 #define CONFIG_SYS_PCI_64BIT	1	/* enable 64-bit PCI resources */
 #define CONFIG_FSL_PCIE_RESET	1	/* need PCIe reset errata */
 #define CONFIG_FSL_LAW		1	/* Use common FSL init code */
@@ -48,11 +63,11 @@
 /*
  * DDR config
  */
-#define CONFIG_SYS_FSL_DDR3
+#define CONFIG_FSL_DDR3
 #define CONFIG_SPD_EEPROM		/* Use SPD EEPROM for DDR setup */
 #define CONFIG_DDR_SPD
 #define CONFIG_MEM_INIT_VALUE		0xdeadbeef
-#define SPD_EEPROM_ADDRESS			0x54
+#define SPD_EEPROM_ADDRESS1			0x54
 #define SPD_EEPROM_OFFSET		0x200	/* OFFSET of SPD in EEPROM */
 #define CONFIG_NUM_DDR_CONTROLLERS	1
 #define CONFIG_DIMM_SLOTS_PER_CTLR	1
@@ -78,8 +93,14 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
 #define CONFIG_BTB			/* toggle branch predition */
 #define CONFIG_ENABLE_36BIT_PHYS	1
 
-#define CONFIG_SYS_CCSRBAR		0xef000000
-#define CONFIG_SYS_CCSRBAR_PHYS_LOW	CONFIG_SYS_CCSRBAR
+/*
+ * Base addresses -- Note these are effective addresses where the
+ * actual resources get mapped (not physical addresses)
+ */
+#define CONFIG_SYS_CCSRBAR_DEFAULT	0xff700000	/* CCSRBAR Default */
+#define CONFIG_SYS_CCSRBAR		0xef000000	/* relocated CCSRBAR */
+#define CONFIG_SYS_CCSRBAR_PHYS	CONFIG_SYS_CCSRBAR	/* physical addr of CCSRBAR */
+#define CONFIG_SYS_IMMR		CONFIG_SYS_CCSRBAR	/* PQII uses CONFIG_SYS_IMMR */
 
 /*
  * Diagnostics
@@ -221,6 +242,7 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
  * Use the HUSH parser
  */
 #define CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 
 /*
  * Pass open firmware flat tree
@@ -233,14 +255,13 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
 /*
  * I2C
  */
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_FSL
-#define CONFIG_SYS_FSL_I2C_SPEED	400000
-#define CONFIG_SYS_FSL_I2C_SLAVE	0x7F
-#define CONFIG_SYS_FSL_I2C_OFFSET	0x3000
-#define CONFIG_SYS_FSL_I2C2_SPEED	400000
-#define CONFIG_SYS_FSL_I2C2_SLAVE	0x7F
-#define CONFIG_SYS_FSL_I2C2_OFFSET	0x3100
+#define CONFIG_FSL_I2C				/* Use FSL common I2C driver */
+#define CONFIG_HARD_I2C				/* I2C with hardware support */
+#define CONFIG_SYS_I2C_SPEED		400000	/* I2C speed and slave address */
+#define CONFIG_SYS_I2C_SLAVE		0x7F
+#define CONFIG_SYS_I2C_OFFSET		0x3000
+#define CONFIG_SYS_I2C2_OFFSET		0x3100
+#define CONFIG_I2C_MULTI_BUS
 
 /* I2C DS7505 temperature sensor */
 #define CONFIG_DTT_LM75
@@ -318,6 +339,7 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
  */
 #define CONFIG_TSEC_ENET		/* tsec ethernet support */
 #define CONFIG_PHY_GIGE		1	/* Include GbE speed/duplex detection */
+#define CONFIG_NET_MULTI	1
 #define CONFIG_TSEC_TBI
 #define CONFIG_MII		1	/* MII PHY management */
 #define CONFIG_MII_DEFAULT_TSEC	1	/* Allow unregistered phys */
@@ -395,10 +417,12 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
  */
 #define CONFIG_SYS_LONGHELP			/* undef to save memory	*/
 #define CONFIG_SYS_LOAD_ADDR	0x2000000	/* default load address */
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt */
 #define CONFIG_SYS_CBSIZE	256		/* Console I/O Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS	16		/* max number of command args */
 #define CONFIG_SYS_BARGSIZE	CONFIG_SYS_CBSIZE	/* Boot Argument Buffer Size */
+#define CONFIG_SYS_HZ		1000		/* decrementer freq: 1ms ticks */
 #define CONFIG_CMDLINE_EDITING	1		/* add command line history	*/
 #define CONFIG_AUTO_COMPLETE	1		/* add autocompletion support */
 #define CONFIG_LOADADDR		0x1000000	/* default location for tftp and bootm */
@@ -416,6 +440,12 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
  */
 #define CONFIG_SYS_BOOTMAPSZ	(16 << 20)	/* Initial Memory map for Linux*/
 #define CONFIG_SYS_BOOTM_LEN	(16 << 20)	/* Increase max gunzip size */
+
+/*
+ * Boot Flags
+ */
+#define BOOTFLAG_COLD		0x01		/* Normal Power-On: Boot from FLASH */
+#define BOOTFLAG_WARM		0x02		/* Software reboot */
 
 /*
  * Environment Configuration
@@ -439,12 +469,12 @@ extern unsigned long get_board_ddr_clk(unsigned long dummy);
  * f6f00000 - f7efffff     Sec OS image (16MB)
  * f0000000 - f6efffff     Sec OS Use/Filesystem (111MB)
  */
-#define CONFIG_UBOOT1_ENV_ADDR	__stringify(0xfff80000)
-#define CONFIG_UBOOT2_ENV_ADDR	__stringify(0xf7f80000)
-#define CONFIG_FDT1_ENV_ADDR	__stringify(0xfff00000)
-#define CONFIG_FDT2_ENV_ADDR	__stringify(0xf7f00000)
-#define CONFIG_OS1_ENV_ADDR	__stringify(0xfef00000)
-#define CONFIG_OS2_ENV_ADDR	__stringify(0xf6f00000)
+#define CONFIG_UBOOT1_ENV_ADDR	MK_STR(0xfff80000)
+#define CONFIG_UBOOT2_ENV_ADDR	MK_STR(0xf7f80000)
+#define CONFIG_FDT1_ENV_ADDR	MK_STR(0xfff00000)
+#define CONFIG_FDT2_ENV_ADDR	MK_STR(0xf7f00000)
+#define CONFIG_OS1_ENV_ADDR	MK_STR(0xfef00000)
+#define CONFIG_OS2_ENV_ADDR	MK_STR(0xf6f00000)
 
 #define CONFIG_PROG_UBOOT1						\
 	"$download_cmd $loadaddr $ubootfile; "				\

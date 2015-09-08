@@ -11,11 +11,24 @@
  *       Developed by Simple Network Magic Corporation (SNMC)
  * Copyright (C) 1996 by Erik Stahlman (ES)
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Information contained in this file was obtained from the LAN91C96
  * manual from SMC.  To get a copy, if you really want one, you can find
  * information under www.smsc.com.
+ *
  *
  * "Features" of the SMC chip:
  *   6144 byte packet memory. ( for the 91C96 )
@@ -50,7 +63,6 @@
 #include <malloc.h>
 #include "lan91c96.h"
 #include <net.h>
-#include <linux/compiler.h>
 
 /*------------------------------------------------------------------------
  *
@@ -142,7 +154,7 @@ static void smc_set_mac_addr(const unsigned char *addr)
  ***********************************************/
 void dump_memory_info(struct eth_device *dev)
 {
-	__maybe_unused word mem_info;
+	word mem_info;
 	word old_bank;
 
 	old_bank = SMC_inw(dev, LAN91C96_BANK_SELECT) & 0xF;
@@ -301,10 +313,11 @@ static void smc_shutdown(struct eth_device *dev)
  *	Enable the transmit interrupt, so I know if it failed
  *	Free the kernel data if I actually sent it.
  */
-static int smc_send_packet(struct eth_device *dev, void *packet,
+static int smc_send_packet(struct eth_device *dev, volatile void *packet,
 		int packet_length)
 {
 	byte packet_no;
+	unsigned long ioaddr;
 	byte *buf;
 	int length;
 	int numPages;
@@ -368,6 +381,9 @@ static int smc_send_packet(struct eth_device *dev, void *packet,
 			 dev->name, try);
 
 	/* I can send the packet now.. */
+
+	ioaddr = dev->iobase;
+
 	buf = (byte *) packet;
 
 	/* If I get here, I _know_ there is a packet slot waiting for me */
@@ -687,7 +703,7 @@ static int lan91c96_recv(struct eth_device *dev)
 	return smc_rcv(dev);
 }
 
-static int lan91c96_send(struct eth_device *dev, void *packet,
+static int lan91c96_send(struct eth_device *dev, volatile void *packet,
 		int length)
 {
 	return smc_send_packet(dev, packet, length);
@@ -766,7 +782,7 @@ static int lan91c96_detect_chip(struct eth_device *dev)
 	SMC_SELECT_BANK(dev, 3);
 	chip_id = (SMC_inw(dev, 0xA) & LAN91C96_REV_CHIPID) >> 4;
 	SMC_SELECT_BANK(dev, 0);
-	for (r = 0; r < ARRAY_SIZE(supported_chips); r++)
+	for (r = 0; r < sizeof(supported_chips) / sizeof(struct id_type); r++)
 		if (chip_id == supported_chips[r].id)
 			return r;
 	return 0;

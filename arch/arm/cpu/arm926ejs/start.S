@@ -5,20 +5,42 @@
  *
  *  ----- Adapted for OMAP1610 OMAP730 from ARM925t code ------
  *
- *  Copyright (c) 2001	Marius GrÃ¶ger <mag@sysgo.de>
- *  Copyright (c) 2002	Alex ZÃ¼pke <azu@sysgo.de>
+ *  Copyright (c) 2001	Marius Gröger <mag@sysgo.de>
+ *  Copyright (c) 2002	Alex Züpke <azu@sysgo.de>
  *  Copyright (c) 2002	Gary Jennejohn <garyj@denx.de>
  *  Copyright (c) 2003	Richard Woodruff <r-woodruff2@ti.com>
  *  Copyright (c) 2003	Kshitij <kshitij@ti.com>
- *  Copyright (c) 2010	Albert Aribaud <albert.u.boot@aribaud.net>
+ *  Copyright (c) 2010	Albert Aribaud <albert.aribaud@free.fr>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <asm-offsets.h>
 #include <config.h>
 #include <common.h>
 #include <version.h>
+
+#if defined(CONFIG_OMAP1610)
+#include <./configs/omap1510.h>
+#elif defined(CONFIG_OMAP730)
+#include <./configs/omap730.h>
+#endif
 
 /*
  *************************************************************************
@@ -29,19 +51,10 @@
  */
 
 
-#ifdef CONFIG_SYS_DV_NOR_BOOT_CFG
-.globl _start
-_start:
-.globl _NOR_BOOT_CFG
-_NOR_BOOT_CFG:
-	.word	CONFIG_SYS_DV_NOR_BOOT_CFG
-	b	reset
-#else
 .globl _start
 _start:
 	b	reset
-#endif
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_PRELOADER
 /* No exception handlers in preloader */
 	ldr	pc, _hang
 	ldr	pc, _hang
@@ -85,7 +98,7 @@ _irq:
 _fiq:
 	.word fiq
 
-#endif	/* CONFIG_SPL_BUILD */
+#endif	/* CONFIG_PRELOADER */
 	.balignl 16,0xdeadbeef
 
 
@@ -101,6 +114,28 @@ _fiq:
  *
  *************************************************************************
  */
+
+.globl _TEXT_BASE
+_TEXT_BASE:
+	.word	CONFIG_SYS_TEXT_BASE
+
+/*
+ * These are defined in the board-specific linker script.
+ * Subtracting _start from them lets the linker put their
+ * relative position in the executable instead of leaving
+ * them null.
+ */
+.globl _bss_start_ofs
+_bss_start_ofs:
+	.word __bss_start - _start
+
+.globl _bss_end_ofs
+_bss_end_ofs:
+	.word __bss_end__ - _start
+
+.globl _end_ofs
+_end_ofs:
+	.word _end - _start
 
 #ifdef CONFIG_USE_IRQ
 /* IRQ stack memory (calculated at run-time) */
@@ -140,14 +175,135 @@ reset:
 	bl	cpu_init_crit
 #endif
 
-	bl	_main
+/* Set stackpointer in internal RAM to call board_init_f */
+call_board_init_f:
+	ldr	sp, =(CONFIG_SYS_INIT_SP_ADDR)
+	bic	sp, sp, #7 /* 8-byte alignment for ABI compliance */
+	ldr	r0,=0x00000000
+	bl	board_init_f
 
 /*------------------------------------------------------------------------------*/
 
-	.globl	c_runtime_cpu_setup
-c_runtime_cpu_setup:
+/*
+ * void relocate_code (addr_sp, gd, addr_moni)
+ *
+ * This "function" does not return, instead it continues in RAM
+ * after relocating the monitor code.
+ *
+ */
+	.globl	relocate_code
+relocate_code:
+	mov	r4, r0	/* save addr_sp */
+	mov	r5, r1	/* save addr of gd */
+	mov	r6, r2	/* save addr of destination */
 
-	bx	lr
+	/* Set up the stack						    */
+stack_setup:
+	mov	sp, r4
+
+	adr	r0, _start
+	cmp	r0, r6
+	beq	clear_bss		/* skip relocation */
+	mov	r1, r6			/* r1 <- scratch for copy loop */
+	ldr	r3, _bss_start_ofs
+	add	r2, r0, r3		/* r2 <- source end address	    */
+
+copy_loop:
+	ldmia	r0!, {r9-r10}		/* copy from source address [r0]    */
+	stmia	r1!, {r9-r10}		/* copy to   target address [r1]    */
+	cmp	r0, r2			/* until source end address [r2]    */
+	blo	copy_loop
+
+#ifndef CONFIG_PRELOADER
+	/*
+	 * fix .rel.dyn relocations
+	 */
+	ldr	r0, _TEXT_BASE		/* r0 <- Text base */
+	sub	r9, r6, r0		/* r9 <- relocation offset */
+	ldr	r10, _dynsym_start_ofs	/* r10 <- sym table ofs */
+	add	r10, r10, r0		/* r10 <- sym table in FLASH */
+	ldr	r2, _rel_dyn_start_ofs	/* r2 <- rel dyn start ofs */
+	add	r2, r2, r0		/* r2 <- rel dyn start in FLASH */
+	ldr	r3, _rel_dyn_end_ofs	/* r3 <- rel dyn end ofs */
+	add	r3, r3, r0		/* r3 <- rel dyn end in FLASH */
+fixloop:
+	ldr	r0, [r2]		/* r0 <- location to fix up, IN FLASH! */
+	add	r0, r0, r9		/* r0 <- location to fix up in RAM */
+	ldr	r1, [r2, #4]
+	and	r7, r1, #0xff
+	cmp	r7, #23			/* relative fixup? */
+	beq	fixrel
+	cmp	r7, #2			/* absolute fixup? */
+	beq	fixabs
+	/* ignore unknown type of fixup */
+	b	fixnext
+fixabs:
+	/* absolute fix: set location to (offset) symbol value */
+	mov	r1, r1, LSR #4		/* r1 <- symbol index in .dynsym */
+	add	r1, r10, r1		/* r1 <- address of symbol in table */
+	ldr	r1, [r1, #4]		/* r1 <- symbol value */
+	add	r1, r1, r9		/* r1 <- relocated sym addr */
+	b	fixnext
+fixrel:
+	/* relative fix: increase location by offset */
+	ldr	r1, [r0]
+	add	r1, r1, r9
+fixnext:
+	str	r1, [r0]
+	add	r2, r2, #8		/* each rel.dyn entry is 8 bytes */
+	cmp	r2, r3
+	blo	fixloop
+#endif
+
+clear_bss:
+#ifndef CONFIG_PRELOADER
+	ldr	r0, _bss_start_ofs
+	ldr	r1, _bss_end_ofs
+	mov	r4, r6			/* reloc addr */
+	add	r0, r0, r4
+	add	r1, r1, r4
+	mov	r2, #0x00000000		/* clear			    */
+
+clbss_l:str	r2, [r0]		/* clear loop...		    */
+	add	r0, r0, #4
+	cmp	r0, r1
+	bne	clbss_l
+
+	bl coloured_LED_init
+	bl red_LED_on
+#endif
+
+/*
+ * We are done. Do not return, instead branch to second part of board
+ * initialization, now running from RAM.
+ */
+#ifdef CONFIG_NAND_SPL
+	ldr     r0, _nand_boot_ofs
+	mov	pc, r0
+
+_nand_boot_ofs:
+	.word nand_boot
+#else
+	ldr	r0, _board_init_r_ofs
+	ldr	r1, _TEXT_BASE
+	add	lr, r0, r1
+	add	lr, lr, r9
+	/* setup parameters for board_init_r */
+	mov	r0, r5		/* gd_t */
+	mov	r1, r6		/* dest_addr */
+	/* jump to it ... */
+	mov	pc, lr
+
+_board_init_r_ofs:
+	.word board_init_r - _start
+#endif
+
+_rel_dyn_start_ofs:
+	.word __rel_dyn_start - _start
+_rel_dyn_end_ofs:
+	.word __rel_dyn_end - _start
+_dynsym_start_ofs:
+	.word __dynsym_start - _start
 
 /*
  *************************************************************************
@@ -162,32 +318,20 @@ c_runtime_cpu_setup:
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 cpu_init_crit:
 	/*
-	 * flush D cache before disabling it
+	 * flush v4 I/D caches
 	 */
 	mov	r0, #0
-flush_dcache:
-	mrc	p15, 0, r15, c7, c10, 3
-	bne	flush_dcache
-
-	mcr	p15, 0, r0, c8, c7, 0	/* invalidate TLB */
-	mcr	p15, 0, r0, c7, c5, 0	/* invalidate I Cache */
+	mcr	p15, 0, r0, c7, c7, 0	/* flush v3/v4 cache */
+	mcr	p15, 0, r0, c8, c7, 0	/* flush v4 TLB */
 
 	/*
-	 * disable MMU and D cache
-	 * enable I cache if CONFIG_SYS_ICACHE_OFF is not defined
+	 * disable MMU stuff and caches
 	 */
 	mrc	p15, 0, r0, c1, c0, 0
-	bic	r0, r0, #0x00000300	/* clear bits 9:8 (---- --RS) */
+	bic	r0, r0, #0x00002300	/* clear bits 13, 9:8 (--V- --RS) */
 	bic	r0, r0, #0x00000087	/* clear bits 7, 2:0 (B--- -CAM) */
-#ifdef CONFIG_SYS_EXCEPTION_VECTORS_HIGH
-	orr	r0, r0, #0x00002000	/* set bit 13 (--V- ----) */
-#else
-	bic	r0, r0, #0x00002000	/* clear bit 13 (--V- ----) */
-#endif
 	orr	r0, r0, #0x00000002	/* set bit 2 (A) Align */
-#ifndef CONFIG_SYS_ICACHE_OFF
 	orr	r0, r0, #0x00001000	/* set bit 12 (I) I-Cache */
-#endif
 	mcr	p15, 0, r0, c1, c0, 0
 
 	/*
@@ -199,7 +343,7 @@ flush_dcache:
 	mov	pc, lr		/* back to my caller */
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
 
-#ifndef CONFIG_SPL_BUILD
+#ifndef CONFIG_PRELOADER
 /*
  *************************************************************************
  *
@@ -296,17 +440,18 @@ flush_dcache:
 	.macro get_fiq_stack			@ setup FIQ stack
 	ldr	sp, FIQ_STACK_START
 	.endm
-#endif	/* CONFIG_SPL_BUILD */
+#endif	/* CONFIG_PRELOADER */
 
 /*
  * exception handlers
  */
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_PRELOADER
 	.align	5
 do_hang:
+	ldr	sp, _TEXT_BASE			/* switch to abort stack */
 1:
 	bl	1b				/* hang and never return */
-#else	/* !CONFIG_SPL_BUILD */
+#else	/* !CONFIG_PRELOADER */
 	.align  5
 undefined_instruction:
 	get_bad_stack
@@ -369,4 +514,4 @@ fiq:
 	bl	do_fiq
 
 #endif
-#endif	/* CONFIG_SPL_BUILD */
+#endif	/* CONFIG_PRELOADER */

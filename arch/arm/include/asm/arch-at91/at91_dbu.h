@@ -5,7 +5,10 @@
  * Debug Unit
  * Based on AT91SAM9XE datasheet
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  */
 
 #ifndef AT91_DBU_H
@@ -34,9 +37,5 @@ typedef struct at91_dbu {
 #define AT91_DBU_CID_ARCH_MASK		0x0ff00000
 #define AT91_DBU_CID_ARCH_9xx		0x01900000
 #define AT91_DBU_CID_ARCH_9XExx	0x02900000
-
-#define AT91_DBU_CIDR_MASK		0x1f
-#define AT91_DBU_CIDR			0x40
-#define AT91_DBU_EXID			0x44
 
 #endif

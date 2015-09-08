@@ -32,6 +32,7 @@ static const unsigned char lzop_magic[] = {
 
 static inline const unsigned char *parse_header(const unsigned char *src)
 {
+	u8 level = 0;
 	u16 version;
 	int i;
 
@@ -46,7 +47,7 @@ static inline const unsigned char *parse_header(const unsigned char *src)
 	version = get_unaligned_be16(src);
 	src += 7;
 	if (version >= 0x0940)
-		src++;
+		level = *src++;
 	if (get_unaligned_be32(src) & HEADER_HAS_FILTER)
 		src += 4; /* filter info */
 
@@ -68,14 +69,13 @@ int lzop_decompress(const unsigned char *src, size_t src_len,
 	unsigned char *start = dst;
 	const unsigned char *send = src + src_len;
 	u32 slen, dlen;
-	size_t tmp, remaining;
+	size_t tmp;
 	int r;
 
 	src = parse_header(src);
 	if (!src)
 		return LZO_E_ERROR;
 
-	remaining = *dst_len;
 	while (src < send) {
 		/* read uncompressed block size */
 		dlen = get_unaligned_be32(src);
@@ -94,10 +94,6 @@ int lzop_decompress(const unsigned char *src, size_t src_len,
 		if (slen <= 0 || slen > dlen)
 			return LZO_E_ERROR;
 
-		/* abort if buffer ran out of room */
-		if (dlen > remaining)
-			return LZO_E_OUTPUT_OVERRUN;
-
 		/* decompress */
 		tmp = dlen;
 		r = lzo1x_decompress_safe((u8 *) src, slen, dst, &tmp);
@@ -110,7 +106,6 @@ int lzop_decompress(const unsigned char *src, size_t src_len,
 
 		src += slen;
 		dst += dlen;
-		remaining -= dlen;
 	}
 
 	return LZO_E_INPUT_OVERRUN;

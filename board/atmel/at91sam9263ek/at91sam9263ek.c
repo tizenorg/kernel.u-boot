@@ -1,9 +1,25 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian@popies.net>
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
  * Lead Tech Design <www.leadtechdesign.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -12,11 +28,11 @@
 #include <asm/arch/at91sam9_smc.h>
 #include <asm/arch/at91_common.h>
 #include <asm/arch/at91_pmc.h>
+#include <asm/arch/at91_rstc.h>
 #include <asm/arch/at91_matrix.h>
 #include <asm/arch/at91_pio.h>
 #include <asm/arch/clk.h>
-#include <asm/io.h>
-#include <asm/arch/gpio.h>
+#include <asm/arch/io.h>
 #include <asm/arch/hardware.h>
 #include <lcd.h>
 #include <atmel_lcdc.h>
@@ -36,9 +52,9 @@ DECLARE_GLOBAL_DATA_PTR;
 static void at91sam9263ek_nand_hw_init(void)
 {
 	unsigned long csa;
-	at91_smc_t    *smc    = (at91_smc_t *) ATMEL_BASE_SMC0;
-	at91_matrix_t *matrix = (at91_matrix_t *) ATMEL_BASE_MATRIX;
-	at91_pmc_t    *pmc    = (at91_pmc_t *) ATMEL_BASE_PMC;
+	at91_smc_t 	*smc 	= (at91_smc_t *) AT91_SMC0_BASE;
+	at91_matrix_t 	*matrix = (at91_matrix_t *) AT91_MATRIX_BASE;
+	at91_pmc_t	*pmc	= (at91_pmc_t *) AT91_PMC_BASE;
 
 	/* Enable CS3 */
 	csa = readl(&matrix->csa[0]) | AT91_MATRIX_CSA_EBI_CS3A;
@@ -67,25 +83,26 @@ static void at91sam9263ek_nand_hw_init(void)
 		       AT91_SMC_MODE_TDF_CYCLE(2),
 		&smc->cs[3].mode);
 
-	writel(1 << ATMEL_ID_PIOA | 1 << ATMEL_ID_PIOCDE,
+	writel(1 << AT91SAM9263_ID_PIOA | 1 << AT91SAM9263_ID_PIOCDE,
 		&pmc->pcer);
 
 	/* Configure RDY/BSY */
-	at91_set_gpio_input(CONFIG_SYS_NAND_READY_PIN, 1);
+	at91_set_pio_input(CONFIG_SYS_NAND_READY_PIN, 1);
 
 	/* Enable NandFlash */
-	at91_set_gpio_output(CONFIG_SYS_NAND_ENABLE_PIN, 1);
+	at91_set_pio_output(CONFIG_SYS_NAND_ENABLE_PIN, 1);
 }
 #endif
 
 #ifdef CONFIG_MACB
 static void at91sam9263ek_macb_hw_init(void)
 {
-	at91_pmc_t	*pmc	= (at91_pmc_t *) ATMEL_BASE_PMC;
-	at91_pio_t	*pio	= (at91_pio_t *) ATMEL_BASE_PIO;
-
+	unsigned long 	erstl;
+	at91_pmc_t	*pmc	= (at91_pmc_t *) AT91_PMC_BASE;
+	at91_pio_t	*pio	= (at91_pio_t *) AT91_PIO_BASE;
+	at91_rstc_t	*rstc	= (at91_rstc_t *) AT91_RSTC_BASE;
 	/* Enable clock */
-	writel(1 << ATMEL_ID_EMAC, &pmc->pcer);
+	writel(1 << AT91SAM9263_ID_EMAC, &pmc->pcer);
 
 	/*
 	 * Disable pull-up on:
@@ -95,10 +112,23 @@ static void at91sam9263ek_macb_hw_init(void)
 	 *
 	 * PHY has internal pull-down
 	 */
+
 	writel(1 << 25, &pio->pioc.pudr);
 	writel((1 << 25) | (1 <<26), &pio->pioe.pudr);
 
-	at91_phy_reset();
+	erstl = readl(&rstc->mr) & AT91_RSTC_MR_ERSTL_MASK;
+
+	/* Need to reset PHY -> 500ms reset */
+	writel(AT91_RSTC_KEY | AT91_RSTC_MR_ERSTL(0x0D) |
+		AT91_RSTC_MR_URSTEN, &rstc->mr);
+
+	writel(AT91_RSTC_KEY | AT91_RSTC_CR_EXTRST, &rstc->cr);
+	/* Wait for end hardware reset */
+	while (!(readl(&rstc->sr) & AT91_RSTC_SR_NRSTL))
+		;
+
+	/* Restore NRST value */
+	writel(AT91_RSTC_KEY | erstl | AT91_RSTC_MR_URSTEN, &rstc->mr);
 
 	/* Re-enable pull-up */
 	writel(1 << 25, &pio->pioc.puer);
@@ -123,7 +153,7 @@ vidinfo_t panel_info = {
 	vl_vsync_len:	1,
 	vl_upper_margin:1,
 	vl_lower_margin:0,
-	mmio:		ATMEL_BASE_LCDC,
+	mmio:		AT91SAM9263_LCDC_BASE,
 };
 
 void lcd_enable(void)
@@ -138,7 +168,7 @@ void lcd_disable(void)
 
 static void at91sam9263ek_lcd_hw_init(void)
 {
-	at91_pmc_t	*pmc	= (at91_pmc_t *) ATMEL_BASE_PMC;
+	at91_pmc_t	*pmc	= (at91_pmc_t *) AT91_PMC_BASE;
 
 	at91_set_a_periph(AT91_PIO_PORTC, 1, 0);	/* LCDHSYNC */
 	at91_set_a_periph(AT91_PIO_PORTC, 2, 0);	/* LCDDOTCK */
@@ -163,8 +193,8 @@ static void at91sam9263ek_lcd_hw_init(void)
 	at91_set_a_periph(AT91_PIO_PORTC, 26, 0);	/* LCDD22 */
 	at91_set_a_periph(AT91_PIO_PORTC, 27, 0);	/* LCDD23 */
 
-	writel(1 << ATMEL_ID_LCDC, &pmc->pcer);
-	gd->fb_base = ATMEL_BASE_SRAM0;
+	writel(1 << AT91SAM9263_ID_LCDC, &pmc->pcer);
+	gd->fb_base = AT91SAM9263_SRAM0_BASE;
 }
 
 #ifdef CONFIG_LCD_INFO
@@ -188,7 +218,7 @@ void lcd_show_board_info(void)
 	lcd_printf ("(C) 2008 ATMEL Corp\n");
 	lcd_printf ("at91support@atmel.com\n");
 	lcd_printf ("%s CPU at %s MHz\n",
-		ATMEL_CPU_NAME,
+		CONFIG_SYS_AT91_CPU_NAME,
 		strmhz(temp, get_cpu_clk_rate()));
 
 	dram_size = 0;
@@ -214,26 +244,17 @@ void lcd_show_board_info(void)
 #endif /* CONFIG_LCD_INFO */
 #endif
 
-int board_early_init_f(void)
-{
-	struct at91_pmc *pmc = (struct at91_pmc *)ATMEL_BASE_PMC;
-
-	/* Enable clocks for all PIOs */
-	writel((1 << ATMEL_ID_PIOA) | (1 << ATMEL_ID_PIOB) |
-		(1 << ATMEL_ID_PIOCDE),
-		&pmc->pcer);
-
-	at91_seriald_hw_init();
-	return 0;
-}
-
 int board_init(void)
 {
+	/* Enable Ctrlc */
+	console_init_f();
+
 	/* arch number of AT91SAM9263EK-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_AT91SAM9263EK;
 	/* adress of boot parameters */
-	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
+	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
+	at91_serial_hw_init();
 #ifdef CONFIG_CMD_NAND
 	at91sam9263ek_nand_hw_init();
 #endif
@@ -255,9 +276,8 @@ int board_init(void)
 
 int dram_init(void)
 {
-	gd->ram_size = get_ram_size((void *)CONFIG_SYS_SDRAM_BASE,
-		CONFIG_SYS_SDRAM_SIZE);
-
+	gd->bd->bi_dram[0].start = PHYS_SDRAM;
+	gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE;
 	return 0;
 }
 
@@ -271,7 +291,7 @@ int board_eth_init(bd_t *bis)
 {
 	int rc = 0;
 #ifdef CONFIG_MACB
-	rc = macb_eth_initialize(0, (void *) ATMEL_BASE_EMAC, 0x00);
+	rc = macb_eth_initialize(0, (void *) AT91_EMAC_BASE, 0x00);
 #endif
 	return rc;
 }

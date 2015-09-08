@@ -37,8 +37,8 @@ DECLARE_GLOBAL_DATA_PTR;
 static int gzip_decompress(const unsigned char *in, size_t in_len,
 			   unsigned char *out, size_t *out_len)
 {
-	return zunzip(out, *out_len, (unsigned char *)in,
-		      (unsigned long *)out_len, 0, 0);
+	unsigned long len = in_len;
+	return zunzip(out, *out_len, (unsigned char *)in, &len, 0, 0);
 }
 
 /* Fake description object for the "none" compressor */
@@ -295,7 +295,6 @@ static int ubifs_finddir(struct super_block *sb, char *dirname,
 	struct file *file;
 	struct dentry *dentry;
 	struct inode *dir;
-	int ret = 0;
 
 	file = kzalloc(sizeof(struct file), 0);
 	dentry = kzalloc(sizeof(struct dentry), 0);
@@ -337,8 +336,7 @@ static int ubifs_finddir(struct super_block *sb, char *dirname,
 		if ((strncmp(dirname, (char *)dent->name, nm.len) == 0) &&
 		    (strlen(dirname) == nm.len)) {
 			*inum = le64_to_cpu(dent->inum);
-			ret = 1;
-			goto out_free;
+			return 1;
 		}
 
 		/* Switch to the next entry */
@@ -357,12 +355,11 @@ static int ubifs_finddir(struct super_block *sb, char *dirname,
 	}
 
 out:
-	if (err != -ENOENT)
+	if (err != -ENOENT) {
 		ubifs_err("cannot find next direntry, error %d", err);
+		return err;
+	}
 
-out_free:
-	if (file->private_data)
-		kfree(file->private_data);
 	if (file)
 		free(file);
 	if (dentry)
@@ -370,7 +367,11 @@ out_free:
 	if (dir)
 		free(dir);
 
-	return ret;
+	if (file->private_data)
+		kfree(file->private_data);
+	file->private_data = NULL;
+	file->f_pos = 2;
+	return 0;
 }
 
 static unsigned long ubifs_findfile(struct super_block *sb, char *filename)
@@ -738,10 +739,8 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 
 	if (err)
 		printf("Error reading file '%s'\n", filename);
-	else {
-		setenv_hex("filesize", size);
+	else
 		printf("Done\n");
-	}
 
 	ubifs_iput(inode);
 

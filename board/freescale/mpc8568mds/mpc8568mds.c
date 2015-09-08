@@ -1,9 +1,25 @@
 /*
- * Copyright 2007,2009-2011 Freescale Semiconductor, Inc.
+ * Copyright 2007,2009-2010 Freescale Semiconductor, Inc.
  *
  * (C) Copyright 2002 Scott McNutt <smcnutt@artesyncp.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
@@ -12,7 +28,7 @@
 #include <asm/mmu.h>
 #include <asm/immap_85xx.h>
 #include <asm/fsl_pci.h>
-#include <fsl_ddr_sdram.h>
+#include <asm/fsl_ddr_sdram.h>
 #include <asm/fsl_serdes.h>
 #include <spd_sdram.h>
 #include <i2c.h>
@@ -131,10 +147,12 @@ local_bus_init(void)
 	volatile fsl_lbc_t *lbc = LBC_BASE_ADDR;
 
 	uint clkdiv;
+	uint lbc_hz;
 	sys_info_t sysinfo;
 
 	get_sys_info(&sysinfo);
 	clkdiv = (lbc->lcrr & LCRR_CLKDIV) * 2;
+	lbc_hz = sysinfo.freqSystemBus / 1000000 / clkdiv;
 
 	gur->lbiuiplldcr1 = 0x00078080;
 	if (clkdiv == 16) {
@@ -241,7 +259,11 @@ static struct pci_config_table pci_mpc8568mds_config_table[] = {
 };
 #endif
 
-static struct pci_controller pci1_hose;
+static struct pci_controller pci1_hose = {
+#ifndef CONFIG_PCI_PNP
+	config_table: pci_mpc8568mds_config_table,
+#endif
+};
 #endif	/* CONFIG_PCI */
 
 /*
@@ -284,7 +306,6 @@ pib_init(void)
 	i2c_write(0x27, 0x3, 1, &val8, 1);
 
 	asm("eieio");
-	i2c_set_bus_num(orig_i2c_bus);
 }
 
 #ifdef CONFIG_PCI
@@ -326,9 +347,6 @@ void pci_init_board(void)
 			pci_arb ? "arbiter" : "external-arbiter",
 			pci_info.regs);
 
-#ifndef CONFIG_PCI_PNP
-		pci1_hose.config_table = pci_mpc8568mds_config_table;
-#endif
 		first_free_busno = fsl_pci_init_port(&pci_info,
 					&pci1_hose, first_free_busno);
 	} else {

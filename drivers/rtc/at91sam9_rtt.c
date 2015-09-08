@@ -2,7 +2,23 @@
  * (C) Copyright 2010
  * Reinhard Meyer, reinhard.meyer@emk-elektronik.de
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -22,9 +38,9 @@
 #include <common.h>
 #include <command.h>
 #include <rtc.h>
-#include <asm/io.h>
 #include <asm/errno.h>
 #include <asm/arch/hardware.h>
+#include <asm/arch/io.h>
 #include <asm/arch/at91_rtt.h>
 #include <asm/arch/at91_gpbr.h>
 
@@ -32,8 +48,8 @@
 
 int rtc_get (struct rtc_time *tmp)
 {
-	at91_rtt_t *rtt = (at91_rtt_t *) ATMEL_BASE_RTT;
-	at91_gpbr_t *gpbr = (at91_gpbr_t *) ATMEL_BASE_GPBR;
+	at91_rtt_t *rtt = (at91_rtt_t *) AT91_RTT_BASE;
+	at91_gpbr_t *gpbr = (at91_gpbr_t *) AT91_GPR_BASE;
 	ulong tim;
 	ulong tim2;
 	ulong off;
@@ -50,8 +66,8 @@ int rtc_get (struct rtc_time *tmp)
 
 int rtc_set (struct rtc_time *tmp)
 {
-	at91_rtt_t *rtt = (at91_rtt_t *) ATMEL_BASE_RTT;
-	at91_gpbr_t *gpbr = (at91_gpbr_t *) ATMEL_BASE_GPBR;
+	at91_rtt_t *rtt = (at91_rtt_t *) AT91_RTT_BASE;
+	at91_gpbr_t *gpbr = (at91_gpbr_t *) AT91_GPR_BASE;
 	ulong tim;
 
 	tim = mktime (tmp->tm_year, tmp->tm_mon, tmp->tm_mday,
@@ -69,8 +85,8 @@ int rtc_set (struct rtc_time *tmp)
 
 void rtc_reset (void)
 {
-	at91_rtt_t *rtt = (at91_rtt_t *) ATMEL_BASE_RTT;
-	at91_gpbr_t *gpbr = (at91_gpbr_t *) ATMEL_BASE_GPBR;
+	at91_rtt_t *rtt = (at91_rtt_t *) AT91_RTT_BASE;
+	at91_gpbr_t *gpbr = (at91_gpbr_t *) AT91_GPR_BASE;
 
 	/* clear alarm, set prescaler to 32768, clear counter */
 	writel(32768+AT91_RTT_RTTRST, &rtt->mr);

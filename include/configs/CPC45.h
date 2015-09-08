@@ -2,7 +2,23 @@
  * (C) Copyright 2001-2005
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -25,6 +41,7 @@
  * (easy to change)
  */
 
+#define CONFIG_MPC824X		1
 #define CONFIG_MPC8245		1
 #define CONFIG_CPC45		1
 
@@ -32,6 +49,7 @@
 
 #define CONFIG_CONS_INDEX	1
 #define CONFIG_BAUDRATE		9600
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 #define CONFIG_PREBOOT	"echo;echo Type \\\"run flash_nfs\\\" to mount root filesystem over NFS;echo"
 
@@ -73,10 +91,14 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP			/* undef to save memory		*/
+#define CONFIG_SYS_PROMPT	"=> "		/* Monitor Command Prompt	*/
 #define CONFIG_SYS_CBSIZE	256		/* Console I/O Buffer Size	*/
 
 #if 1
 #define CONFIG_SYS_HUSH_PARSER		1	/* use "hush" command parser	*/
+#endif
+#ifdef	CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #endif
 
 /* Print Buffer Size
@@ -129,6 +151,9 @@
  * Definitions for initial stack pointer and data area
  */
 
+/* Size in bytes reserved for initial data
+ */
+
 #define CONFIG_SYS_INIT_RAM_ADDR	0x40000000
 #define CONFIG_SYS_INIT_RAM_SIZE	0x1000
 #define CONFIG_SYS_GBL_DATA_OFFSET	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
@@ -178,6 +203,7 @@
  */
 
 #define CONFIG_SYS_CLK_FREQ	33000000
+#define CONFIG_SYS_HZ			1000
 
 
 /* Bit-field values for MCCR1.
@@ -431,11 +457,11 @@
  *-----------------------------------------------------------------------
  */
 #define CONFIG_PCI			/* include pci support			*/
-#define CONFIG_PCI_INDIRECT_BRIDGE	/* indirect PCI bridge support */
 #define CONFIG_SYS_EARLY_PCI_INIT
 #undef	CONFIG_PCI_PNP
 #undef	CONFIG_PCI_SCAN_SHOW
 
+#define CONFIG_NET_MULTI		/* Multi ethernet cards support		*/
 
 #define CONFIG_EEPRO100
 #define CONFIG_SYS_RX_ETH_BUFFER	8	/* use 8 rx buffer on eepro100	*/
@@ -462,7 +488,6 @@
  *-----------------------------------------------------------------------
  */
 
-#define CONFIG_IDE_PREINIT	1	/* Use preinit IDE hook */
 #define	CONFIG_IDE_8xx_PCCARD	1	/* Use IDE with PC Card	Adapter	*/
 
 #undef	CONFIG_IDE_8xx_DIRECT		/* Direct IDE    not supported	*/

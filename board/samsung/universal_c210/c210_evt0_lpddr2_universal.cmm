@@ -1,0 +1,466 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;	<S5PC210 for universal cmm file >	;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;----------------------------------------------------------------------;
+; Configuring Option
+;----------------------------------------------------------------------;
+
+&DMC_DLL_ON=1
+;&DMC_DLL_ON=0
+
+&MIU_LINEAR='a'
+&MIU_1BIT_INTERLEAVED='b'
+&MIU_2BIT_INTERLEAVED='c'
+;&IS_INTERLEAVED_MAPPING=&MIU_LINEAR
+&IS_INTERLEAVED_MAPPING=&MIU_1BIT_INTERLEAVED
+;&IS_INTERLEAVED_MAPPING=&MIU_2BIT_INTERLEAVED
+
+&USE_PLL=1
+
+&ARMCLK=800	; ARMCLK=800MHz
+;&ARMCLK=1000	; ARMCLK=1000MHz
+
+&CLK_165_330='a'
+&CLK_200_400='b'
+&CLK_BUS_DMC=&CLK_165_330
+;&CLK_BUS_DMC=&CLK_200_400
+
+;------------------------------------------------------------------------------;
+; Configuring JTAG interface
+;------------------------------------------------------------------------------;
+
+print "Reset System"
+
+;;; start debugger
+Symbol.Reset
+System.Reset
+System.CPU CORTEXA9MPCORESMP2
+System.JtagClock 10Mhz
+ETM.OFF
+System.Option ResBreak OFF
+
+Sys.Config.COREBASE 0x80110000 0x80112000
+
+Sys.Mode PREPARE
+Wait 0.1s
+
+System.Up
+Wait 0.2s
+
+;Core.Select 1
+;Register.Set PC 0x40110000
+;r.s cpsr (r(cpsr)&0xffffff00)|0xd3  ; change to supervisor mode
+;wait 0.1s
+
+Core.Select 0
+Register.Set PC 0x40110000
+r.s cpsr (r(cpsr)&0xffffff00)|0xd3  ; change to supervisor mode
+wait 0.1s
+
+;------------------------------------------------------------------------------;
+; Watchdog
+;------------------------------------------------------------------------------;
+
+print "Disable Watchdog Timer"
+
+d.s SD:0x10060000 %LE %LONG 0x00000000		;Disable Watchdog Timer
+
+;------------------------------------------------------------------------------;
+; Deassert PMIC Manual Reset                                                   ;
+;------------------------------------------------------------------------------;
+d.s SD:0x11000c44 %LE %LONG 0x00000080          ;GPX2DAT, GPX2[7]= '1'
+d.s SD:0x11000c40 %LE %LONG 0x10000000          ;GPX2CON, GPX2[7]= output
+
+;------------------------------------------------------------------------------;
+; Clock Controller for Init DMC
+;------------------------------------------------------------------------------;
+
+d.s SD:0x10040500 %LE %LONG 0x13113113	;CLK_DIV_DMC0 on iROM DMC=50MHz for Init DMC(LPDDR2)
+
+;------------------------------------------------------------------------------;
+; MIU                                                              
+;------------------------------------------------------------------------------;
+
+print "Set MIU"
+
+if &IS_INTERLEAVED_MAPPING==&MIU_1BIT_INTERLEAVED
+(
+	d.s SD:0x10600400 %LE %LONG 0x0000000c		;MIU Interleaved Config
+	d.s SD:0x10600808 %LE %LONG 0x40000000		;MIU Interleaved Mapping Start Address
+	d.s SD:0x10600810 %LE %LONG 0x5fffffff		;MIU Interleaved Mapping End Address
+	d.s SD:0x10600800 %LE %LONG 0x00000001          ;MIU Set Interleaved Mapping and Update
+)
+else if &IS_INTERLEAVED_MAPPING==&MIU_2BIT_INTERLEAVED
+(
+	d.s SD:0x10600400 %LE %LONG 0x2000150c		;MIU Interleaved Config
+	d.s SD:0x10600808 %LE %LONG 0x40000000		;MIU Interleaved Mapping Start Address
+	d.s SD:0x10600810 %LE %LONG 0x5fffffff		;MIU Interleaved Mapping End Address
+	d.s SD:0x10600800 %LE %LONG 0x00000001          ;MIU Set Interleaved Mapping and Update
+)
+else ; MIU_LINEAR
+(
+	d.s SD:0x10600818 %LE %LONG 0x40000000		;MIU Single Mapping 0 Start Address
+	d.s SD:0x10600820 %LE %LONG 0x4fffffff		;MIU Single Mapping 0 End Address
+	d.s SD:0x10600828 %LE %LONG 0x50000000		;MIU Single Mapping 1 Start Address
+	d.s SD:0x10600830 %LE %LONG 0x5fffffff		;MIU Single Mapping 1 End Address
+	d.s SD:0x10600800 %LE %LONG 0x00000006		;MIU Set Single Mapping and Update
+)
+
+;------------------------------------------------------------------------------;
+; DREX0                                
+;------------------------------------------------------------------------------;
+
+;LPDDR2
+;MEM1 = 64Mbit x 32bit, 8bank = 256MB
+;ROW = [13:0], COL = [8:0]
+print "Setting DREX0 - LPDDR2"
+
+; PhyControl
+; ----------
+d.s SD:0x10400044 %LE %LONG 0xE3855503	;PhyControl0 // disable PhyZQControl.ctrl_zq_mode_noterm and enable PhyZQControl.ctrl_zq_start
+
+d.s SD:0x10400018 %LE %LONG 0x71101008	;PhyControl0 // PhyControl0.ctrl_force to maximum value 
+d.s SD:0x10400018 %LE %LONG 0x7110100A	;PhyControl0 // PhyControl0.ctrl_dll_on bit-field to 1
+d.s SD:0x1040001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.ctrl_shiftc=4, PhyControl1.ctrl_offsetc=0
+d.s SD:0x10400018 %LE %LONG 0x71101008	;PhyControl0 // PhyControl0.ctrl_dll_on bit-field to 0
+
+d.s SD:0x1040001C %LE %LONG 0x0000008C	;PhyControl1 // PhyControl1.fp_resync bit-field to 1
+d.s SD:0x1040001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.fp_resync bit-field to 0
+d.s SD:0x1040001C %LE %LONG 0x0000008C	;PhyControl1 // PhyControl1.fp_resync bit-field to 1
+d.s SD:0x1040001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.fp_resync bit-field to 0
+
+d.s SD:0x10400020 %LE %LONG 0x00000000	;PhyControl2
+
+; ConControl
+; ----------
+d.s SD:0x10400000 %LE %LONG 0x0FFF30da
+; [27:16] timeout_level0
+; [12]=3 rd_fetch
+; [7:6]=3 drv_type, [5]=0 auto refresh off, [4]=1 awr_on
+; [3]=1 div_pipe, [2:1]=1 ACLK:MCLK=1:2
+
+; MemControl
+; ----------
+d.s SD:0x10400004 %LE %LONG 0x00202500
+; [22:20]=2 bl=4
+; [19:16]=0 1chip
+; [15:12]=2 mem_width=32
+; [11:8]=5 LPDDR2
+; [5] dynamic self refresh off
+; [4] timeout precharge off
+; [1] dynamic power down off
+; [0] dynamic clock control off
+
+; MemConfig0
+; ----------
+if &IS_INTERLEAVED_MAPPING==&MIU_LINEAR
+(
+	d.s SD:0x10400008 %LE %LONG 0x40f00223	;MemConfig0
+)
+else
+(
+	d.s SD:0x10400008 %LE %LONG 0x20f00223	;MemConfig0
+)
+; [31:24]=0x20 or 0x40 base address
+; [23:16]=0xe0 mask=256MB
+; [15:12]=0 linear map
+; [11:8]=2 col=9bit
+; [7:4]=2 row=14bit
+; [3:0]=3 8bank
+
+; PrechConfig
+; -----------
+d.s SD:0x10400014 %LE %LONG 0xff000000	;PrechConfig
+
+; Timing Param @mclk=400MHz or 330MHz
+; -----------------------------------
+d.s SD:0x10400030 %LE %LONG 0x0000005D	;TimingAref	3.9us*24MHz=93(0x5d)	
+IF &CLK_BUS_DMC==&CLK_165_330
+(
+	d.s SD:0x10400034 %LE %LONG 0x2b47654e
+	d.s SD:0x10400038 %LE %LONG 0x35330306
+	d.s SD:0x1040003C %LE %LONG 0x442f0365
+)
+ELSE
+(
+	d.s SD:0x10400034 %LE %LONG 0x34498691
+	d.s SD:0x10400038 %LE %LONG 0x36330306
+	d.s SD:0x1040003C %LE %LONG 0x50380365
+)
+
+; Direct Command
+; --------------
+wait 0.1s ; wait 100ns
+d.s SD:0x10400010 %LE %LONG 0x07000000	;DirectCmd	chip0 Deselect, NOP
+wait 0.1s ; wait 200us
+d.s SD:0x10400010 %LE %LONG 0x00071C00	;DirectCmd	Reset MR[63]
+wait 0.1s ; wait 20us ; // whether Device Auto-Initialization is completed or not.
+d.s SD:0x10400010 %LE %LONG 0x00010BFC	;DirectCmd	chip0 MRS, MA10 ZQINIT
+wait 0.1s ; wait 1us
+d.s SD:0x10400010 %LE %LONG 0x00000488	;DirectCmd	chip0 MRS, MA01 nWR[7:5]='b001(tWR=3),WC[4]='b0(Wrap),BT[3]='b0(Seq),BL[2:0]='b010(BL4)		
+d.s SD:0x10400010 %LE %LONG 0x00000810	;DirectCmd	chip0 MRS, MA02 RL=6/WL=3
+d.s SD:0x10400010 %LE %LONG 0x00000C10	;DirectCmd	chip0 MRS, MA03 60-ohm
+
+;------------------------------------------------------------------------------;
+; DREX1                                
+;------------------------------------------------------------------------------;
+
+;LPDDR2
+;MEM1 = 64Mbit x 32bit, 8bank = 256MB
+;ROW = [13:0], COL = [8:0]
+print "Setting DREX0 - LPDDR2"
+
+; PhyControl
+; ----------
+d.s SD:0x10410044 %LE %LONG 0xE3855503	;PhyControl0 // disable PhyZQControl.ctrl_zq_mode_noterm and enable PhyZQControl.ctrl_zq_start
+
+d.s SD:0x10410018 %LE %LONG 0x71101008	;PhyControl0 // PhyControl0.ctrl_force to maximum value 
+d.s SD:0x10410018 %LE %LONG 0x7110100A	;PhyControl0 // PhyControl0.ctrl_dll_on bit-field to 1
+d.s SD:0x1041001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.ctrl_shiftc=4, PhyControl1.ctrl_offsetc=0
+d.s SD:0x10410018 %LE %LONG 0x71101008	;PhyControl0 // PhyControl0.ctrl_dll_on bit-field to 0
+
+d.s SD:0x1041001C %LE %LONG 0x0000008C	;PhyControl1 // PhyControl1.fp_resync bit-field to 1
+d.s SD:0x1041001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.fp_resync bit-field to 0
+d.s SD:0x1041001C %LE %LONG 0x0000008C	;PhyControl1 // PhyControl1.fp_resync bit-field to 1
+d.s SD:0x1041001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.fp_resync bit-field to 0
+
+d.s SD:0x10410020 %LE %LONG 0x00000000	;PhyControl2
+
+; ConControl
+; ----------
+d.s SD:0x10410000 %LE %LONG 0x0FFF30da
+; [27:16] timeout_level0
+; [12]=3 rd_fetch
+; [7:6]=3 drv_type, [5]=0 auto refresh off, [4]=1 awr_on
+; [3]=1 div_pipe, [2:1]=1 ACLK:MCLK=1:2
+
+; MemControl
+; ----------
+d.s SD:0x10410004 %LE %LONG 0x00202500
+; [22:20]=2 bl=4
+; [19:16]=0 1chip
+; [15:12]=2 mem_width=32
+; [11:8]=5 LPDDR2
+; [5] dynamic self refresh off
+; [4] timeout precharge off
+; [1] dynamic power down off
+; [0] dynamic clock control off
+
+; MemConfig0
+; ----------
+if &IS_INTERLEAVED_MAPPING==0
+(
+	d.s SD:0x10410008 %LE %LONG 0x50f00223	;MemConfig0
+)
+else
+(
+	d.s SD:0x10410008 %LE %LONG 0x20f00223	;MemConfig0
+)
+; [31:24]=0x20 or 0x40 base address
+; [23:16]=0xe0 mask=256MB
+; [15:12]=0 linear map
+; [11:8]=2 col=9bit
+; [7:4]=2 row=14bit
+; [3:0]=3 8bank
+
+; PrechConfig
+; -----------
+d.s SD:0x10410014 %LE %LONG 0xff000000	;PrechConfig
+
+; Timing Param @mclk=400MHz or 330MHz
+; -----------------------------------
+d.s SD:0x10410030 %LE %LONG 0x0000005D	;TimingAref	3.9us*24MHz=93(0x5d)	
+IF &CLK_BUS_DMC==&CLK_165_330
+(
+	d.s SD:0x10410034 %LE %LONG 0x2b47654e
+	d.s SD:0x10410038 %LE %LONG 0x35330306
+	d.s SD:0x1041003C %LE %LONG 0x442f0365
+)
+ELSE
+(
+	d.s SD:0x10410034 %LE %LONG 0x34498691
+	d.s SD:0x10410038 %LE %LONG 0x36330306
+	d.s SD:0x1041003C %LE %LONG 0x50380365
+)
+
+; Direct Command
+; --------------
+wait 0.1s ; wait 100ns
+d.s SD:0x10410010 %LE %LONG 0x07000000	;DirectCmd	chip0 Deselect, NOP
+wait 0.1s ; wait 200us
+d.s SD:0x10410010 %LE %LONG 0x00071C00	;DirectCmd	Reset MR[63]
+wait 0.1s ; wait 20us ; // whether Device Auto-Initialization is completed or not.
+d.s SD:0x10410010 %LE %LONG 0x00010BFC	;DirectCmd	chip0 MRS, MA10 ZQINIT
+wait 0.1s ; wait 1us
+d.s SD:0x10410010 %LE %LONG 0x00000488	;DirectCmd	chip0 MRS, MA01 nWR[7:5]='b001(tWR=3),WC[4]='b0(Wrap),BT[3]='b0(Seq),BL[2:0]='b010(BL4)		
+d.s SD:0x10410010 %LE %LONG 0x00000810	;DirectCmd	chip0 MRS, MA02 RL=6/WL=3
+d.s SD:0x10410010 %LE %LONG 0x00000C10	;DirectCmd	chip0 MRS, MA03 60-ohm
+
+;------------------------------------------------------------------------------;
+; Clock Controller
+;------------------------------------------------------------------------------;
+
+IF &USE_PLL==1
+(
+	; CMU_CPU MUX / DIV
+	d.s SD:0x10044200 %LE %LONG 0x0 ;CLK_SRC_CPU	MUX_A/MPLL out => FINPLL
+	wait 0.1s
+	d.s SD:0x10044500 %LE %LONG 0x00133730	;CLK_DIV_CPU0
+	d.s SD:0x10044504 %LE %LONG 0x00000003	;CLK_DIV_CPU1
+
+	; CMU_DMC MUX / DIV
+	d.s SD:0x10040200 %LE %LONG 0x0 ;CLK_SRC_DMC	MUX out => SCLK_MPLL
+	wait 0.1s
+
+	d.s SD:0x10040500 %LE %LONG 0x13111113	;CLK_DIV_DMC0	; MPLL / 2 = DMC clock
+	d.s SD:0x10040504 %LE %LONG 0x01010100	;CLK_DIV_DMC1
+
+	; CMU_TOP MUX / DIV
+	d.s SD:0x1003C210 %LE %LONG 0x0 ;CLK_SRC_TOP0
+	d.s SD:0x1003C214 %LE %LONG 0x0 ;CLK_SRC_TOP1
+	wait 0.1s
+	d.s SD:0x1003C510 %LE %LONG 0x00015473	;CLK_DIV_TOP
+
+	; CMU_LEFTBUS MUX / DIV
+	d.s SD:0x10034200 %LE %LONG 0x0 ;CLK_SRC_LEFTBUS
+	wait 0.1s
+	d.s SD:0x10034500 %LE %LONG 0x00000013 ;CLK_DIV_LEFTBUS
+
+	; CMU_LEFTBUS MUX / DIV
+	d.s SD:0x10038200 %LE %LONG 0x0 ;CLK_SRC_RIGHTBUS
+	wait 0.1s
+	d.s SD:0x10038500 %LE %LONG 0x00000013 ;CLK_DIV_RIGHTBUS
+
+	; Set PLL locktime
+	d.s SD:0x10044000 %LE %LONG 0x00001C20 ;APLL_LOCK 300us
+	d.s SD:0x10044008 %LE %LONG 0x00001C20 ;MPLL_LOCK 300us
+	d.s SD:0x1003C010 %LE %LONG 0x00001C20 ;EPLL_LOCK 300us
+	d.s SD:0x1003C020 %LE %LONG 0x00001C20 ;VPLL_LOCK 300us
+
+	; Set PLL P,M,S ON
+	d.s SD:0x10044104 %LE %LONG 0x8000001C ;APLL_CON1
+
+	IF &ARMCLK==1000
+	(
+	  d.s SD:0x10044100 %LE %LONG 0x80FA0601 ;APLL_CON0	APLL=1000MHz
+	)
+	ELSE IF &ARMCLK==800
+	(
+	  d.s SD:0x10044100 %LE %LONG 0x80C80601 ;APLL_CON0	APLL=800MHz
+	)
+	ELSE
+	(
+		print "check variable &ARMCLK"
+		sys.d
+	)
+
+	IF &CLK_BUS_DMC==&CLK_200_400
+	(
+		d.s SD:0x1004410C %LE %LONG 0x8000001C ;MPLL_CON1
+		d.s SD:0x10044108 %LE %LONG 0x80C80601 ;MPLL_CON0 MPLL=800MHz
+	)
+	ELSE IF &CLK_BUS_DMC==&CLK_165_330
+	(
+		d.s SD:0x1004410C %LE %LONG 0x8000000D ;MPLL_CON1
+		d.s SD:0x10044108 %LE %LONG 0x806E0401 ;MPLL_CON0 MPLL=660MHz
+	)
+	ELSE
+	(
+		print "check variable &CLK_BUS_DMC"
+	)
+
+	d.s SD:0x1003C114 %LE %LONG 0x00000000 ;EPLL_CON1
+	d.s SD:0x1003C110 %LE %LONG 0x80300302 ;EPLL_CON0 EPLL=96MHz
+
+	d.s SD:0x1003C124 %LE %LONG 0x11000400 ;VPLL_CON1
+	d.s SD:0x1003C120 %LE %LONG 0x80350302 ;VPLL_CON0 VPLL=108MHz
+
+	wait 0.3s
+
+	d.s SD:0x10044200 %LE %LONG 0x00000101 ;CLK_SRC_CPU	MUX_A/MPLL out => PLL out
+	wait 0.1s
+	print "pll enable"
+)
+
+; Clock out setting
+; for monitoring APLL
+d.s SD:0x10020A00 %LE %LONG 0x00000401 ;PMU_DEBUG ( CLKOUT = CMU_CPU )
+d.s SD:0x10044A00 %LE %LONG 0x00000904 ;CLKOUT_CMU_CPU	( CMU_CLKOUT = ARMCLK/2 )
+
+; for monitoring MPLL,EPLL,VPLL
+;d.s SD:0x10020A00 %LE %LONG 0x00000101 ;PMU_DEBUG ( CLKOUT = CMU_TOP )
+;d.s SD:0x1003CA00 %LE %LONG 0x0000090C ;CLKOUT_CMU_TOP	( CMU_CLKOUT = ACLK_200 )
+;d.s SD:0x1003CA00 %LE %LONG 0x00000900 ;CLKOUT_CMU_TOP	( CMU_CLKOUT = EPLLOUT )
+;d.s SD:0x1003CA00 %LE %LONG 0x00000901 ;CLKOUT_CMU_TOP	( CMU_CLKOUT = VPLLOUT )
+print "Clock Initialization done..."
+
+;------------------------------------------------------------------------------;
+; DREX0, DREX1
+;------------------------------------------------------------------------------;
+
+; ConControl
+; ----------
+
+if &DMC_DLL_ON==1
+(
+	d.s SD:0x10400018 %LE %LONG 0x7110100A	;PhyControl0	DLL on
+	d.s SD:0x1040001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.ctrl_shiftc=4, PhyControl1.ctrl_offsetc=0
+	d.s SD:0x10400018 %LE %LONG 0x7110100B	;PhyControl0	DLL¿ª start Ω√≈¥
+	wait 0.2s ; // Check whether PHY DLL is locked
+	d.s SD:0x1040001C %LE %LONG 0x0000008C	;PhyControl1 // PhyControl1.fp_resync bit-field to 1
+	d.s SD:0x1040001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.fp_resync bit-field to 0
+)
+wait 0.2s ; // Check whether PHY DLL is locked
+
+if &DMC_DLL_ON==1
+(
+	d.s SD:0x10410018 %LE %LONG 0x7110100A	;PhyControl0	DLL on
+	d.s SD:0x1041001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.ctrl_shiftc=4, PhyControl1.ctrl_offsetc=0
+	d.s SD:0x10410018 %LE %LONG 0x7110100B	;PhyControl0	DLL¿ª start Ω√≈¥
+	wait 0.2s ; // Check whether PHY DLL is locked
+	d.s SD:0x1041001C %LE %LONG 0x0000008C	;PhyControl1 // PhyControl1.fp_resync bit-field to 1
+	d.s SD:0x1041001C %LE %LONG 0x00000084	;PhyControl1 // PhyControl1.fp_resync bit-field to 0
+)
+wait 0.2s ; // Check whether PHY DLL is locked
+
+d.s SD:0x10400000 %LE %LONG 0x0FFF30fa
+; [27:16] timeout_level0
+; [12]=3 rd_fetch
+; [7:6]=3 drv_type, [5]=1 auto refresh on, [4]=1 awr_on
+; [3]=1 div_pipe, [2:1]=1 ACLK:MCLK=1:2
+
+d.s SD:0x10410000 %LE %LONG 0x0FFF30fa
+; [27:16] timeout_level0
+; [12]=3 rd_fetch
+; [7:6]=3 drv_type, [5]=1 auto refresh on, [4]=1 awr_on
+; [3]=1 div_pipe, [2:1]=1 ACLK:MCLK=1:2
+
+print "DRAM Initialization done..."
+
+;------------------------------------------------------------------------------;
+; Load IMAGE                                                                   ;
+;------------------------------------------------------------------------------;
+
+print "Loading ..."
+
+&UBOOT_CODE="j:\u-boot-s5pc1xx\u-boot"	
+&UBOOT_IMAGE="j:\u-boot-s5pc1xx\u-boot.bin"
+&ONENAND_IPL="j:\u-boot-s5pc1xx\u-boot-onenand.bin"
+&ONENAND_IPL_IMAGE="j:\u-boot-s5pc1xx\onenand_ipl\onenand-ipl.bin"
+&ONENAND_CODE="j:\u-boot-s5pc1xx\onenand_ipl\onenand-ipl"
+
+;&IPL_LOAD_ADDRESS=0x02020000
+&UBOOT_EXECUTED_ADDRESS=0x44800000
+
+Data.LOAD.Binary	&UBOOT_IMAGE &UBOOT_EXECUTED_ADDRESS
+Data.Load.Elf		&UBOOT_CODE /ABSLIFETIMES /gnu /nocode /STRIPPART 6
+
+Data.load.binary	&ONENAND_IPL 0x42008000
+Data.Load.Elf		&ONENAND_CODE /ABSLIFETIMES /gnu /nocode /STRIPPART 7
+
+; Break & Run
+Register.Set pc &UBOOT_EXECUTED_ADDRESS
+go
+
+data.list

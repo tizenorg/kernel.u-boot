@@ -4,7 +4,23 @@
  *
  * Configuation settings for the TOP9000 CPU module with AT91SAM9XE.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 /*
  * top9000 with at91sam9xe256 or at91sam9xe512
@@ -21,10 +37,6 @@
  */
 #ifndef __CONFIG_H
 #define __CONFIG_H
-
-/* SoC must be defined first, before hardware.h is included */
-#define CONFIG_AT91SAM9XE
-#include <asm/hardware.h>
 
 /*
  * Warning: changing CONFIG_SYS_TEXT_BASE requires
@@ -49,11 +61,19 @@
 #define CONFIG_CMD_CACHE
 
 /* ARM asynchronous clock */
-#define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock xtal */
-#define CONFIG_SYS_AT91_MAIN_CLOCK	18432000	/* main clock xtal */
+#define CONFIG_SYS_AT91_MAIN_CLOCK	18432000	/* 18.432 MHz xtal */
+#define CONFIG_SYS_HZ			1000
+
+/* SoC */
+#define CONFIG_ARM926EJS		/* ARM926EJS Core */
+#define CONFIG_AT91FAMILY		/* it's a member of AT91 */
+#define CONFIG_AT91SAM9260		/* Atmel AT91SAM9260 based SoC */
+#define CONFIG_AT91SAM9XE
 
 /* Misc CPU related */
+#define CONFIG_AT91_LEGACY
 #define CONFIG_ARCH_CPU_INIT
+#undef	CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff	*/
 #define CONFIG_CMDLINE_TAG		/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG
@@ -63,15 +83,14 @@
 #define CONFIG_AT91RESET_EXTRST		/* assert external reset */
 
 /* general purpose I/O */
-#define CONFIG_ATMEL_LEGACY		/* required until (g)pio is fixed */
 #define CONFIG_AT91_GPIO
 #define CONFIG_AT91_GPIO_PULLUP	1	/* keep pullups on peripheral pins */
 
 /* serial console */
 #define CONFIG_ATMEL_USART
-#define CONFIG_USART_BASE		ATMEL_BASE_DBGU
-#define	CONFIG_USART_ID			ATMEL_ID_SYS
+#define CONFIG_USART3			/* USART 3 is DBGU !!! */
 #define CONFIG_BAUDRATE			115200
+#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
 
 /* SD/MMC card */
 #define CONFIG_MMC
@@ -84,6 +103,7 @@
 #define CONFIG_MACB
 #define CONFIG_SYS_PHY_ID	1
 #define CONFIG_RMII
+#define CONFIG_NET_MULTI
 #define CONFIG_NET_RETRY_COUNT	20
 
 /* real time clock */
@@ -103,7 +123,7 @@
  * with u-boot commands
  */
 # define CONFIG_AT91_EFLASH
-# define CONFIG_SYS_FLASH_BASE		ATMEL_BASE_FLASH
+# define CONFIG_SYS_FLASH_BASE		0x200000
 # define CONFIG_SYS_MAX_FLASH_SECT	32
 # define CONFIG_SYS_MAX_FLASH_BANKS	1
 # define CONFIG_SYS_FLASH_PROTECTION
@@ -119,6 +139,7 @@
 #define CONFIG_ATMEL_SPI0		/* SPI used for FRAM is SPI0 */
 #define FRAM_SPI_BUS		0
 #define FRAM_CS_NUM		0
+#define CONFIG_SPI_FLASH		/* RAMTRON FRAM on SPI bus */
 #define CONFIG_SPI_FRAM_RAMTRON
 #define CONFIG_SF_DEFAULT_SPEED	1000000	/* be conservative here... */
 #define CONFIG_SF_DEFAULT_MODE	SPI_MODE_0
@@ -138,10 +159,10 @@
  * Initialized before u-boot gets started.
  */
 #define CONFIG_NR_DRAM_BANKS		1
-#define CONFIG_SYS_SDRAM_BASE		ATMEL_BASE_CS1
+#define CONFIG_SYS_SDRAM_BASE		0x20000000
 #define CONFIG_SYS_SDRAM_SIZE		0x08000000
 #define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE
-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_SDRAM_BASE + 0x01e00000)
+#define CONFIG_SYS_MEMTEST_END		0x21e00000
 #define CONFIG_SYS_LOAD_ADDR \
 	(CONFIG_SYS_SDRAM_BASE + 0x01000000)
 /*
@@ -150,7 +171,7 @@
  * that address while providing maximum stack area below.
  */
 #define CONFIG_SYS_INIT_SP_ADDR \
-	(ATMEL_BASE_SRAM + 0x4000 - GENERATED_GBL_DATA_SIZE)
+	(0x00300000 + 0x4000 - GENERATED_GBL_DATA_SIZE)
 
 /*
  * NAND flash: 256 MB (optional)
@@ -163,7 +184,7 @@
  */
 #define CONFIG_NAND_ATMEL
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
-#define CONFIG_SYS_NAND_BASE		ATMEL_BASE_CS3
+#define CONFIG_SYS_NAND_BASE		0x40000000
 #define CONFIG_SYS_NAND_DBW_8
 #define CONFIG_SYS_NAND_MASK_ALE	(1 << 21)
 #define CONFIG_SYS_NAND_MASK_CLE	(1 << 22)
@@ -173,23 +194,21 @@
 
 /* USB */
 #define CONFIG_USB_ATMEL
-#define CONFIG_USB_ATMEL_CLK_SEL_PLLB
 #define CONFIG_USB_OHCI_NEW
 #define CONFIG_DOS_PARTITION
 #define CONFIG_SYS_USB_OHCI_CPU_INIT
-#define CONFIG_SYS_USB_OHCI_REGS_BASE	ATMEL_UHP_BASE
+#define CONFIG_SYS_USB_OHCI_REGS_BASE	0x00500000
 #define CONFIG_SYS_USB_OHCI_SLOT_NAME	"top9000"
 #define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
 #define CONFIG_USB_STORAGE
 #define CONFIG_CMD_USB
 
 /* I2C support must always be enabled */
+#define CONFIG_SOFT_I2C
 #define CONFIG_CMD_I2C
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_SOFT		/* I2C bit-banged */
-#define CONFIG_SYS_I2C_SOFT_SPEED	400000
-#define CONFIG_SYS_I2C_SOFT_SLAVE	0x7F
-
+#define CONFIG_SYS_I2C_SPEED		400000
+#define CONFIG_SYS_I2C_SLAVE		0x7F
+#define CONFIG_I2C_MULTI_BUS
 #define I2C0_PORT			AT91_PIO_PORTA
 #define SDA0_PIN			23
 #define SCL0_PIN			24
@@ -286,5 +305,9 @@ extern void read_factory_r(void);
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN \
 	ROUND(3 * CONFIG_ENV_SIZE + 128*1024, 0x1000)
+#define CONFIG_STACKSIZE		(32*1024)
+#ifdef CONFIG_USE_IRQ
+#error CONFIG_USE_IRQ not supported
+#endif
 
 #endif

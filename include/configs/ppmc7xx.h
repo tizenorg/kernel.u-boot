@@ -51,10 +51,6 @@
 
 #define	CONFIG_SYS_TEXT_BASE	0xFFF00000
 
-#ifndef __ASSEMBLY__
-#include <galileo/core.h>
-#endif
-
 /*
  * Monitor configuration
  *
@@ -118,7 +114,6 @@
  */
 
 #define	CONFIG_PCI
-#define	CONFIG_PCI_INDIRECT_BRIDGE
 #define	CONFIG_PCI_PNP
 #undef	CONFIG_PCI_SCAN_SHOW
 
@@ -126,10 +121,12 @@
 /*
  * Network config
  *
+ * CONFIG_NET_MULTI		- Support for multiple network interfaces
  * CONFIG_EEPRO100		- Intel 8255x Ethernet Controller
  * CONFIG_EEPRO100_SROM_WRITE	- Enable writing to network card ROM
  */
 
+#define	CONFIG_NET_MULTI
 #define	CONFIG_EEPRO100
 #define	CONFIG_EEPRO100_SROM_WRITE
 
@@ -234,7 +231,7 @@
 #define CONFIG_SYS_FLASH_ERASE_TOUT	250000
 #define CONFIG_SYS_FLASH_WRITE_TOUT	5000
 #define CONFIG_SYS_MAX_FLASH_BANKS	1
-#define CONFIG_SYS_MAX_FLASH_SECT	128
+#define CONFIG_SYS_MAX_FLASH_SECT	19
 
 
 /*
@@ -272,6 +269,7 @@
 #define CONFIG_SYS_MEMTEST_START	0x00040000
 #define CONFIG_SYS_MEMTEST_END		0x00040100
 #define CONFIG_SYS_PBSIZE		1024
+#define CONFIG_SYS_PROMPT		"=> "
 
 
 /*
@@ -362,11 +360,13 @@
  */
 
 #define CONFIG_SYS_BUS_CLK		CONFIG_BUS_CLK
+#define CONFIG_SYS_HZ			1000
 
 
 /*
  * Serial port config
  *
+ * CONFIG_SYS_BAUDRATE_TABLE		- List of valid baud rates
  * CONFIG_SYS_NS16550			- Include the NS16550 driver
  * CONFIG_SYS_NS16550_SERIAL		- Include the serial (wrapper) driver
  * CONFIG_SYS_NS16550_CLK		- Frequency of reference clock
@@ -374,6 +374,7 @@
  * CONFIG_SYS_NS16550_COM1		- Base address of 1st serial port
  */
 
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 #define CONFIG_SYS_NS16550
 #define CONFIG_SYS_NS16550_SERIAL
 #define CONFIG_SYS_NS16550_CLK		3686400

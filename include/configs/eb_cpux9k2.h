@@ -5,7 +5,23 @@
  *
  * Configuation settings for the EB+CPUx9K2 board.
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #ifndef _CONFIG_EB_CPUx9K2_H_
@@ -13,33 +29,26 @@
 
 /*--------------------------------------------------------------------------*/
 
-#define CONFIG_AT91RM9200		/* It's an Atmel AT91RM9200 SoC	*/
-#define CONFIG_EB_CPUX9K2		/* on an EP+CPUX9K2 Board	*/
-#define USE_920T_MMU
+#define CONFIG_ARM920T		1	/* This is an ARM920T Core	*/
+#define CONFIG_AT91RM9200	1	/* It's an Atmel AT91RM9200 SoC	*/
+#define CONFIG_EB_CPUX9K2	1	/* on an EP+CPUX9K2 Board	*/
+#define USE_920T_MMU		1
 
-#define CONFIG_VERSION_VARIABLE
+#define CONFIG_VERSION_VARIABLE 1
 #define CONFIG_IDENT_STRING	" on EB+CPUx9K2"
 
-#include <asm/hardware.h>	/* needed for port definitions */
+#include <asm/arch/hardware.h>	/* needed for port definitions */
 
 #define CONFIG_MISC_INIT_R
-#define CONFIG_BOARD_EARLY_INIT_F
-
-#define MACH_TYPE_EB_CPUX9K2		1977
-#define CONFIG_MACH_TYPE		MACH_TYPE_EB_CPUX9K2
-
-#define CONFIG_SYS_CACHELINE_SIZE	32
-#define CONFIG_SYS_DCACHE_OFF
 
 /*--------------------------------------------------------------------------*/
-#ifndef CONFIG_RAMBOOT
-#define CONFIG_SYS_TEXT_BASE		0x00000000
-#else
-#define CONFIG_SKIP_LOWLEVEL_INIT
-#define CONFIG_SYS_TEXT_BASE		0x21800000
-#endif
+#define CONFIG_SYS_TEXT_BASE 		0x00000000
 #define CONFIG_SYS_LOAD_ADDR		0x21000000  /* default load address */
-#define CONFIG_STANDALONE_LOAD_ADDR	0x21000000
+
+#define CONFIG_SYS_BOOT_SIZE		0x00 /* 0 KBytes */
+#define CONFIG_SYS_U_BOOT_BASE		PHYS_FLASH_1
+#define CONFIG_SYS_U_BOOT_SIZE		0x60000 /* 384 KBytes */
+
 
 #define CONFIG_BOOT_RETRY_TIME		30
 #define CONFIG_CMDLINE_EDITING
@@ -50,15 +59,18 @@
 #define CONFIG_SYS_PBSIZE	\
 	(CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) /* Print Buffer Size */
 
+#define CONFIG_STACKSIZE	(32*1024)	/* regular stack */
+
 /*
  * ARM asynchronous clock
  */
 
 #define AT91C_MAIN_CLOCK	179404800	/* from 12.288 MHz * 73 / 5 */
 #define AT91C_MASTER_CLOCK	(AT91C_MAIN_CLOCK / 3)
+#define CONFIG_SYS_HZ		1000
 #define CONFIG_SYS_HZ_CLOCK 	(AT91C_MASTER_CLOCK / 2)
 
-#define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock */
+#define AT91_SLOW_CLOCK			32768		/* slow clock */
 
 #define CONFIG_CMDLINE_TAG		1
 #define CONFIG_SETUP_MEMORY_TAGS	1
@@ -78,7 +90,7 @@
  * Size of malloc() pool
  */
 
-#define CONFIG_SYS_MALLOC_LEN		(4 * 1024 * 1024)
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + 520*1024)
 
 /*
  * sdram
@@ -119,70 +131,57 @@
 #define CONFIG_CMD_DATE
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_I2C
+#define CONFIG_CMD_JFFS2
 #define CONFIG_CMD_MII
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_PING
+#define CONFIG_I2C_CMD_NO_FLAT
 #define CONFIG_I2C_CMD_TREE
-#define CONFIG_CMD_USB
-#define CONFIG_CMD_FAT
-#define CONFIG_CMD_UBI
-#define CONFIG_CMD_MTDPARTS
-#define CONFIG_CMD_UBIFS
 
 #define CONFIG_SYS_LONGHELP
 
 /*
- * MTD defines
+ * Filesystems
  */
 
-#define CONFIG_FLASH_CFI_MTD
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_RBTREE
-#define CONFIG_LZO
+#define CONFIG_JFFS2_NAND		1
 
-#define MTDIDS_DEFAULT		"nor0=physmap-flash.0,nand0=atmel_nand"
+#ifndef CONFIG_JFFS2_CMDLINE
+#define CONFIG_JFFS2_DEV 		"nand0"
+#define CONFIG_JFFS2_PART_OFFSET 	0
+#define CONFIG_JFFS2_PART_SIZE		0xFFFFFFFF
+#else
+#define MTDIDS_DEFAULT		"nor0=0,nand0=1"
 #define MTDPARTS_DEFAULT	"mtdparts="				\
-					"physmap-flash.0:"		\
-						"512k(U-Boot),"		\
-						"128k(Env),"		\
-						"128k(Splash),"		\
-						"4M(Kernel),"		\
-						"384k(MiniFS),"		\
-						"-(FS)"			\
+					"0:"				\
+					"384k(U-Boot),"			\
+					"128k(Env),"			\
+					"128k(Splash)," 		\
+					"4M(Kernel),"			\
+					"-(FS)"				\
 					";"				\
-					"atmel_nand:"			\
-						"1M(emergency),"	\
-						"-(data)"
+					"1:"				\
+					"-(jffs2)"
+#endif /* CONFIG_JFFS2_CMDLINE */
+
 /*
  * Hardware drivers
  */
-#define CONFIG_USB_ATMEL
-#define CONFIG_USB_ATMEL_CLK_SEL_PLLB
-#define CONFIG_USB_OHCI_NEW
-#define CONFIG_AT91C_PQFP_UHPBUG
-#define CONFIG_USB_STORAGE
-#define CONFIG_DOS_PARTITION
-#define CONFIG_ISO_PARTITION
-#define CONFIG_EFI_PARTITION
-
-#define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	1
-#define CONFIG_SYS_USB_OHCI_CPU_INIT
-#define CONFIG_SYS_USB_OHCI_REGS_BASE		0x00300000
-#define CONFIG_SYS_USB_OHCI_SLOT_NAME		"at91rm9200"
 
 /*
  * UART/CONSOLE
  */
 
+#define CONFIG_SYS_BAUDRATE_TABLE	{ 115200, 19200, 38400, 57600, 9600 }
+
 #define CONFIG_BAUDRATE 115200
-#define CONFIG_ATMEL_USART
-#define CONFIG_USART_BASE	ATMEL_BASE_DBGU
-#define CONFIG_USART_ID		0/* ignored in arm */
+#define CONFIG_AT91RM9200_USART
+#define CONFIG_DBGU			/* define DBGU as console */
 
 /*
  * network
  */
+#define CONFIG_NET_MULTI		1
 
 #define CONFIG_NET_RETRY_COUNT		10
 #define CONFIG_RESET_PHY_R		1
@@ -204,10 +203,11 @@
  * I2C-Bus
  */
 
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_SOFT		/* I2C bit-banged */
-#define CONFIG_SYS_I2C_SOFT_SPEED	50000
-#define CONFIG_SYS_I2C_SOFT_SLAVE	0
+#define CONFIG_SYS_I2C_SPEED		50000
+#define CONFIG_SYS_I2C_SLAVE		0 		/* not used */
+
+#ifndef CONFIG_HARD_I2C
+#define CONFIG_SOFT_I2C
 
 /* Software  I2C driver configuration */
 
@@ -217,21 +217,23 @@
 #define CONFIG_SYS_I2C_INIT_BOARD
 
 #define I2C_INIT	i2c_init_board();
-#define I2C_ACTIVE	writel(ATMEL_PMX_AA_TWD, &pio->pioa.mddr);
-#define I2C_TRISTATE	writel(ATMEL_PMX_AA_TWD, &pio->pioa.mder);
-#define I2C_READ	((readl(&pio->pioa.pdsr) & ATMEL_PMX_AA_TWD) != 0)
+#define I2C_ACTIVE	writel(AT91_PMX_AA_TWD, &pio->pioa.mddr);
+#define I2C_TRISTATE	writel(AT91_PMX_AA_TWD, &pio->pioa.mder);
+#define I2C_READ	((readl(&pio->pioa.pdsr) & AT91_PMX_AA_TWD) != 0)
 #define I2C_SDA(bit)						\
 	if (bit)						\
-		writel(ATMEL_PMX_AA_TWD, &pio->pioa.sodr);	\
+		writel(AT91_PMX_AA_TWD, &pio->pioa.sodr);	\
 	else							\
-		writel(ATMEL_PMX_AA_TWD, &pio->pioa.codr);
+		writel(AT91_PMX_AA_TWD, &pio->pioa.codr);
 #define I2C_SCL(bit)						\
 	if (bit)						\
-		writel(ATMEL_PMX_AA_TWCK, &pio->pioa.sodr);	\
+		writel(AT91_PMX_AA_TWCK, &pio->pioa.sodr);	\
 	else							\
-		writel(ATMEL_PMX_AA_TWCK, &pio->pioa.codr);
+		writel(AT91_PMX_AA_TWCK, &pio->pioa.codr);
 
-#define I2C_DELAY	udelay(2500000/CONFIG_SYS_I2C_SOFT_SPEED)
+#define I2C_DELAY	udelay(2500000/CONFIG_SYS_I2C_SPEED)
+
+#endif	/* CONFIG_HARD_I2C */
 
 /* I2C-RTC */
 
@@ -266,9 +268,12 @@
 
 /* NAND */
 
+#define CONFIG_SYS_NAND_MAX_CHIPS	1
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		0x40000000
 #define CONFIG_SYS_NAND_DBW_8		1
+
+#define CONFIG_SYS_64BIT_VSPRINTF	1
 
 /* Status LED's */
 
@@ -325,7 +330,7 @@
 #define CONFIG_BOOTDELAY		5
 
 #define CONFIG_ENV_IS_IN_FLASH		1
-#define CONFIG_ENV_ADDR			(PHYS_FLASH_1 + 0x80000)
+#define CONFIG_ENV_ADDR			(PHYS_FLASH_1 + 0x60000)
 #define CONFIG_ENV_SIZE			0x20000 /* sectors are 128K here */
 
 #define CONFIG_BAUDRATE 		115200
@@ -344,14 +349,12 @@
 	"displayheight=512\0"						\
 	"displaybsteps=1023\0"						\
 	"ubootaddr=10000000\0"						\
-	"splashimage=100A0000\0"					\
-	"kerneladdr=100C0000\0"						\
+	"splashimage=10080000\0"					\
+	"kerneladdr=100A0000\0"						\
 	"kernelsize=00400000\0"						\
-	"rootfsaddr=10520000\0"						\
+	"rootfsaddr=104A0000\0"						\
 	"copy_addr=21200000\0"						\
-	"rootfssize=00AE0000\0"						\
-	"mtdids=" MTDIDS_DEFAULT "\0"					\
-	"mtdparts=" MTDPARTS_DEFAULT "\0"				\
+	"rootfssize=00B60000\0"						\
 	"bootargsdefaults=set bootargs "				\
 		"console=ttyS0,115200 "					\
 		"video=vcxk_fb:xres:${displaywidth},"			\
@@ -372,15 +375,15 @@
 		"erase $(rootfsaddr) +$(rootfssize);"			\
 		"cp.b $(fileaddr) $(rootfsaddr) $(filesize);"		\
 		"\0"							\
-	"update_uboot=protect off 10000000 1007FFFF;"			\
+	"update_uboot=protect off 10000000 1005FFFF;"			\
 		"dhcp $(copy_addr) u-boot_eb_cpux9k2;"			\
-		"erase 10000000 1007FFFF;"				\
+		"erase 10000000 1005FFFF;"				\
 		"cp.b $(fileaddr) $(ubootaddr) $(filesize);"		\
-		"protect on 10000000 1007FFFF;reset\0"			\
+		"protect on 10000000 1005FFFF;reset\0"			\
 	"update_splash=protect off $(splashimage) +20000;"		\
 		"dhcp $(copy_addr) splash_eb_cpux9k2.bmp;"		\
 		"erase $(splashimage) +20000;"				\
-		"cp.b $(fileaddr) $(splashimage) $(filesize);"		\
+		"cp.b $(fileaddr) 10080000 $(filesize);"		\
 		"protect on $(splashimage) +20000;reset\0"		\
 	"emergency=run bootargsdefaults;"				\
 		"set bootargs $(bootargs) root=initramfs boot=emergency " \

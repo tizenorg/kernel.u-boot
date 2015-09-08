@@ -2,28 +2,50 @@
 # Copyright (c) 2007
 # Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
 #
-# SPDX-License-Identifier:	GPL-2.0+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+# MA 02111-1307 USA
 #
 
+include $(TOPDIR)/config.mk
 
-obj-y	+= board.o
-obj-$(CONFIG_CMD_BOOTM) += bootm.o
+LIB	= $(obj)lib$(ARCH).o
+
+SOBJS-y	+=
+
+COBJS-y	+= board.o
+COBJS-y	+= bootm.o
 ifeq ($(CONFIG_SH2),y)
-obj-y	+= time_sh2.o
+COBJS-y	+= time_sh2.o
 else
-obj-y	+= time.o
+COBJS-y	+= time.o
 endif
-obj-$(CONFIG_CMD_SH_ZIMAGEBOOT) += zimageboot.o
-
-
-
-# Build private libgcc only when asked for
-ifdef USE_PRIVATE_LIBGCC
-lib-y	+= ashiftrt.o
-lib-y	+= ashiftlt.o
-lib-y	+= lshiftrt.o
-lib-y	+= ashldi3.o
-lib-y	+= ashrsi3.o
-lib-y	+= lshrdi3.o
-lib-y	+= movmem.o
+ifeq ($(CONFIG_CMD_SH_ZIMAGEBOOT),y)
+COBJS-y += zimageboot.o
 endif
+
+SRCS	:= $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
+OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
+
+$(LIB):	$(obj).depend $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
+
+#########################################################################
+
+# defines $(obj).depend target
+include $(SRCTREE)/rules.mk
+
+sinclude $(obj).depend
+
+#########################################################################

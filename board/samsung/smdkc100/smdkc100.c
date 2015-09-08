@@ -3,12 +3,28 @@
  *  Minkyu Kang <mk7.kang@samsung.com>
  *  Kyungmin Park <kyungmin.park@samsung.com>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/arch/sromc.h>
+#include <asm/arch/smc.h>
 #include <asm/arch/gpio.h>
 #include <netdev.h>
 
@@ -25,7 +41,7 @@ static void smc9115_pre_init(void)
 		(struct s5pc100_gpio *)samsung_get_base_gpio();
 
 	/* gpio configuration GPK0CON */
-	s5p_gpio_cfg_pin(&gpio->k0, CONFIG_ENV_SROM_BANK, GPIO_FUNC(2));
+	gpio_cfg_pin(&gpio->k0, CONFIG_ENV_SROM_BANK, GPIO_FUNC(2));
 
 	/* Ethernet needs bus width of 16 bits */
 	smc_bw_conf = SMC_DATA16_WIDTH(CONFIG_ENV_SROM_BANK);
@@ -34,7 +50,7 @@ static void smc9115_pre_init(void)
 			| SMC_BC_TACP(0x6) | SMC_BC_PMC(0x0);
 
 	/* Select and configure the SROMC bank */
-	s5p_config_sromc(CONFIG_ENV_SROM_BANK, smc_bw_conf, smc_bc_conf);
+	s5pc1xx_config_sromc(CONFIG_ENV_SROM_BANK, smc_bw_conf, smc_bc_conf);
 }
 
 int board_init(void)

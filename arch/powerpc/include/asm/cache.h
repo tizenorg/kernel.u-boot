@@ -4,10 +4,11 @@
 #ifndef __ARCH_PPC_CACHE_H
 #define __ARCH_PPC_CACHE_H
 
+#include <linux/config.h>
 #include <asm/processor.h>
 
 /* bytes per L1 cache line */
-#if defined(CONFIG_8xx)
+#if defined(CONFIG_8xx) || defined(CONFIG_IOP480)
 #define	L1_CACHE_SHIFT	4
 #elif defined(CONFIG_PPC64BRIDGE)
 #define L1_CACHE_SHIFT	7
@@ -18,12 +19,6 @@
 #endif
 
 #define L1_CACHE_BYTES          (1 << L1_CACHE_SHIFT)
-
-/*
- * Use the L1 data cache line size value for the minimum DMA buffer alignment
- * on PowerPC.
- */
-#define ARCH_DMA_MINALIGN	L1_CACHE_BYTES
 
 /*
  * For compatibility reasons support the CONFIG_SYS_CACHELINE_SIZE too

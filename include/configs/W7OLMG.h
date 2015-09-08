@@ -2,7 +2,23 @@
  * (C) Copyright 2001
  * Erik Theisen, Wave 7 Optics, etheisen@mindspring.com
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*
@@ -18,6 +34,7 @@
  */
 
 #define CONFIG_405GP		1		/* This is a PPC405GP CPU	*/
+#define CONFIG_4xx		1		/* ...member of PPC405 family	*/
 #define CONFIG_W7O		1		/* ...on a Wave 7 Optics board	*/
 #define CONFIG_W7OLMG		1		/* ...specifically an LMG	*/
 
@@ -54,6 +71,7 @@
 #define CONFIG_PPC4xx_EMAC
 #define CONFIG_MII		1		/* MII PHY management		*/
 #define CONFIG_PHY_ADDR		0		/* PHY address			*/
+#define CONFIG_NET_MULTI
 
 #define CONFIG_RTC_M48T35A	1		/* ST Electronics M48 timekeeper */
 #define CONFIG_DTT_LM75     1                /* ON Semi's LM75 */
@@ -103,6 +121,7 @@
 #define CONFIG_SYS_PROMPT		"Wave7Optics> " /* Monitor Command Prompt	*/
 #undef  CONFIG_SYS_HUSH_PARSER				/* No hush parse for U-Boot       */
 #ifdef  CONFIG_SYS_HUSH_PARSER
+#define CONFIG_SYS_PROMPT_HUSH_PS2     "> "
 #endif
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_SYS_CBSIZE		1024		/* Console I/O Buffer Size	*/
@@ -133,6 +152,8 @@
 #define CONFIG_SYS_LOAD_ADDR		0x100000	/* default load address		*/
 #define CONFIG_SYS_EXTBDINFO		1		/* use extended board_info (bd_t) */
 
+#define CONFIG_SYS_HZ			1000		/* decrementer freq: 1 ms ticks */
+
 /*-----------------------------------------------------------------------
  * PCI stuff
  *-----------------------------------------------------------------------
@@ -142,7 +163,6 @@
 #define PCI_HOST_AUTO		2		/* detected via arbiter enable	*/
 
 #define CONFIG_PCI				/* include pci support		*/
-#define CONFIG_PCI_INDIRECT_BRIDGE	/* indirect PCI bridge support */
 #define CONFIG_PCI_HOST		PCI_HOST_AUTO	/* select pci host function	*/
 #define CONFIG_PCI_PNP				/* pci plug-and-play		*/
 /* resource configuration	*/
@@ -267,11 +287,10 @@
 /*-----------------------------------------------------------------------
  * I2C EEPROM (ATMEL 24C04N)
  */
-#define CONFIG_SYS_I2C
-#define CONFIG_SYS_I2C_PPC4XX
-#define CONFIG_SYS_I2C_PPC4XX_CH0
-#define CONFIG_SYS_I2C_PPC4XX_SPEED_0		400000
-#define CONFIG_SYS_I2C_PPC4XX_SLAVE_0		0x7F
+#define CONFIG_HARD_I2C		1		/* Hardware assisted I2C	*/
+#define CONFIG_PPC4XX_I2C		/* use PPC4xx driver		*/
+#define CONFIG_SYS_I2C_SPEED		400000		/* I2C speed and slave address */
+#define CONFIG_SYS_I2C_SLAVE		0x7F
 
 #define CONFIG_SYS_I2C_EEPROM_ADDR	0x50		/* EEPROM ATMEL 24C04N		*/
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	1		/* Bytes of address		*/
@@ -303,6 +322,7 @@
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	230400		/* speed to run kgdb serial port */
+#define CONFIG_KGDB_SER_INDEX	2		/* which serial port to use	*/
 #endif
 
 /*

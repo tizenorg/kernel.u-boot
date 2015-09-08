@@ -3,7 +3,23 @@
  *  Copyright (C) 1999	Magnus Damm <kieraypc01.p.y.kie.era.ericsson.se>
  *  Copyright (C) 2000,2001,2002 Wolfgang Denk <wd@denx.de>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 /*  U-Boot - Startup Code for PowerPC based Embedded Boards
@@ -24,7 +40,11 @@
 #include <asm-offsets.h>
 #include <config.h>
 #include <mpc8xx.h>
+#include <timestamp.h>
 #include <version.h>
+
+#define CONFIG_8xx 1		/* needed for Linux kernel header files */
+#define _LINUX_CONFIG_H 1	/* avoid reading Linux autoconf.h file	*/
 
 #include <ppc_asm.tmpl>
 #include <ppc_defs.h>
@@ -32,6 +52,10 @@
 #include <asm/cache.h>
 #include <asm/mmu.h>
 #include <asm/u-boot.h>
+
+#ifndef  CONFIG_IDENT_STRING
+#define  CONFIG_IDENT_STRING ""
+#endif
 
 /* We don't want the  MMU yet.
 */
@@ -53,7 +77,7 @@
 	GOT_ENTRY(transfer_to_handler)
 
 	GOT_ENTRY(__init_end)
-	GOT_ENTRY(__bss_end)
+	GOT_ENTRY(__bss_end__)
 	GOT_ENTRY(__bss_start)
 	END_GOT
 
@@ -65,7 +89,9 @@
 	.long	0x27051956		/* U-Boot Magic Number			*/
 	.globl	version_string
 version_string:
-	.ascii U_BOOT_VERSION_STRING, "\0"
+	.ascii U_BOOT_VERSION
+	.ascii " (", U_BOOT_DATE, " - ", U_BOOT_TIME, ")"
+	.ascii CONFIG_IDENT_STRING, "\0"
 
 	. = EXC_OFF_SYS_RESET
 	.globl	_start
@@ -571,7 +597,7 @@ clear_bss:
 	 * Now clear BSS segment
 	 */
 	lwz	r3,GOT(__bss_start)
-	lwz	r4,GOT(__bss_end)
+	lwz	r4,GOT(__bss_end__)
 
 	cmplw	0, r3, r4
 	beq	6f
