@@ -21,6 +21,7 @@
 #include <usbd.h>
 #include <asm/errno.h>
 #include <asm/arch/power.h>
+#include <div64.h>
 #include <malloc.h>
 #include <mbr.h>
 #include <mmc.h>
@@ -356,7 +357,8 @@ static int fusing_mmc(u32 pit_idx, u32 addr, u32 len, u32 is_last)
 		sprintf(buf, "mmc boot 0 1 1 %d", PIT_BOOTPARTn_GET(part_id));
 		if (run_command(buf, 0) > 0) {
 			sprintf(buf, "mmc write 0 0x%x 0 0x%x", addr,
-				(u32)pitparts[pit_idx].size / usbd_ops.mmc_blk);
+				(u32)lldiv(pitparts[pit_idx].size,
+					   usbd_ops.mmc_blk));
 			ret = run_command(buf, 0);
 		} else
 			ERROR("s-boot update failed\n");
@@ -374,9 +376,10 @@ static int fusing_mmc(u32 pit_idx, u32 addr, u32 len, u32 is_last)
 	if (part_fstype == PART_FS_TYPE_BASIC) {
 		DEBUG(3, "at hidden partition\n");
 		ret = mmc_cmd(OPS_WRITE, usbd_ops.mmc_dev,
-				pitparts[pit_idx].offset / usbd_ops.mmc_blk,
-				pitparts[pit_idx].size / usbd_ops.mmc_blk,
-				(void *)addr);
+				lldiv(pitparts[pit_idx].offset,
+				      usbd_ops.mmc_blk),
+				lldiv(pitparts[pit_idx].size,
+				      usbd_ops.mmc_blk), (void *)addr);
 	} else {
 		DEBUG(3, "at normal partition as image\n");
 		int part_base = pit_get_partition_base();
@@ -459,7 +462,8 @@ static int update_pit(void)
 		int mbr_idx = pit_get_partition_base();
 		memcpy((void *)download_addr, (void *)mbr, len);
 		set_gpt_info(&mmc->block_dev, (char *)download_addr, len,
-				pitparts[mbr_idx].offset / usbd_ops.mmc_blk);
+				lldiv(pitparts[mbr_idx].offset,
+				      usbd_ops.mmc_blk));
 	}
 
 	/*
@@ -475,7 +479,7 @@ static int update_pit(void)
 		/* just erase partition head to format at writing */
 		DEBUG(1, "erase /boot partition to format");
 		sprintf(cmd, "mmc erase 0 0x%x 4",
-			pitparts[boot_idx].offset / usbd_ops.mmc_blk);
+			lldiv(pitparts[boot_idx].offset, usbd_ops.mmc_blk));
 		run_command(cmd, 0);
 	}
 
@@ -592,8 +596,8 @@ static int recv_data(int pit_idx)
 	}
 
 	if (check_speed)
-		sw_size = (unsigned long long) download_packet_size *
-				stopwatch_tick_clock() / 1024; /* KB */
+		sw_size = lldiv(download_packet_size * stopwatch_tick_clock(),
+				1024); /* KB */
 
 	while(!final) {
 		if (check_speed) {
@@ -621,7 +625,8 @@ static int recv_data(int pit_idx)
 		/* fusing per chunk */
 		if ((buffered >= PKT_DOWNLOAD_CHUNK_SIZE) || final) {
 			if (check_speed)
-				printf("[%d MB/s]\n", (u32)(sw_size / sw_time / 1024));
+				printf("[%d MB/s]\n",
+				       (u32)lldiv(sw_size, sw_time / 1024));
 
 			set_update_state(1);
 			ret = fusing_recv_data(download_addr, pit_idx, MIN(buffered, remained), final);

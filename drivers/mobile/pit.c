@@ -29,6 +29,7 @@
 #include <mmc.h>
 #include <mobile/pit.h>
 #include <mobile/parts.h>
+#include <div64.h>
 
 #include "Tizen_GPT_Ver08.h"
 #include "Tizen_GPT_Ver13.h"
@@ -352,10 +353,10 @@ static void set_mmcparts(char *buf, unsigned long long size, char *name, int id)
 		count_mbr += sprintf(buf + count_mbr, "-(%s)", name);
 	} else {
 		if (size % 1024 == 0) {
-			size /= 1024;
+			size = lldiv(size, 1024);
 			if (size % 1024 == 0)
 				count_mbr += sprintf(buf + count_mbr, "%dm",
-						size / 1024);
+						lldiv(size, 1024));
 			else
 				count_mbr += sprintf(buf + count_mbr, "%dk", size);
 		} else {
@@ -403,8 +404,8 @@ static int mmc_cmd(int ops, u64 start, u64 cnt, void *addr)
 		return 1;
 	}
 
-	start /= mmc->read_bl_len;
-	cnt /= mmc->read_bl_len;
+	start = lldiv(start, mmc->read_bl_len);
+	cnt = lldiv(cnt, mmc->read_bl_len);
 
 	/*printf("mmc %s 0x%llx 0x%llx\n", ops ? "write" : "read", start, cnt); */
 
@@ -593,7 +594,8 @@ static int do_pit_update(cmd_tbl_t * cmdtp, int flag, int argc,
 
 	env = getenv("mbrparts");
 	if (env && pit_is_switched) {
-		set_gpt_info(&mmc->block_dev, env, strlen(env), pitparts[partition_index].offset / 512);
+		set_gpt_info(&mmc->block_dev, env, strlen(env),
+			     lldiv(pitparts[partition_index].offset, 512));
 		/* file system format */
 		printf("Please wait for partition format\n");
 		do_format_parts();

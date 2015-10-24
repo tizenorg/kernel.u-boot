@@ -123,7 +123,7 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 		unsigned int grp, last = 0;
 		int gdt_dirty = 0;
 
-		gdt_off %= apb;
+		gdt_off %= (blk_t) apb;
 		if (!dindir_buf[gdt_off]) {
 			/* FIXME XXX XXX
 			blk_t new_blk;

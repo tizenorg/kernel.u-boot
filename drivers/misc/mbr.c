@@ -6,6 +6,7 @@
 #include <common.h>
 #include <mbr.h>
 #include <mmc.h>
+#include <div64.h>
 
 #define SIGNATURE	((unsigned short) 0xAA55)
 
@@ -49,7 +50,7 @@ void set_mbr_table(unsigned int start_addr, int parts,
 	unsigned int size = 0;
 	int i, j;
 
-	max = mmc->capacity / mmc->read_bl_len;
+	max = lldiv(mmc->capacity / mmc->read_bl_len);
 
 	memset(&mbr_table, 0, sizeof(struct mbr));
 

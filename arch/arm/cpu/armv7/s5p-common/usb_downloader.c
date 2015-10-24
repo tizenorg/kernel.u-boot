@@ -25,6 +25,7 @@
 #include <malloc.h>
 #include "usb-hs-otg.h"
 #include <mobile/misc.h>
+#include <div64.h>
 
 #define TX_DATA_LEN	5
 #define RX_DATA_LEN	1024
@@ -78,7 +79,7 @@ static void usbd_set_mmc_dev(struct usbd_ops *usbd)
 	/* FIXME */
 	usbd->mmc_max = 0xf000;
 	usbd->mmc_blk = mmc->read_bl_len;
-	usbd->mmc_total = mmc->capacity / mmc->read_bl_len;
+	usbd->mmc_total = lldiv(mmc->capacity, mmc->read_bl_len);
 
 	sprintf(mmc_name, "%c%c%c", mmc->cid[0] & 0xff,
 			(mmc->cid[1] >> 24), (mmc->cid[1] >> 16) & 0xff);

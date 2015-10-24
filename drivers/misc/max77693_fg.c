@@ -614,7 +614,8 @@ static int check_fuelgauge_powered(void)
 
 void max77693_fg_init(enum battery_type batt_type, int charger_type)
 {
-	u32 soc, vcell, vfocv, power_check, table_soc, soc_diff, soc_chk_cnt, check_cnt;
+	u32 soc, vcell, vfocv, power_check, table_soc, soc_diff;
+	u32 soc_chk_cnt = 0, check_cnt = 0;
 	u32 raw_data, t_raw_data;
 	u16 status, reg_data;
 	u8 recalculation_type = 0, soc_valid = 0;

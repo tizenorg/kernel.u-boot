@@ -736,7 +736,7 @@ int mkfs_ext2(block_dev_desc_t *dev_desc, int part_no)
 	if (!get_partition_info(dev_desc, part_no, &info)) {
 		kilobytes = (info.size * info.blksz)/1024;
 		volume_size_bytes = info.size * info.blksz;
-		volume_size_sect = volume_size_bytes / bytes_per_sect;
+		volume_size_sect = lldiv(volume_size_bytes, bytes_per_sect);
 
 		total_sector = volume_size_sect;
 	} else {
